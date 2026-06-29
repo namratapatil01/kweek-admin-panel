@@ -179,7 +179,7 @@
 @section('scripts')
     <script>
         var id = "<?php echo $id; ?>";
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('zone').where("id", "==", id);
         var default_lat = getCookie('default_latitude');
         var default_lng = getCookie('default_longitude');
@@ -293,7 +293,7 @@
                             for (let i = 0; i < coordinates.length; i++) {
                                 var item = coordinates[i];
                                 if (item && item.lat !== undefined && item.lng !== undefined) {
-                                    area.push(new firebase.firestore.GeoPoint(item.lat, item.lng));
+                                    area.push(new kweekFirestore.GeoPoint(item.lat, item.lng));
                                 } else {
                                     console.error("Invalid coordinate at index " + i, item);
                                 }
@@ -364,7 +364,7 @@
                                         const lat = updatedItem.lat;
                                         const lng = updatedItem.lon;
                                         if (typeof lat === 'number' && !isNaN(lat) && !isNaN(lng) && typeof lng === 'number') {
-                                            area.push(new firebase.firestore.GeoPoint(lat, lng));
+                                            area.push(new kweekFirestore.GeoPoint(lat, lng));
                                             if (!latitude && !longitude) {
                                                 latitude = lat;
                                                 longitude = lng;

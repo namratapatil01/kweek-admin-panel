@@ -4,31 +4,30 @@ namespace App\Services;
 
 class ArroPaySettingsService
 {
-    public function __construct(protected FirestoreSettingsService $firestoreSettingsService)
+    public function __construct(protected SettingsService $settingsService)
     {
     }
 
     public function getAuthSettings(): array
     {
         $envSettings = $this->getEnvSettings();
-        if (!empty($envSettings['apiKey']) && !empty($envSettings['apiSecret'])) {
+        if (! empty($envSettings['apiKey']) && ! empty($envSettings['apiSecret'])) {
             return $envSettings;
         }
 
-        $firestoreSettings = $this->firestoreSettingsService->getDocument('settings', 'arropay_auth_settings');
-
-        if (is_array($firestoreSettings) && !empty($firestoreSettings['apiKey']) && !empty($firestoreSettings['apiSecret'])) {
+        $stored = $this->settingsService->get('arropay_auth_settings');
+        if (is_array($stored) && ! empty($stored['apiKey']) && ! empty($stored['apiSecret'])) {
             return [
-                'source' => 'firebase',
-                'baseUrl' => $this->normalizeBaseUrl((string) ($firestoreSettings['baseUrl'] ?? '')),
-                'loginEndpoint' => $firestoreSettings['loginEndpoint'] ?? (string) config('services.arropay_auth.login_endpoint', '/api/v2/auth/login'),
-                'apiKey' => (string) $firestoreSettings['apiKey'],
-                'apiSecret' => (string) $firestoreSettings['apiSecret'],
+                'source' => 'mysql',
+                'baseUrl' => $this->normalizeBaseUrl((string) ($stored['baseUrl'] ?? '')),
+                'loginEndpoint' => $stored['loginEndpoint'] ?? (string) config('services.arropay_auth.login_endpoint', '/api/v2/auth/login'),
+                'apiKey' => (string) $stored['apiKey'],
+                'apiSecret' => (string) $stored['apiSecret'],
             ];
         }
 
         return [
-            'source' => is_array($firestoreSettings) ? 'firebase_incomplete' : 'missing',
+            'source' => is_array($stored) ? 'mysql_incomplete' : 'missing',
             'baseUrl' => (string) config('services.arropay_auth.base_url', 'https://arropay.app'),
             'loginEndpoint' => (string) config('services.arropay_auth.login_endpoint', '/api/v2/auth/login'),
             'apiKey' => '',

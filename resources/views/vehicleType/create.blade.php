@@ -108,7 +108,7 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-	var database = firebase.firestore();
+	var database = kweekFirestore();
 	var photo = "";
 	var fileName = "";
 	var ref_sections = database.collection('sections');
@@ -174,7 +174,7 @@
 			});
 		}
 	});
-	var storageRef = firebase.storage().ref('images');
+	var storageRef = kweekStorage().ref('images');
 	function handleFileSelect(evt) {
 		var f = evt.target.files[0];
 		var reader = new FileReader();

@@ -145,7 +145,7 @@
 
     <script type="text/javascript">
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var id = '<?php echo $id; ?>';
         var sosId = '<?php echo @$sosId; ?>';
         var offest = 1;
@@ -284,9 +284,9 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) { 
-                    var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
                     refData = refData.where('createdAt', '>=', fromDate);
-                    var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                     refData = refData.where('createdAt', '<=', toDate);
                 }
             }

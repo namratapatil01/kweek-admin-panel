@@ -809,7 +809,7 @@
         var section_id = getCookie('section_id') || null;
         var service_type = getCookie('service_type') || null;
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var photo = "";
         var menuPhotoCount = 0;
         var vendorMenuPhotos = "";
@@ -817,7 +817,7 @@
         var vendorOwnerId = "";
         var vendorOwnerOnline = false;
         var photocount = 0;
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
         var restaurnt_photos = [];
         var restaurant_photos_filename = [];
         var ownerphoto = '';
@@ -828,7 +828,7 @@
         var story_thumbnail_filename = '';
 
         var ref_sections = database.collection('sections');
-        var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        var createdAt = kweekFirestore.FieldValue.serverTimestamp();
         var sections_list = [];
         var categories_list = [];
         var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
@@ -859,8 +859,8 @@
         var dine_in_active = false;
         var story_isEnabled = false;
         var storyCount = 0;
-        var storyRef = firebase.storage().ref('Story');
-        var storyImagesRef = firebase.storage().ref('Story/images');
+        var storyRef = kweekStorage().ref('Story');
+        var storyImagesRef = kweekStorage().ref('Story/images');
         var vendor_id = database.collection("tmp").doc().id;
         var driverNearBy = database.collection('settings').doc("DriverNearBy");
 
@@ -1361,7 +1361,7 @@
 
                             }).then(function(result) {
 
-                                coordinates = new firebase.firestore.GeoPoint(latitude, longitude);
+                                coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
 
                                 geoFirestore.collection('vendors').doc(vendor_id).set({
                                     'section_id': section_id,
@@ -1870,7 +1870,7 @@
         $(document).on("click", ".remove-story-video", function() {
             var id = $(this).attr('data-id');
             var photo_remove = $(this).attr('data-img');
-            firebase.storage().refFromURL(photo_remove).delete();
+            kweekStorage().refFromURL(photo_remove).delete();
             $("#story_div_" + id).remove();
             index = story_vedios.indexOf(photo_remove);
             $("#video_file").val('');

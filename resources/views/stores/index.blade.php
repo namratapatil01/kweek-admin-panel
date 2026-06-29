@@ -196,13 +196,13 @@
 @section('scripts')
 
     <script type="text/javascript">
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = JSON.parse(user_permissions);
         var checkDeletePermission = false;
         var checkCopyPermission = false;
         var active_id = getCookie('section_id');
-        var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        var createdAt = kweekFirestore.FieldValue.serverTimestamp();
 
         if ($.inArray('stores.delete', user_permissions) >= 0) {
             checkDeletePermission = true;
@@ -659,13 +659,7 @@
         async function deleteStoreData(storeId) {
             await database.collection('users').where('vendorID', '==', storeId).where('role', '==', 'vendor').get().then(async function(userssanpshots) {
                 if (userssanpshots.docs.length > 0) {
-                    var projectId = '<?php echo env('FIREBASE_PROJECT_ID'); ?>';
                     var item_data = userssanpshots.docs[0].data();
-                    var dataObject = {
-                        "data": {
-                            "uid": item_data.id
-                        }
-                    };
                     //delete vendor from mysql
                     await database.collection('settings').doc("Version").get().then(function(snapshot) {
                         var settingData = snapshot.data();
@@ -688,21 +682,7 @@
                             });
                         }
                     });
-                    jQuery.ajax({
-                        url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-                        method: 'POST',
-                        contentType: "application/json; charset=utf-8",
-                        data: JSON.stringify(dataObject),
-                        success: async function(data) {
-                            console.log('Delete user success:', data.result);
-                            await deleteDocumentWithImage('users', item_data.id, 'profilePictureURL');
-                        },
-                        error: function(xhr, status, error) {
-                            var responseText = JSON.parse(xhr.responseText);
-                            console.log('Delete user error:', responseText.error);
-                        }
-                    });
-                }
+}
             });
             var productSnapshot = await database.collection('vendor_products').where('vendorID', '==', storeId).get();
             if (!productSnapshot.empty) {
@@ -857,8 +837,7 @@
                     window.scrollTo(0, 0);
                 } else {
                     jQuery("#data-table_processing").show();
-                    firebase.auth().createUserWithEmailAndPassword(email, password).then(async function(firebaseUser) {
-                        var user_id = firebaseUser.user.uid;
+                    var user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
                         userData.email = email;
                         userData.firstName = userFirstName;
                         userData.lastName = userLastName;
@@ -870,7 +849,7 @@
                         vendorData.authorName = userFirstName + ' ' + userLastName;
                         vendorData.title = vendor_title;
                         vendorData.id = vendor_id;
-                        coordinates = new firebase.firestore.GeoPoint(vendorData.latitude, vendorData.longitude);
+                        coordinates = new kweekFirestore.GeoPoint(vendorData.latitude, vendorData.longitude);
                         vendorData.coordinates = coordinates;
                         vendorData.createdAt = createdAt;
                         await database.collection('users').doc(user_id).set(userData).then(async function(result) {
@@ -914,8 +893,7 @@
                                     });
                                 }
                             });
-                        })
-                    }).catch(function(error) {
+                        }).catch(function(error) {
                         $(".error_top").show();
                         jQuery("#data-table_processing").hide();
                         $(".error_top").html("");

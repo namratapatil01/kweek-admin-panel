@@ -1,5 +1,5 @@
-@include('auth.default')
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="kweek-data-bridge" content="{{ url('admin-data') }}">
 
 <div class="container">
     <div class="row page-titles ">
@@ -909,20 +909,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/7.2.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/7.2.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/7.2.0/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/7.2.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/7.2.0/firebase-database.js"></script>
-<script src="{{ asset('js/geofirestore.js') }}"></script>
-<script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
-
+<script src="{{ asset('js/kweek-data-bridge.js') }}"></script>
 <script src="{{ asset('js/crypto-js.js') }}"></script>
 <script src="{{ asset('js/jquery.cookie.js') }}"></script>
 <script src="{{ asset('js/jquery.validate.js') }}"></script>
 
 <script>
-    var database = firebase.firestore();
+    var database = kweekFirestore();
+    var geoFirestore = window.kweekGeoFirestore;
     var photo = "";
     var menuPhotoCount = 0;
     var vendorMenuPhotos = "";
@@ -934,7 +928,7 @@
     var restaurnt_photos = [];
     var ownerphoto = '';
     var ref_sections = database.collection('sections');
-    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
     var sections_list = [];
     var categories_list = [];
     var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
@@ -1276,10 +1270,8 @@
                 'otherDetails': otherDetails,
             };
 
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then(function (firebaseUser) {
-                    user_id = firebaseUser.user.uid;
-                    database.collection('users').doc(user_id).set({
+            user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
+database.collection('users').doc(user_id).set({
                         'sectionId': section_id,
                         'firstName': userFirstName,
                         'lastName': userLastName,
@@ -1295,7 +1287,7 @@
 
                     }).then(function (result) {
 
-                        coordinates = new firebase.firestore.GeoPoint(latitude, longitude);
+                        coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
 
                         geoFirestore.collection('vendors').doc(vendor_id).set({
                             'section_id': section_id,
@@ -1352,10 +1344,7 @@
 
                         });
 
-                    })
-
-                }).catch(function (error) {
-
+                    }).catch(function (error) {
                 $(".error_top").show();
                 $(".error_top").html("");
                 $(".error_top").append("<p>" + error + "</p>");
@@ -1559,7 +1548,7 @@
         //restaurnt_photos
     }
 
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
 
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];

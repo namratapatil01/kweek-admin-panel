@@ -197,14 +197,14 @@
 
 <script type="text/javascript">
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var photo = "";
     var fileName = "";
     var webPhoto="";
     var webFileName="";
     var photo_position2 = "";
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
     var ref_sections = database.collection('sections');
     var sections_list = [];
 

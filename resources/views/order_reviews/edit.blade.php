@@ -115,7 +115,7 @@
 <script type="text/javascript">
 
 var id = "<?php echo $id;?>";
-var database = firebase.firestore();
+var database = kweekFirestore();
 var ref = database.collection('items_review').where("Id","==",id);
 
 $(document).ready(function(){

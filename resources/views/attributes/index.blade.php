@@ -83,7 +83,7 @@
     if ($.inArray('item.attributes.delete', user_permissions) >= 0) {
         checkDeletePermission = true;
     }    
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var offest = 1;
     var pagesize = 10;
     var end = null;

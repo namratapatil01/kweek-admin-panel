@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @extends('layouts.app')
 
 @section('content')
@@ -814,3 +815,6 @@ $(document).on("click", "input[name='isActive']", function (e) {
 </script>
 
 @endsection
+=======
+@include('admin.partials.crud-index')
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

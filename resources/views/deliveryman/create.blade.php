@@ -145,18 +145,18 @@ foreach ($countries as $keycountry => $valuecountry) {
 <script>
     
     var section_id = getCookie('section_id') || '';
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var geoFirestore = new GeoFirestore(database);
     var refVendor = database.collection('vendors');
-    var storageRef = firebase.storage().ref('images');
-    var storage = firebase.storage();
+    var storageRef = kweekStorage().ref('images');
+    var storage = kweekStorage();
     var photo = "";
     var profilephoto = '';
     var profileFileName = '';
     var placeholderImage = '';
     
     var storeSection = '';
-    var createdAtman = firebase.firestore.Timestamp.fromDate(new Date());
+    var createdAtman = kweekFirestore.Timestamp.fromDate(new Date());
     var placeholder = database.collection('settings').doc('placeHolderImage');
     placeholder.get().then(async function(snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -274,10 +274,8 @@ foreach ($countries as $keycountry => $valuecountry) {
             var id = database.collection('tmp').doc().id;
             await storeImageData().then(async (IMG) => {
 
-                firebase.auth().createUserWithEmailAndPassword(email, password)
-                    .then(async function(firebaseUser) {
-                        user_id = firebaseUser.user.uid;
-                        database.collection('users').doc(user_id).set({
+                user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
+database.collection('users').doc(user_id).set({
                             'firstName': userFirstName,
                             'lastName': userLastName,
                             'email': email,

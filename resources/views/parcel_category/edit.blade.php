@@ -68,13 +68,13 @@
 <script type="text/javascript">
 
   var id = "<?php echo $id; ?>";
-  var database = firebase.firestore();
+  var database = kweekFirestore();
   var ref = database.collection('parcel_categories').where("id", "==", id);
   var photo = "";
   var fileName = "";
   var oldFileName = "";
-  var storageRef = firebase.storage().ref('images');
-  var storage = firebase.storage();
+  var storageRef = kweekStorage().ref('images');
+  var storage = kweekStorage();
   
   var placeholderImage = '';
   var placeholder = database.collection('settings').doc('placeHolderImage');
@@ -183,17 +183,7 @@
       if (oldFileName != "" && photo != oldFileName) {
         var oldImageUrl = await storage.refFromURL(oldFileName);
         imageBucket = oldImageUrl.bucket;
-        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-        if (imageBucket == envBucket) {
-          await oldImageUrl.delete().then(() => {
-            console.log("Old file deleted!")
-          }).catch((error) => {
-            console.log("ERR File delete ===", error);
-          });
-        } else {
-          console.log('Bucket not matched');
         }
-      }
       if (photo != oldFileName) {
         photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
         var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });

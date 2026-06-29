@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @extends('layouts.app')
 
 
@@ -513,3 +514,6 @@ var ref = database.collection('tax').orderBy('title');
 
 
 @endsection
+=======
+@include('admin.partials.crud-index')
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

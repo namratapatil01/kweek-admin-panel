@@ -90,7 +90,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref = database.collection('provider_categories');
     var ref_category = database.collection('provider_categories');
     var ref_sections = database.collection('sections');
@@ -167,7 +167,7 @@
             }
         });
     });
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
     async function storeImageData() {
         var newPhoto = '';
         try {

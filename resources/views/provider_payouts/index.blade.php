@@ -117,7 +117,7 @@
 <script type="text/javascript">
 
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var id = '<?php echo $id; ?>';
 
     var intRegex = /^\d+$/;

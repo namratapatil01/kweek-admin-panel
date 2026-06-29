@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ArroPayAuthService;
-use App\Services\FirebaseFirestoreService;
+use App\Services\DocumentStoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +26,7 @@ class ArroPayV2AuthApiController extends Controller
 
     public function __construct(
         protected ArroPayAuthService $authService,
-        protected FirebaseFirestoreService $firestoreService
+        protected DocumentStoreService $documentStore
     ) {
     }
 
@@ -119,7 +119,7 @@ class ArroPayV2AuthApiController extends Controller
                 'raw' => $result['raw'] ?? null,
             ]);
 
-            $this->savePaymentToFirebase(
+            $this->savePaymentRecord(
                 flow: 'payment-intent',
                 requestPayload: $payload,
                 responseData: is_array($result['raw'] ?? null) ? $result['raw'] : null,
@@ -150,7 +150,7 @@ class ArroPayV2AuthApiController extends Controller
             ]);
         }
 
-        $this->savePaymentToFirebase(
+        $this->savePaymentRecord(
             flow: 'payment-intent',
             requestPayload: $payload,
             responseData: is_array($result['data'] ?? null) ? $result['data'] : null,
@@ -201,7 +201,7 @@ class ArroPayV2AuthApiController extends Controller
                 'raw' => $result['raw'] ?? null,
             ]);
 
-            $this->savePaymentToFirebase(
+            $this->savePaymentRecord(
                 flow: 'payment-check',
                 requestPayload: $payload,
                 responseData: is_array($result['raw'] ?? null) ? $result['raw'] : null,
@@ -242,7 +242,7 @@ class ArroPayV2AuthApiController extends Controller
             ]);
         }
 
-        $this->savePaymentToFirebase(
+        $this->savePaymentRecord(
             flow: 'payment-check',
             requestPayload: $payload,
             responseData: $responseData,
@@ -357,7 +357,7 @@ class ArroPayV2AuthApiController extends Controller
         return null;
     }
 
-    private function savePaymentToFirebase(
+    private function savePaymentRecord(
         string $flow,
         array $requestPayload,
         ?array $responseData,
@@ -368,7 +368,7 @@ class ArroPayV2AuthApiController extends Controller
     ): void {
         try {
             $paymentId = $this->extractPaymentReference($requestPayload, $responseData);
-            $documentId = $this->resolveFirestoreDocumentId($requestPayload, $responseData, $paymentId);
+            $documentId = $this->resolveDocumentId($requestPayload, $responseData, $paymentId);
 
             $record = [
                 'gateway' => 'arropay_maya_v2',
@@ -391,25 +391,25 @@ class ArroPayV2AuthApiController extends Controller
                 'response_data' => $responseData,
             ];
 
-            $collection = (string) env('FIREBASE_ARROPAY_PAYMENTS_COLLECTION', 'arropay_v2_payments');
+            $collection = (string) config('services.arropay_auth.payments_table', 'arropay_v2_payments');
 
-            $result = $this->firestoreService->upsertDocument($collection, $documentId, $record);
+            $result = $this->documentStore->upsertDocument($collection, $documentId, $record);
             if (!($result['success'] ?? false)) {
-                Log::warning('Unable to save ArroPay payment details to Firebase.', [
+                Log::warning('Unable to save ArroPay payment details to MySQL.', [
                     'flow' => $flow,
-                    'message' => $result['message'] ?? 'Firestore write failed.',
+                    'message' => $result['message'] ?? 'MySQL write failed.',
                     'details' => $result['details'] ?? null,
                 ]);
             }
         } catch (\Throwable $e) {
-            Log::warning('Unable to save ArroPay payment details to Firebase.', [
+            Log::warning('Unable to save ArroPay payment details to MySQL.', [
                 'flow' => $flow,
                 'error' => $e->getMessage(),
             ]);
         }
     }
 
-    private function resolveFirestoreDocumentId(array $requestPayload, ?array $responseData, ?string $paymentId): string
+    private function resolveDocumentId(array $requestPayload, ?array $responseData, ?string $paymentId): string
     {
         $candidates = [
             $paymentId,

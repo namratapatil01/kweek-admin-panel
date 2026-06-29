@@ -85,7 +85,7 @@
 
     <script type="text/javascript">
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
 
         var offest = 1;
 
@@ -607,9 +607,6 @@ $(function () {
                             await database.collection('users').where('vendorID', '==', vendorID).get().then(async function (userssanpshots) {
 
                                 if (userssanpshots.docs.length > 0) {
-
-                                    var projectId = '<?php echo env('FIREBASE_PROJECT_ID') ?>';
-
                                     userssanpshots.docs.forEach((val) => {
 
                                         var item_data = val.data();
@@ -623,26 +620,7 @@ $(function () {
                                             }
 
                                         };
-
-                                        jQuery.ajax({
-
-                                            url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-
-                                            method: 'POST',
-
-                                            contentType: "application/json; charset=utf-8",
-
-                                            data: JSON.stringify(dataObject),
-
-                                            success: function (data) {
-
-                                                console.log('Delete user success:', data.result);
-
-                                                database.collection('users').doc(item_data.id).delete().then(function () {
-
-                                                });
-
-                                            },
+},
 
                                             error: function (xhr, status, error) {
 

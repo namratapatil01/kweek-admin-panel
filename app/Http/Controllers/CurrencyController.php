@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 
 namespace App\Http\Controllers;
 
@@ -29,3 +30,23 @@ class CurrencyController extends Controller
     }
 
 }
+=======
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
+class CurrencyController extends Controller
+{
+    use ProvidesMySqlCrud;
+
+    public function __construct()
+    {
+        $this->middleware("auth");
+    }
+
+    protected function moduleSlug(): string
+    {
+        return "currencies";
+    }
+}
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

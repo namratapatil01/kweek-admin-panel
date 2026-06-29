@@ -272,7 +272,7 @@
             checkDeletePermission = true;
         }
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var refData = database.collection('vendor_orders');
         if (section_id) {
             refData = refData.where('section_id', '==', section_id);
@@ -347,7 +347,7 @@
             ref = refData.orderBy('createdAt', 'desc');
         }
 
-        const sectionsRef = firebase.firestore().collection('sections');
+        const sectionsRef = kweekFirestore().collection('sections');
         $('.status_selector').select2({
             placeholder: '{{ trans('lang.status') }}',
             minimumResultsForSearch: Infinity,
@@ -417,8 +417,8 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).add(1, 'day').toDate(); // FIX
 
-                var fromDate = firebase.firestore.Timestamp.fromDate(from);
-                var toDate = firebase.firestore.Timestamp.fromDate(to);
+                var fromDate = kweekFirestore.Timestamp.fromDate(from);
+                var toDate = kweekFirestore.Timestamp.fromDate(to);
 
                 refData = refData.where('createdAt', '>=', fromDate);
                 refData = refData.where('createdAt', '<', toDate); // FIX

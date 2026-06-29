@@ -145,7 +145,7 @@
             checkDeletePermission = true;
     }
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var id="{{$id}}";
     if(id!=''){

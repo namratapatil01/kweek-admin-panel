@@ -144,7 +144,7 @@
         checkDeletePermission = true;
     }
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var offest = 1;
     var pagesize = 10;
     var end = null;
@@ -221,9 +221,9 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) { 
-                    var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
                     ref = ref.where('createdAt', '>=', fromDate);
-                    var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                     ref = ref.where('createdAt', '<=', toDate);
                 }
             }

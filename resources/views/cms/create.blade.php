@@ -178,7 +178,7 @@
 
 var id = "<?php echo uniqid();?>";
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 
 var ref = database.collection('cms_pages');
 

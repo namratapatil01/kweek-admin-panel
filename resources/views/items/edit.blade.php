@@ -279,10 +279,10 @@
         var section_id = getCookie('section_id') || '';
         var vendor_id = "{{ $id }}";
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('vendor_products').where("id", "==", vendor_id);
         var ref_sections = database.collection('sections');
-        var storage = firebase.storage();
+        var storage = kweekStorage();
         var categories_list = [];
         var brand_list = [];
         var attributes_list = [];
@@ -852,7 +852,7 @@
             })
         })
 
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
         function handleFileSelect(evt) {
             var f = evt.target.files[0];
             var reader = new FileReader();
@@ -924,17 +924,7 @@
                 await Promise.all(variantImageToDelete.map(async (delImage) => {
                     var delImageUrlRef = await storage.refFromURL(delImage);
                     imageBucket = delImageUrlRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await delImageUrlRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-                }));
+                    }));
             }
             return newPhoto;
         }
@@ -1021,17 +1011,7 @@
                     if (digital_product_old_file != "" && digital_product_file != digital_product_old_file) {
                         var oldImageUrlRef = await storage.refFromURL(digital_product_old_file);
                         imageBucket = oldImageUrlRef.bucket;
-                        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                        if (imageBucket == envBucket) {
-                            await oldImageUrlRef.delete().then(() => {
-                                console.log("Old file deleted!")
-                            }).catch((error) => {
-                                console.log("ERR File delete ===", error);
-                            });
-                        } else {
-                            console.log('Bucket not matched');
                         }
-                    }
                     if (digital_product_file != digital_product_old_file) {
                         digital_product_file = digital_product_file.replace(/^data:image\/[a-z]+;base64,/, "");
                         if (digital_product_ext == 'zip' || digital_product_ext == "pdf") {
@@ -1085,17 +1065,7 @@
             if (photosToDelete.length > 0) {
                 await Promise.all(photosToDelete.map(async (delImage) => {
                     imageBucket = delImage.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await delImage.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-                }));
+                    }));
             }
             return newPhoto;
         }
@@ -1104,7 +1074,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                photosToDelete.push(firebase.storage().refFromURL(photo_remove));
+                photosToDelete.push(kweekStorage().refFromURL(photo_remove));
             }
             $("#photo_" + id).remove();
             index = photos.indexOf(photo_remove);
@@ -1123,7 +1093,7 @@
                 var itemid = jQuery(this).data('itemid');
                 itemid = itemid.toString();
                 if (fileurl) {
-                    firebase.storage().refFromURL(fileurl).delete();
+                    kweekStorage().refFromURL(fileurl).delete();
                     database.collection('vendor_products').doc(itemid).update({
                         'digitalProduct': ''
                     });

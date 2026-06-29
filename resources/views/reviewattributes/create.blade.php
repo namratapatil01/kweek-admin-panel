@@ -49,7 +49,7 @@
 
 <script type="text/javascript">
 
-  var database = firebase.firestore();
+  var database = kweekFirestore();
   var ref = database.collection('review_attributes');
   var photo = "";
   var id_reviewattribute = "<?php echo uniqid(); ?>";

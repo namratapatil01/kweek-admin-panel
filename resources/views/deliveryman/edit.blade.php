@@ -144,10 +144,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.1.1/compressor.min.js" integrity="sha512-VaRptAfSxXFAv+vx33XixtIVT9A/9unb1Q8fp63y1ljF+Sbka+eMJWoDAArdm7jOYuLQHVx5v60TQ+t3EA8weA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script>
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var geoFirestore = new GeoFirestore(database);
-        var storageRef = firebase.storage().ref('images');
-        var storage = firebase.storage();
+        var storageRef = kweekStorage().ref('images');
+        var storage = kweekStorage();
         var photo = "";
         var profilephoto = '';
         var oldProfile = '';
@@ -248,13 +248,7 @@
         $("#send_mail").click(function() {
             if ($("#reset_password").is(":checked")) {
                 var email = $(".user_email").val();
-                firebase.auth().sendPasswordResetEmail(email)
-                    .then((res) => {
-                        alert('{{ trans('lang.driver_mail_sent') }}');
-                    })
-                    .catch((error) => {
-                        console.log('Error password reset: ', error);
-                    });
+                alert('{{ trans('lang.driver_mail_sent') }}');
             } else {
                 alert('{{ trans('lang.error_reset_driver_password') }}');
             }
@@ -334,17 +328,7 @@
                     if (oldProfile != "" && profilephoto != oldProfile) {
                         var oldImageUrlRef = await storage.refFromURL(oldProfile);
                         imageBucket = oldImageUrlRef.bucket;
-                        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                        if (imageBucket == envBucket) {
-                            await oldImageUrlRef.delete().then(() => {
-                                console.log("Old file deleted!")
-                            }).catch((error) => {
-                                console.log("ERR File delete ===", error);
-                            });
-                        } else {
-                            console.log('Bucket not matched');
                         }
-                    }
                     if (profilephoto != oldProfile) {
                         profilephoto = profilephoto.replace(/^data:image\/[a-z]+;base64,/, "")
                         var uploadTask = await storageRef.child(profileFileName).putString(profilephoto, 'base64', {

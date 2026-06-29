@@ -207,7 +207,7 @@ foreach ($countries as $keycountry => $valuecountry) {
 
             var section_id = getCookie('section_id') || '';
 
-            var database = firebase.firestore();
+            var database = kweekFirestore();
             var geoFirestore = new GeoFirestore(database);
             var autoAprroveVendor = database.collection('settings').doc("vendor");
             var photo = "";
@@ -218,9 +218,9 @@ foreach ($countries as $keycountry => $valuecountry) {
             var ownerphoto = '';
             var photo = "";
             var fileName = "";
-            var storageRef = firebase.storage().ref('images');
+            var storageRef = kweekStorage().ref('images');
 
-            var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            var createdAt = kweekFirestore.FieldValue.serverTimestamp();
             var adminCommission = '';
             
             $(document).ready(async function () {
@@ -340,10 +340,8 @@ foreach ($countries as $keycountry => $valuecountry) {
                         var subscriptionData=null;
                     }
 
-                    firebase.auth().createUserWithEmailAndPassword(email, password)
-                        .then(function (firebaseUser) {
-                            user_id = firebaseUser.user.uid;
-                            storeImageData().then(IMG => {
+                    user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
+storeImageData().then(IMG => {
                                 database.collection('users').doc(user_id).set({
                                     'section_id': section_id,
                                     'firstName': userFirstName,
@@ -518,7 +516,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                     var currentDate=new Date();
                     if(data.expiryDay!='-1') {
                         currentDate.setDate(currentDate.getDate()+parseInt(data.expiryDay));
-                        data.expiryDate=firebase.firestore.Timestamp.fromDate(currentDate);
+                        data.expiryDate=kweekFirestore.Timestamp.fromDate(currentDate);
                     } else {
                         data.expiryDate=null;
                     }
@@ -528,7 +526,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             }
             async function addSubscriptionHistory(historyData) {
                 var id_order=database.collection('tmp').doc().id;
-                var createdAt=firebase.firestore.FieldValue.serverTimestamp();
+                var createdAt=kweekFirestore.FieldValue.serverTimestamp();
 
                 var userId=historyData.userId;
                 await database.collection('subscription_history').doc(id_order).set({

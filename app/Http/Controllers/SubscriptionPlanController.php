@@ -1,5 +1,6 @@
 <?php
 
+<<<<<<< HEAD
 
 
 namespace App\Http\Controllers;
@@ -63,3 +64,23 @@ class SubscriptionPlanController extends Controller
 
 }
 
+=======
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
+class SubscriptionPlanController extends Controller
+{
+    use ProvidesMySqlCrud;
+
+    public function __construct()
+    {
+        $this->middleware("auth");
+    }
+
+    protected function moduleSlug(): string
+    {
+        return "subscription-plans";
+    }
+}
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

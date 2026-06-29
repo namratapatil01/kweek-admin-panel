@@ -40,9 +40,9 @@
         var id = "{{$ownerId}}";
         var allVendor = database.collection('users').where('role', '==', 'vendor');
         var driverRef= database.collection('users').where('id','==',id);
-        var database = firebase.firestore();
-        var storageRef = firebase.storage().ref('images');
-        var storage = firebase.storage();
+        var database = kweekFirestore();
+        var storageRef = kweekStorage().ref('images');
+        var storage = kweekStorage();
         var docref = database.collection('documents_verify').doc(id);
         var requestUrl = "{{request()->is('vendors/document-list/*')}}";
         var back_photo = '';
@@ -102,17 +102,7 @@
                 if (frontFileOld != "" && front_photo != frontFileOld) {
                     var frontFileOldRef = await storage.refFromURL(frontFileOld);
                     imageBucket = frontFileOldRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await frontFileOldRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
                     }
-                }
                 if (front_photo != frontFileOld) {
                     front_photo = front_photo.replace(/^data:image\/[a-z]+;base64,/, "")
                     var uploadTask = await storageRef.child(frontFileName).putString(front_photo, 'base64', { contentType: 'image/jpg' });
@@ -125,17 +115,7 @@
                 if (backFileOld != "" && back_photo != backFileOld) {
                     var backFileOldRef = await storage.refFromURL(backFileOld);
                     imageBucket = backFileOldRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await backFileOldRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
                     }
-                }
                 if (back_photo != backFileOld) {
                     back_photo = back_photo.replace(/^data:image\/[a-z]+;base64,/, "")
                     var uploadTask = await storageRef.child(backFileName).putString(back_photo, 'base64', { contentType: 'image/jpg' });
@@ -229,7 +209,7 @@
                         database.collection('documents_verify').doc(id).set({
                             id: id,
                             type: type,
-                            documents: firebase.firestore.FieldValue.arrayUnion({
+                            documents: kweekFirestore.FieldValue.arrayUnion({
                                 backImage: IMG.back_img ? IMG.back_img : '',
                                 documentId: docId.trim(),
                                 frontImage: IMG.front_img ? IMG.front_img : '',

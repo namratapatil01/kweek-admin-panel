@@ -190,7 +190,7 @@
     @endsection
     @section('scripts')
         <script type="text/javascript">
-            var database = firebase.firestore();
+            var database = kweekFirestore();
             var newRequestRef = database.collection('advertisements').where('status', '==', 'pending');
             var canceledRequestRef = database.collection('advertisements').where('status', '==', 'canceled');
             var updatedRequestRef = database.collection('advertisements').where('status', '==', 'updated');

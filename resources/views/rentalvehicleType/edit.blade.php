@@ -93,15 +93,15 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-	var database = firebase.firestore();
+	var database = kweekFirestore();
 	var photo = "";
 	var fileName = "";
 	var oldImageFile = "";
 	var placeholderImage = '';
 	var id = "<?php echo $id; ?>";
 	var ref = database.collection('rental_vehicle_type').where('id', '==', id);
-	var storageRef = firebase.storage().ref('images');
-	var storage = firebase.storage();
+	var storageRef = kweekStorage().ref('images');
+	var storage = kweekStorage();
 	var placeholder = database.collection('settings').doc('placeHolderImage');
 	placeholder.get().then(async function (snapshotsimage) {
 		var placeholderImageData = snapshotsimage.data();
@@ -225,19 +225,12 @@
 		var newPhoto = '';
 		try {
 			if (oldImageFile != "" && photo != oldImageFile) {
-				var oldImageUrl = await storage.refFromURL(oldImageFile);
-				imageBucket = oldImageUrl.bucket;
-				var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-				if (imageBucket == envBucket) {
-					await oldImageUrl.delete().then(() => {
-						console.log("Old file deleted!")
-					}).catch((error) => {
-						console.log("ERR File delete ===", error);
-					});
-				} else {
-					console.log('Bucket not matched');
-				}
-			}
+				try {
+                            await storage.storage.refFromURL(oldImageFile).delete();
+                        } catch (error) {
+                            console.log("ERR File delete ===", error);
+                        }
+}
 			if (photo != oldImageFile) {
 				photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
 				var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });

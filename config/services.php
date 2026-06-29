@@ -70,11 +70,7 @@ return [
         'login_endpoint' => env('ARROPAY_AUTH_LOGIN_ENDPOINT') ?: '/api/v2/auth/login',
         'gateway_secret' => env('ARROPAY_GATEWAY_SECRET') ?: '1234',
         'request_timeout' => (int) env('ARROPAY_AUTH_TIMEOUT', 30),
-    ],
-     'firebase' => [
-        'project_id' => env('FIREBASE_PROJECT_ID', ''),
-        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/credentials.json')),
-        'arropay_payments_collection' => env('FIREBASE_ARROPAY_PAYMENTS_COLLECTION', 'arropay_v2_payments'),
+        'payments_table' => env('ARROPAY_PAYMENTS_TABLE', 'arropay_v2_payments'),
     ],
     'arropay_disbursement' => [
         'mode' => env('ARROPAY_DISBURSEMENT_MODE', 'local'),
@@ -88,7 +84,7 @@ return [
         'request_timeout' => (int) env('ARROPAY_DISBURSEMENT_TIMEOUT', 30),
         'source_wallet_balance' => (float) env('ARROPAY_DISBURSEMENT_SOURCE_WALLET_BALANCE', 0),
         'test_otp' => env('ARROPAY_DISBURSEMENT_TEST_OTP', ''),
-        'firestore_collection' => env('FIREBASE_DISBURSEMENT_COLLECTION', 'arropay_disbursement_withdrawals'),
+        'mysql_table' => env('ARROPAY_DISBURSEMENT_TABLE', 'arropay_disbursement_withdrawals'),
         'banks' => [
             'INSTAPAY' => [
                 ['code' => 'GXCHPHM2', 'name' => 'GCash'],

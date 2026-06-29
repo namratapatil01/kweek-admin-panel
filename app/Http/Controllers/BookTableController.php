@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Auth;
 use App\Models\VendorUsers;
 use Illuminate\Http\Request;
@@ -10,15 +11,29 @@ use Google\Client as Google_Client;
 class BookTableController extends Controller
 {
 
+=======
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class BookTableController extends Controller
+{
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
     public function __construct()
     {
         $this->middleware('auth');
     }
 
+<<<<<<< HEAD
     public function index($id='')
     {
 
         return view("bookTable.index")->with('id',$id);
+=======
+    public function index($id = '')
+    {
+        return view('bookTable.index')->with('id', $id);
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
     }
 
     public function edit($id)
@@ -28,6 +43,7 @@ class BookTableController extends Controller
 
     public function sendnotification(Request $request)
     {
+<<<<<<< HEAD
 
         if(Storage::disk('local')->has('firebase/credentials.json')){
             
@@ -103,3 +119,49 @@ class BookTableController extends Controller
 }
 
 
+=======
+        $fcmToken = (string) $request->input('fcm', '');
+        $subject = (string) $request->input('subject', '');
+        $message = (string) $request->input('message', '');
+
+        if ($fcmToken === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing FCM token to send notification.',
+            ]);
+        }
+
+        $serverKey = (string) env('FCM_SERVER_KEY', '');
+        if ($serverKey !== '') {
+            $response = Http::withHeaders([
+                'Authorization' => 'key=' . $serverKey,
+                'Content-Type' => 'application/json',
+            ])->post('https://fcm.googleapis.com/fcm/send', [
+                'to' => $fcmToken,
+                'notification' => [
+                    'title' => $subject,
+                    'body' => $message,
+                ],
+                'data' => [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'id' => '1',
+                    'status' => 'done',
+                ],
+            ]);
+
+            return response()->json([
+                'success' => $response->successful(),
+                'message' => $response->successful()
+                    ? 'Notification successfully sent.'
+                    : 'Unable to send notification via FCM.',
+                'result' => $response->json(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'FCM is not configured. Set FCM_SERVER_KEY in .env.',
+        ]);
+    }
+}
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

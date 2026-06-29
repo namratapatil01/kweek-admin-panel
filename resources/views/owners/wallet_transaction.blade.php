@@ -87,7 +87,7 @@
 @endsection
 @section('scripts')
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var id = '<?php echo $id; ?>';
         var offest = 1;
         var pagesize = 10;

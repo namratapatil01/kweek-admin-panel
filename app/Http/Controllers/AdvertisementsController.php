@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+<<<<<<< HEAD
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Google\Client as Google_Client;
@@ -105,5 +106,21 @@ class AdvertisementsController extends Controller
     public function chat($id)
     {
         return view('advertisements.chat')->with('id', $id);
+=======
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
+class AdvertisementsController extends Controller
+{
+    use ProvidesMySqlCrud;
+
+    public function __construct()
+    {
+        $this->middleware("auth");
+    }
+
+    protected function moduleSlug(): string
+    {
+        return "advertisements";
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
     }
 }

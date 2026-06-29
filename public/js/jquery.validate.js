@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 var firebaseConfig = {
     apiKey: $.cookie('XSRF-TOKEN-AK') ? $.decrypt($.cookie('XSRF-TOKEN-AK')) : 'placeholder',
@@ -15,3 +16,6 @@ try {
 } catch (e) {
     console.log("Firebase initialization bypassed (mock credentials used).");
 }
+=======
+// Legacy placeholder — Firebase initialization removed; MySQL data bridge is used instead.
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

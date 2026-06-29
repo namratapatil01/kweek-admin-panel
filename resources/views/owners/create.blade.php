@@ -193,18 +193,18 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     var section_id = getCookie('section_id') || '';
     var service_type = getCookie('service_type') || '';
-    var database = firebase.firestore();  
+    var database = kweekFirestore();  
     
     var photo = "";
     var ownerPhoto = '';
     var ownerFileName = '';
     var ownerOldImageFile = '';
 
-    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = firebase.storage().ref('images');
-    var storage = firebase.storage();
+    var storageRef = kweekStorage().ref('images');
+    var storage = kweekStorage();
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -302,11 +302,8 @@ foreach ($countries as $keycountry => $valuecountry) {
                     'otherDetails': otherDetails,
                 };
 
-                firebase.auth().createUserWithEmailAndPassword(email, password).then(async function (firebaseUser) {
-
-                    user_id = firebaseUser.user.uid;
-                    
-                    await storeImageData().then(async (IMG) => {
+                user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
+await storeImageData().then(async (IMG) => {
                         database.collection('users').doc(user_id).set({ 
                             'firstName': userFirstName,
                             'lastName': userLastName,
@@ -419,18 +416,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                 if (ownerOldImageFile != "" && ownerPhoto != ownerOldImageFile) {
                     var ownerOldImageUrlRef = await storage.refFromURL(ownerOldImageFile);
                     imageBucket = ownerOldImageUrlRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                    if (imageBucket == envBucket) {
-                        await ownerOldImageUrlRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
                     }
-                }
 
                 if (ownerPhoto != ownerOldImageFile) {
 

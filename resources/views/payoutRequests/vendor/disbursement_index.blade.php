@@ -192,7 +192,7 @@
     <script type="text/javascript">
 
         var id = '<?php echo $id; ?>';
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var offest = 1;
         var pagesize = 10;
         var end = null;
@@ -767,7 +767,7 @@ $(function () {
                                 var wId = database.collection('temp').doc().id;
                                 database.collection('wallet').doc(wId).set({
                                     'amount': parseFloat(priceadd),
-                                    'date': firebase.firestore.FieldValue.serverTimestamp(),
+                                    'date': kweekFirestore.FieldValue.serverTimestamp(),
                                     'id': wId,
                                     'isTopUp': false,
                                     'order_id': id,

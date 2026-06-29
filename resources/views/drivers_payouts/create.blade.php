@@ -82,7 +82,7 @@
 
 @section('scripts')
     <script type="text/javascript">
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var driverID = "{{ $id }}";
         var email_templates = database.collection('email_templates').where('type', '==', 'payout_request');
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @extends('layouts.app')
 <style>
 .leaflet-routing-container{
@@ -1599,3 +1600,6 @@ async function drawRoute(originAddress,sosAddress,destinationAddress/* , waypoin
 
 
 @endsection
+=======
+@include('admin.partials.crud-form')
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f

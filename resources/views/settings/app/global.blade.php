@@ -758,7 +758,7 @@
 
 @section('scripts')
     <script type="text/javascript">
-        var database = firebase.firestore();
+        var database = kweekFirestore();
 
         var ref = database.collection('settings').doc("globalSettings");
 
@@ -1799,7 +1799,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
 
 
 
@@ -2149,7 +2149,7 @@ if (globalSettings.defaultCountryCode) {
 
                     var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
 
-                    var uploadTask = firebase.storage().ref('/').child(filename).put(theFile);
+                    var uploadTask = kweekStorage().ref('/').child(filename).put(theFile);
 
                     uploadTask.on('state_changed', function(snapshot) {
 
@@ -2248,7 +2248,7 @@ if (globalSettings.defaultCountryCode) {
                     if (oldAudioData) {
                         try {
                             var OldImageUrlRef = await storage.refFromURL(oldAudioData);
-                            var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
+                            var envBucket = "";
                             if (OldImageUrlRef.bucket === envBucket) {
                                 await OldImageUrlRef.delete();
                                 console.log("Old file deleted!");

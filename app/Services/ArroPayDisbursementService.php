@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 class ArroPayDisbursementService
 {
     public function __construct(
-        protected FirebaseFirestoreService $firestoreService
+        protected DocumentStoreService $documentStore
     ) {
     }
 
@@ -53,7 +53,7 @@ class ArroPayDisbursementService
 
         return $this->failure(
             404,
-            'Initiated disbursement transaction was not found in Firebase Firestore.',
+            'Initiated disbursement transaction was not found in MySQL.',
             $this->withdrawalLookupDebug($payload)
         );
     }
@@ -81,20 +81,11 @@ class ArroPayDisbursementService
 
     protected function withdrawalLookupDebug(array $payload): array
     {
-        $credentialsPath = (string) config(
-            'services.firebase.credentials',
-            storage_path('app/firebase/credentials.json')
-        );
-
         return [
             'mode' => $this->isProxyMode() ? 'proxy' : 'local',
-            'collection' => $this->withdrawalsCollection(),
-            'firebase_project_id' => trim((string) config('services.firebase.project_id', '')),
-            'firebase_credentials' => $credentialsPath,
-            'credentials_readable' => is_readable($credentialsPath),
+            'table' => $this->withdrawalsCollection(),
             'transaction_id' => $payload['transactionId'] ?? null,
             'order_number' => $payload['orderNumber'] ?? null,
-            'hint' => 'Set FIREBASE_PROJECT_ID and FIREBASE_CREDENTIALS in server .env, then run php artisan config:clear.',
         ];
     }
 
@@ -145,7 +136,7 @@ class ArroPayDisbursementService
         if (!($saveResult['success'] ?? false)) {
             return $this->failure(
                 500,
-                (string) ($saveResult['message'] ?? 'Unable to save disbursement to Firebase Firestore.'),
+                (string) ($saveResult['message'] ?? 'Unable to save disbursement to MySQL.'),
                 is_array($saveResult['details'] ?? null) ? $saveResult['details'] : []
             );
         }
@@ -168,7 +159,7 @@ class ArroPayDisbursementService
         if ($withdrawal === null) {
             return $this->failure(
                 404,
-                'Initiated disbursement transaction was not found in Firebase Firestore.',
+                'Initiated disbursement transaction was not found in MySQL.',
                 $this->withdrawalLookupDebug($payload)
             );
         }
@@ -219,7 +210,7 @@ class ArroPayDisbursementService
         $orderNumber = (string) ($payload['orderNumber'] ?? '');
 
         if ($transactionId !== '') {
-            $document = $this->firestoreService->getDocument(
+            $document = $this->documentStore->getDocument(
                 $this->withdrawalsCollection(),
                 $transactionId
             );
@@ -230,7 +221,7 @@ class ArroPayDisbursementService
                 return $document;
             }
 
-            $documents = $this->firestoreService->queryDocuments(
+            $documents = $this->documentStore->queryDocuments(
                 $this->withdrawalsCollection(),
                 [['field' => 'transaction_id', 'op' => 'EQUAL', 'value' => $transactionId]],
                 1,
@@ -253,7 +244,7 @@ class ArroPayDisbursementService
                 $filters[] = ['field' => 'channel', 'op' => 'EQUAL', 'value' => (string) $payload['channel']];
             }
 
-            $documents = $this->firestoreService->queryDocuments(
+            $documents = $this->documentStore->queryDocuments(
                 $this->withdrawalsCollection(),
                 $filters,
                 1,
@@ -268,7 +259,7 @@ class ArroPayDisbursementService
 
     protected function findActiveWithdrawalByOrderNumber(string $orderNumber): ?array
     {
-        $documents = $this->firestoreService->queryDocuments(
+        $documents = $this->documentStore->queryDocuments(
             $this->withdrawalsCollection(),
             [
                 ['field' => 'order_number', 'op' => 'EQUAL', 'value' => $orderNumber],
@@ -282,7 +273,7 @@ class ArroPayDisbursementService
 
     protected function saveWithdrawal(string $transactionId, array $record): array
     {
-        return $this->firestoreService->upsertDocument(
+        return $this->documentStore->upsertDocument(
             $this->withdrawalsCollection(),
             $transactionId,
             $record
@@ -291,7 +282,7 @@ class ArroPayDisbursementService
 
     protected function updateWithdrawalStatus(string $transactionId, string $status): bool
     {
-        $result = $this->firestoreService->upsertDocument(
+        $result = $this->documentStore->upsertDocument(
             $this->withdrawalsCollection(),
             $transactionId,
             [
@@ -306,7 +297,7 @@ class ArroPayDisbursementService
     protected function withdrawalsCollection(): string
     {
         return (string) config(
-            'services.arropay_disbursement.firestore_collection',
+            'services.arropay_disbursement.mysql_table',
             'arropay_disbursement_withdrawals'
         );
     }

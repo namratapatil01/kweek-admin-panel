@@ -104,7 +104,7 @@
 
     var section_id = getCookie('section_id') || '';
     var id = "<?php echo $id; ?>";
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     
     var ref = database.collection('vendor_categories').where("id", "==", id);
     var ref_review_attributes = database.collection('review_attributes');
@@ -115,8 +115,8 @@
     var catImageFile = "";
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storage = firebase.storage();
-    var storageRef = firebase.storage().ref('images');
+    var storage = kweekStorage();
+    var storageRef = kweekStorage().ref('images');
     var order = 0;
     let sectionData = '';
 
@@ -282,17 +282,7 @@
             if (catImageFile != "" && photo != catImageFile) {
                 var catOldImageUrlRef = await storage.refFromURL(catImageFile);
                 imageBucket = catOldImageUrlRef.bucket;
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                if (imageBucket == envBucket) {
-                    await catOldImageUrlRef.delete().then(() => {
-                        console.log("Old file deleted!")
-                    }).catch((error) => {
-                        console.log("ERR File delete ===", error);
-                    });
-                } else {
-                    console.log('Bucket not matched');
                 }
-            }
             if (photo != catImageFile) {
                 photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
                 var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });

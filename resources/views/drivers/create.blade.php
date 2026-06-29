@@ -613,7 +613,7 @@ foreach ($countries as $keycountry => $valuecountry) {
         });
     });
 
-    // var storageRef = firebase.storage().ref('images'); // Firebase removed
+    // var storageRef = kweekStorage().ref('images'); // Firebase removed
     function handleFileSelect(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();

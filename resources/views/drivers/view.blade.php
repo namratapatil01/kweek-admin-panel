@@ -270,7 +270,7 @@
         });
 
         // Email templates still from Firestore (no MySQL table yet)
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var email_templates = database.collection('email_templates').where('type', '==', 'wallet_topup');
 
         $(document).ready(async function () {
@@ -429,7 +429,7 @@
         });
         // });
         $("#add-wallet-btn").click(function () {
-            var date = firebase.firestore.FieldValue.serverTimestamp();
+            var date = kweekFirestore.FieldValue.serverTimestamp();
             var amount = $('#amount').val();
             if (amount == '' || amount <= 0) {
                 $('#wallet_error').text('{{trans("lang.add_wallet_amount_error")}}');

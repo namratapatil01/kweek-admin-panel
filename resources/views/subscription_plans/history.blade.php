@@ -175,7 +175,7 @@
     <script>
         
         var section_id = getCookie('section_id') || '';
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var intRegex = /^\d+$/;
         var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
         var refData = database.collection('subscription_history');

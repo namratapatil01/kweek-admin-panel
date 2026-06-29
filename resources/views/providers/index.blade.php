@@ -96,7 +96,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref = database.collection('users').where("role", "==", "provider");
     if(section_id){
         ref = ref.where('section_id', 'in', [section_id, '']);
@@ -148,9 +148,9 @@
             var from = moment(daterangepicker.startDate).toDate();
             var to = moment(daterangepicker.endDate).toDate();
             if (from && to) { 
-                var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
                 ref = ref.where('createdAt', '>=', fromDate);
-                var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                 ref = ref.where('createdAt', '<=', toDate);
             }
         }
@@ -522,22 +522,7 @@
                             "uid": item_data.id
                         }
                     };
-                    var projectId = '<?php echo env('FIREBASE_PROJECT_ID') ?>';
-                    jQuery.ajax({
-                        url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-                        method: 'POST',
-                        contentType: "application/json; charset=utf-8",
-                        data: JSON.stringify(objectnew),
-                        success: async function (data) {
-                            await deleteDocumentWithImage('providers_workers',item_data.id,'profilePictureURL');    
-                            console.log('Delete user worker success:', data.result);
-                        },
-                        error: function (xhr, status, error) {
-                            var responseText = JSON.parse(xhr.responseText);
-                            console.log('Delete user worker error:', responseText.error);
-                        }
-                    });
-                });
+});
             }
         });
         await database.collection('wallet').where('user_id', '==', userId).get().then(async function (snapshotsItem) {
@@ -607,21 +592,7 @@
                 "uid": userId
             }
         };
-        var projectId = '<?php echo env('FIREBASE_PROJECT_ID') ?>';
-        jQuery.ajax({
-            url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-            method: 'POST',
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify(dataObject),
-            success: function (data) {
-                console.log('Delete user success:', data.result);
-            },
-            error: function (xhr, status, error) {
-                var responseText = JSON.parse(xhr.responseText);
-                console.log('Delete user error:', responseText.error);
-            }
-        });
-    }
+}
     $(document).on("click", "a[name='user-delete']", async function (e) {
         var id = this.id;
         var dataId = $(this).attr('dataId');

@@ -714,7 +714,7 @@
     <script type="text/javascript">
         var id = "{{ $id }}";
         var serviceType = getCookie('service_type');
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('vendors').where("id", "==", id);
         var photo = "";
         var vendorOwnerId = "";
@@ -1264,7 +1264,7 @@
 
         }
 
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
 
         function handleFileSelect(evt) {
             var f = evt.target.files[0];
@@ -1384,7 +1384,7 @@
         }
 
         $("#add-wallet-btn").click(function() {
-            var date = firebase.firestore.FieldValue.serverTimestamp();
+            var date = kweekFirestore.FieldValue.serverTimestamp();
             var amount = $('#amount').val();
             if (amount == '' || amount <= 0) {
                 $('#wallet_error').text('{{ trans('lang.add_wallet_amount_error') }}');
@@ -1762,13 +1762,13 @@
                 var snapshot = await database.collection('subscription_plans').doc(planId).get();
                 if (snapshot.exists) {
                     var planData = snapshot.data();
-                    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
                     if (planData.expiryDay == "-1") {
                         var expiryDay = null
                     } else {
                         var currentDate = new Date();
                         currentDate.setDate(currentDate.getDate() + parseInt(planData.expiryDay));
-                        var expiryDay = firebase.firestore.Timestamp.fromDate(currentDate);
+                        var expiryDay = kweekFirestore.Timestamp.fromDate(currentDate);
                     }
                     await database.collection('users').doc(vendorOwnerId).update({
                         'subscription_plan': planData,

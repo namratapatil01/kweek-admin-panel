@@ -176,15 +176,15 @@
 
 
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
 
 
     var requestId = "{{$id}}";
 
-     var storage = firebase.storage();
+     var storage = kweekStorage();
 
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
 
     var photo = "";
 
@@ -328,7 +328,7 @@
 
                 imageBucket= OldImageUrlRef.bucket;
 
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
+                var envBucket = "";
 
                 if (imageBucket == envBucket) {
 

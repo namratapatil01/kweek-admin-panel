@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+<<<<<<< HEAD
 class VendorController extends Controller
 {
 
@@ -33,5 +34,21 @@ class VendorController extends Controller
     public function DocumentUpload($ownerId, $id)
     {
         return view("vendors.document_upload", compact('ownerId', 'id'));
+=======
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
+class VendorController extends Controller
+{
+    use ProvidesMySqlCrud;
+
+    public function __construct()
+    {
+        $this->middleware("auth");
+    }
+
+    protected function moduleSlug(): string
+    {
+        return "vendors";
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
     }
 }

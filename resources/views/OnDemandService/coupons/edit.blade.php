@@ -144,7 +144,7 @@
 
         <script type="text/javascript">
             var id = "<?php echo $id; ?>";
-            var database = firebase.firestore();
+            var database = kweekFirestore();
             var ref = database.collection('providers_coupons').where("id", "==", id);
             var photo_coupon = "";
             var idOfProviderDetailPage = "{{ @$_GET['id'] }}";
@@ -326,8 +326,8 @@
                     }
                 });
             }
-            var storageRef = firebase.storage().ref('images');
-            var storage = firebase.storage();
+            var storageRef = kweekStorage().ref('images');
+            var storage = kweekStorage();
 
             function handleFileSelect(evt) {
                 var f = evt.target.files[0];
@@ -356,20 +356,12 @@
                 var newPhoto = '';
                 try {
                     if (oldImageFile != "" && photo != oldImageFile) {
-                        var oldImageUrl = await storage.refFromURL(oldImageFile);
-                        imageBucket = oldImageUrl.bucket;
-                        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                        if (imageBucket == envBucket) {
-                            await oldImageUrl.delete().then(() => {
-                                console.log("Old file deleted!")
-                            }).catch((error) => {
-                                console.log("ERR File delete ===", error);
-                            });
-                        } else {
-                            console.log('Bucket not matched');
+                        try {
+                            await storage.storage.refFromURL(oldImageFile).delete();
+                        } catch (error) {
+                            console.log("ERR File delete ===", error);
                         }
-                    }
+}
                     if (photo != oldImageFile) {
                         photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
                         var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {

@@ -575,7 +575,7 @@
     var extraChargePaymentStatus = '';
     var bookingDate = '';
     var newScheduleBookingDate = '';
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var ref = database.collection('provider_orders').where("id", "==", id);
 
@@ -1200,7 +1200,7 @@
     async function callWalletTransaction(status) {
         var orderStatus = status;
 
-        var date = firebase.firestore.FieldValue.serverTimestamp();
+        var date = kweekFirestore.FieldValue.serverTimestamp();
         var wId = database.collection('temp').doc().id;
 
         database.collection('wallet').doc(wId).set({
@@ -1364,7 +1364,7 @@
     }
 
     async function refundAmount() {
-        var date = firebase.firestore.FieldValue.serverTimestamp();
+        var date = kweekFirestore.FieldValue.serverTimestamp();
         var wId = database.collection('temp').doc().id;
         if (paymentMethod != 'cod') {
             database.collection('wallet').doc(wId).set({
@@ -1486,7 +1486,7 @@
     $('.stop_timer_btn').on('click', function () {
         stopTimer();
         $('.stop_time_div').addClass('d-none');
-        storedEndTime = firebase.firestore.FieldValue.serverTimestamp();
+        storedEndTime = kweekFirestore.FieldValue.serverTimestamp();
         currentTime = new Date();
 
         var timeDiff = Math.abs(currentTime - storedStartTime);
@@ -1494,7 +1494,7 @@
         totalTimeInHours = parseFloat(totalTimeInHours).toFixed(2);
 
         database.collection('provider_orders').doc(id).update({
-            'endTime': (priceUnit == 'Hourly') ? firebase.firestore.FieldValue.serverTimestamp() : null,
+            'endTime': (priceUnit == 'Hourly') ? kweekFirestore.FieldValue.serverTimestamp() : null,
             'quantity': (totalTimeInHours < 1) ? parseInt(1) : parseFloat(totalTimeInHours)
         }).then(async function (result) {
             callAjax('Stop Time');
@@ -1540,7 +1540,7 @@
         } else {
             database.collection('provider_orders').doc(id).update({
                 'status': "Order Ongoing",
-                'startTime': (priceUnit == 'Hourly') ? firebase.firestore.FieldValue.serverTimestamp() : null
+                'startTime': (priceUnit == 'Hourly') ? kweekFirestore.FieldValue.serverTimestamp() : null
             }).then(async function (result) {
                 if (priceUnit == 'Hourly') {
                     startTimer();

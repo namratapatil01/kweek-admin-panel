@@ -786,11 +786,11 @@
 
                         if (from && to) {
 
-                            var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                            var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
 
                             ref = ref.where('createdAt', '>=', fromDate);
 
-                            var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                            var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
 
                             ref = ref.where('createdAt', '<=', toDate);
 
@@ -822,7 +822,7 @@
 
 
 
-                var database = firebase.firestore();
+                var database = kweekFirestore();
 
                 var offest = 1;
 
@@ -846,9 +846,9 @@
 
                 endOfToday.setHours(23, 59, 59, 999);
 
-                var startTimestamp = firebase.firestore.Timestamp.fromDate(startOfToday);
+                var startTimestamp = kweekFirestore.Timestamp.fromDate(startOfToday);
 
-                var endTimestamp = firebase.firestore.Timestamp.fromDate(endOfToday);
+                var endTimestamp = kweekFirestore.Timestamp.fromDate(endOfToday);
 
                 if (id != '') {
 
