@@ -68,7 +68,7 @@
 @section('scripts')
 <script type="text/javascript">
     var section_id = getCookie('section_id') || null;
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var offest = 1;
     var pagesize = 10;
     var end = null;

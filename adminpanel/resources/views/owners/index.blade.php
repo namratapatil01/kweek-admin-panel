@@ -117,7 +117,7 @@
 
 <script type="text/javascript">
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var type = "{{ $type }}";
 
     var user_permissions = '<?php echo @session('user_permissions')?>';
@@ -182,9 +182,9 @@
             var from = moment(daterangepicker.startDate).toDate();
             var to = moment(daterangepicker.endDate).toDate();
             if (from && to) { 
-                var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
                 ref = ref.where('createdAt', '>=', fromDate);
-                var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                 ref = ref.where('createdAt', '<=', toDate);
             }
         }
@@ -620,20 +620,6 @@ async function deleteUserData(userId,vendorId) {
 
     //delete user from authentication
     var dataObject = {"data": {"uid": userId}};
-    var projectId = '<?php echo env('FIREBASE_PROJECT_ID') ?>';
-    jQuery.ajax({
-        url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-        method: 'POST',
-        contentType: "application/json; charset=utf-8",
-        data: JSON.stringify(dataObject),
-        success: function (data) {
-            console.log('Delete user success:', data.result);
-        },
-        error: function (xhr, status, error) {
-            var responseText = JSON.parse(xhr.responseText);
-            console.log('Delete user error:', responseText.error);
-        }
-    });
 }
 
 

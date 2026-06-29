@@ -127,15 +127,15 @@
         <script type="text/javascript">
             var section_id = getCookie('section_id') || '';
             var id = "<?php echo $id; ?>";
-            var database = firebase.firestore();
+            var database = kweekFirestore();
             var ref = database.collection('promos').where("id", "==", id);
             var photo = "";
             var fileName = "";
             var oldImageFile = "";
             var placeholderImage = '';
             var placeholder = database.collection('settings').doc('placeHolderImage');
-            var storage = firebase.storage();
-            var storageRef = firebase.storage().ref('images');
+            var storage = kweekStorage();
+            var storageRef = kweekStorage().ref('images');
 
             placeholder.get().then(async function(snapshotsimage) {
                 var placeholderImageData = snapshotsimage.data();
@@ -320,19 +320,12 @@
                 var newPhoto = '';
                 try {
                     if (oldImageFile != "" && photo != oldImageFile) {
-                        var oldImageUrl = await storage.refFromURL(oldImageFile);
-                        imageBucket = oldImageUrl.bucket;
-                        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                        if (imageBucket == envBucket) {
-                            await oldImageUrl.delete().then(() => {
-                                console.log("Old file deleted!")
-                            }).catch((error) => {
-                                console.log("ERR File delete ===", error);
-                            });
-                        } else {
-                            console.log('Bucket not matched');
+                        try {
+                            await storage.storage.refFromURL(oldImageFile).delete();
+                        } catch (error) {
+                            console.log("ERR File delete ===", error);
                         }
-                    }
+}
                     if (photo != oldImageFile) {
                         photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
                         var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {

@@ -811,7 +811,7 @@
 
         var section_id = getCookie('section_id') || null;
         var id = "<?php echo $id; ?>";
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('vendors').where("id", "==", id);
         var ref_sections = database.collection('sections');
         var photo = "";
@@ -860,10 +860,10 @@
         var storevideoDuration = 0;
         var story_isEnabled = false;
         var storyCount = 0;
-        var storyRef = firebase.storage().ref('Story');
-        var storyImagesRef = firebase.storage().ref('Story/images');
-        var storageRef = firebase.storage().ref('images');
-        var storage = firebase.storage();
+        var storyRef = kweekStorage().ref('Story');
+        var storyImagesRef = kweekStorage().ref('Story/images');
+        var storageRef = kweekStorage().ref('images');
+        var storage = kweekStorage();
 
         var specialDiscount = [];
         var timeslotSunday = [];
@@ -1402,7 +1402,7 @@
                 }
 
                 if (change_expiry_date != '' && change_expiry_date != null) {
-                    var subscriptionPlanExpiryDate = firebase.firestore.Timestamp.fromDate(new Date(
+                    var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
                         change_expiry_date));
                 } else {
                     var subscriptionPlanExpiryDate = null;
@@ -1654,7 +1654,7 @@
                 } else {
                     jQuery("#data-table_processing").show();
 
-                    coordinates = new firebase.firestore.GeoPoint(latitude, longitude);
+                    coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
                     await storeImageData().then(async (IMG) => {
                         await storeGalleryImageData().then(async (GalleryIMG) => {
                             await storeMenuImageData().then(async (MenuIMG) => {
@@ -1790,7 +1790,7 @@
             $("#photo_" + id).remove();
             var status = $(this).attr('data-status');
             if (status == "old") {
-                galleryImageToDelete.push(firebase.storage().refFromURL(photo_remove));
+                galleryImageToDelete.push(kweekStorage().refFromURL(photo_remove));
             }
             index = vendor_photos.indexOf(photo_remove);
             if (index > -1) {
@@ -1809,7 +1809,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                menuImageToDelete.push(firebase.storage().refFromURL(photo_remove));
+                menuImageToDelete.push(kweekStorage().refFromURL(photo_remove));
             }
             $("#photo_menu_" + id).remove();
             index = vendor_menu_photos.indexOf(photo_remove);
@@ -1928,7 +1928,7 @@
 
             var id = $(this).attr('data-id');
             var photo_remove = $(this).attr('data-img');
-            firebase.storage().refFromURL(photo_remove).delete();
+            kweekStorage().refFromURL(photo_remove).delete();
             $("#story_div_" + id).remove();
             index = story_vedios.indexOf(photo_remove);
             $("#video_file").val('');
@@ -2691,19 +2691,7 @@
 
                         var thumbnailOldImageUrlRef = await storage.refFromURL(story_thumbnail_oldfile);
                         imageBucket = thumbnailOldImageUrlRef.bucket;
-                        var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                        if (imageBucket == envBucket) {
-                            await thumbnailOldImageUrlRef.delete().then(() => {
-                                console.log("Old file deleted!")
-                            }).catch((error) => {
-                                console.log("ERR File delete ===", error);
-                            });
-                        } else {
-                            console.log('Bucket not matched');
                         }
-
-                    }
                     if (story_thumbnail != story_thumbnail_oldfile) {
 
                         story_thumbnail = story_thumbnail.replace(/^data:image\/[a-z]+;base64,/, "")
@@ -2746,18 +2734,7 @@
                 await Promise.all(galleryImageToDelete.map(async (delImage) => {
 
                     imageBucket = delImage.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await delImage.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-
-                }));
+                    }));
 
             }
             return newPhoto;
@@ -2781,19 +2758,7 @@
                 await Promise.all(menuImageToDelete.map(async (delImage) => {
 
                     imageBucket = delImage.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                    if (imageBucket == envBucket) {
-                        await delImage.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-
-                }));
+                    }));
 
             }
 

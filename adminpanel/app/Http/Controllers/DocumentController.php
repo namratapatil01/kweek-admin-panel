@@ -2,26 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
 
 class DocumentController extends Controller
 {
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware("auth");
     }
 
-    public function index()
+    protected function moduleSlug(): string
     {
-        return view('documents.index');
-    }
-    public function create()
-    {
-        return view("documents.create");
-    }
-    public function edit($id)
-    {
-        return view("documents.edit")->with('id',$id);
+        return "documents";
     }
 }

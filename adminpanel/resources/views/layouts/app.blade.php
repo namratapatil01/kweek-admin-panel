@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="kweek-data-bridge" content="{{ url('admin-data') }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('images/kweek_icon.png') }}">
     <!-- Fonts -->
@@ -119,13 +120,6 @@
     <script src="{{ asset('assets/plugins/sparkline/jquery.sparkline.min.js')}}"></script>
     <script src="{{ asset('js/custom.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/summernote/summernote-bs4.js')}}"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-database.js"></script>
-    <script src="https://unpkg.com/geofirestore@5.2.0/dist/geofirestore.js"></script>
-    <script src="https://cdn.firebase.com/libs/geofire/5.0.1/geofire.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('js/chosen.jquery.js') }}"></script>
     <script src="{{ asset('js/jquery.resizeImg.js') }}"></script>
@@ -162,12 +156,13 @@
             }
         });
     </script>
+    <script src="{{ asset('js/kweek-data-bridge.js') }}"></script>
     <script type="text/javascript">
 
         var languages_list_main = [];
-        var database = firebase.firestore();
-        var geoFirestore = new GeoFirestore(database);
-        var createdAtman = firebase.firestore.Timestamp.fromDate(new Date());
+        var database = window.kweekFirestore();
+        var geoFirestore = window.kweekGeoFirestore;
+        var createdAtman = window.kweekFirestore.Timestamp.fromDate(new Date());
         var createdAt = { _nanoseconds: createdAtman.nanoseconds, _seconds: createdAtman.seconds };
         var mapType = 'ONLINE';
 
@@ -404,30 +399,10 @@
         };
 
         loadGoogleMapsScript();
-        
-        database.collection('settings').doc("notification_setting").get().then(async function (snapshots) {
-            var data = snapshots.data();
-            serviceJson = data.serviceJson;
-            if (serviceJson != '' && serviceJson != null) {
-                $.ajax({
-                    type: 'POST',
-                    data: {
-                        serviceJson: btoa(serviceJson),
-                    },
-                    url: "{{ route('store-firebase-service') }}",
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function (data) {
-                        checkFlag = true;
-                    }
-                });
-            }
-        });
 
-        //On delete item delete image also from bucket general code
+        //On delete item delete image also from storage
         const deleteDocumentWithImage = async (collection, id, singleImageField, arrayImageField, profileImageField, carProofPictureURL, driverProofPictureURL) => {
-            // Reference to the Firestore document
+            // Reference to the document
             const docRef = database.collection(collection).doc(id);
             try {
                 const doc = await docRef.get();
@@ -495,7 +470,7 @@
                 if (driverproof_file_name) {
                     await deleteImageFromBucket(driverproof_file_name);
                 }
-                // Optionally delete the Firestore document after image deletion
+                // Optionally delete the document after image deletion
                 await docRef.delete();
                 console.log("Document and images deleted successfully.");
             } catch (error) {
@@ -505,7 +480,7 @@
 
         const deleteImageFromBucket = async (imageUrl) => {
             try {
-                const storageRef = firebase.storage().ref();
+                const storageRef = kweekStorage().ref();
                 // Check if the imageUrl is a full URL or just a child path
                 let oldImageUrlRef;
                 if (imageUrl.includes('https://')) {
@@ -515,10 +490,9 @@
                     // Child path, use ref instead of refFromURL
                     oldImageUrlRef = storageRef.storage.ref(imageUrl);
                 }
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
+                var envBucket = "";
                 var imageBucket = oldImageUrlRef.bucket;
-                // Check if the bucket name matches
-                if (imageBucket === envBucket) {
+                if (imageBucket === envBucket || envBucket === "") {
                     // Delete the image
                     await oldImageUrlRef.delete();
                     console.log("Image deleted successfully.");

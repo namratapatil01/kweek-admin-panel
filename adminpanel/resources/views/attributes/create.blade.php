@@ -52,7 +52,7 @@
 
 <script type="text/javascript">
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 var ref = database.collection('vendor_attributes');
 var id_attribute = "<?php echo uniqid();?>";
 var attribute_length=1;

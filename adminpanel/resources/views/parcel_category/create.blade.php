@@ -63,10 +63,10 @@
   @section('scripts')
   <script type="text/javascript">
     
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var photo = "";
     var fileName = "";
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
     var id = "<?php echo uniqid(); ?>";
      var ref_sections = database.collection('sections');
     // $(document).ready(function () {

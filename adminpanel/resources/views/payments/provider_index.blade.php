@@ -72,7 +72,7 @@
 
 <script type="text/javascript">
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 
 var ref = database.collection('users').where('role','==','provider');
 

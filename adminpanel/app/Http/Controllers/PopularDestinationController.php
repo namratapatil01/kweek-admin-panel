@@ -2,28 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
 
 class PopularDestinationController extends Controller
 {
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware("auth");
     }
 
-    public function index()
+    protected function moduleSlug(): string
     {
-        return view('destinations.index');
+        return "popular-destinations";
     }
-    
-    public function create()
-    {
-        return view('destinations.create');
-    }
-
-    public function edit($id)
-    {
-        return view('destinations.edit')->with('id',$id);
-    }
-
 }

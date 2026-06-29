@@ -165,7 +165,7 @@
 
 
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var ref = database.collection('settings').doc('languages');
 
@@ -175,7 +175,7 @@
 
     var fileName = "";
 
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
 
 
 

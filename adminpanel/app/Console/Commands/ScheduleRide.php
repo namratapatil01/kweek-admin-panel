@@ -3,46 +3,18 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class ScheduleRide extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:schedule-ride';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Executes the scheduleRide.js file';
+    protected $description = 'Process scheduled rides via MySQL';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        $node_path = env('NODE_PATH','');
+        Log::info('Scheduled ride processing is handled by MySQL-backed application services.');
 
-        if(!empty($node_path)){
-
-            // Run the JS file using Node.js
-            $command = $node_path.' '.storage_path('app/firebase/scheduleRide.js');
-        
-            $output = shell_exec($command." /dev/null 2>&1");
-
-            // Log the output
-            \Log::info('ScheduleRide Output: ' . $output);
-
-            $this->info('Schedule ride process executed.');
-
-        }else{
-
-            // Log the output
-            \Log::info('ScheduleRide Output: Node path is not defined');
-        }
+        return self::SUCCESS;
     }
 }

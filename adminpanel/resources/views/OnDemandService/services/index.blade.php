@@ -161,7 +161,7 @@
             checkDeletePermission = true;
         }
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         
         if (id != '') {
             var wallet_route = "{{route('users.walletstransaction','id')}}";

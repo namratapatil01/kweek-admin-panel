@@ -2,29 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class CategoryController extends Controller
-{   
+{
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    
-	  public function index()
-    {
-        return view("categories.index");
+        $this->middleware("auth");
     }
 
-     public function edit($id)
+    protected function moduleSlug(): string
     {
-    	return view('categories.edit')->with('id', $id);
+        return "vendor-categories";
     }
-
-    public function create()
-    {
-        return view('categories.create');
-    }
-
 }
-
-

@@ -318,7 +318,7 @@
 
 
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 
 var ref = database.collection('settings').doc('flutterWave');
 

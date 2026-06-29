@@ -1,65 +1,20 @@
 <?php
 
-
-
 namespace App\Http\Controllers;
 
-
-
-
-
-use Illuminate\Http\Request;
-
-use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
 
 class SubscriptionPlanController extends Controller
-
 {
-
-
+    use ProvidesMySqlCrud;
 
     public function __construct()
-
     {
-
-        $this->middleware('auth');
-
+        $this->middleware("auth");
     }
 
-    public function index()
-
+    protected function moduleSlug(): string
     {
-
-        return view("subscription_plans.index");
-
+        return "subscription-plans";
     }
-
-
-
-    public function save($id='')
-
-    {
-
-        return view("subscription_plans.save")->with('id',$id);
-
-    }
-
-
-
-    public function SubscriptionPlanHistory($id='')
-
-    {
-
-    	    return view('subscription_plans.history')->with('id',$id);
-
-    }
-    public function currentSubscriberList($id)
-    {
-        return view("subscription_plans.current_subscriber", compact('id'));
-    }
-
-
-   
-
 }
-

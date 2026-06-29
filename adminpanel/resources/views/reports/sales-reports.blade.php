@@ -132,7 +132,7 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
 
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var refCurrency = database.collection('currencies').where('isActive', '==', true).limit('1');
         var vendorsRef = database.collection('vendors').orderBy('title').orderBy('createdAt');
         var driverUserRef = database.collection('users').where('role', '==', 'driver').orderBy('firstName').orderBy('createdAt');

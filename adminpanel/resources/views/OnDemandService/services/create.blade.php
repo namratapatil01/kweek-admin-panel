@@ -201,10 +201,10 @@
 @section('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var days = [];
         var authorName = '';
-        var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        var createdAt = kweekFirestore.FieldValue.serverTimestamp();
         var photos = [];
         var author = database.collection('users').orderBy('createdAt', 'desc');
         var categories = database.collection('provider_categories').where('publish', '==', true);
@@ -513,10 +513,10 @@
                                 'endTime': endTime,
                                 'subCategoryId': sub_category,
                                 'title': name,
-                                'coordinates': new firebase.firestore.GeoPoint(latitude, longitude),
+                                'coordinates': new kweekFirestore.GeoPoint(latitude, longitude),
                                 'g' : {
                                     'geohash' : encodeGeohash(latitude, longitude),
-                                    'geopoint' : new firebase.firestore.GeoPoint(latitude, longitude)
+                                    'geopoint' : new kweekFirestore.GeoPoint(latitude, longitude)
                                 },
                                 'subscription_plan': subscription_plan,
                                 'subscriptionPlanId': subscriptionPlanId,
@@ -558,7 +558,7 @@
                 }
             })
         })
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
         $("#service_image").resizeImg({
             callback: function(base64str) {
                 var val = $('#service_image').val().toLowerCase();

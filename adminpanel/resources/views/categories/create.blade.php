@@ -103,7 +103,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref = database.collection('vendor_categories');
     
     var ref_review_attributes = database.collection('review_attributes');
@@ -113,7 +113,7 @@
     var category_length = 1;
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
         placeholderImage = placeholderImageData.image;

@@ -199,9 +199,9 @@
 
                 var requestId = "<?php echo $id; ?>";
 
-                var database = firebase.firestore();
+                var database = kweekFirestore();
 
-                var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                var createdAt = kweekFirestore.FieldValue.serverTimestamp();
 
                 var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
 

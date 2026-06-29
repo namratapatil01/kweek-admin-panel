@@ -73,7 +73,7 @@
 
 @section('scripts')
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
 
         async function remainingPrice(driverID) {
             var paid_price = 0;

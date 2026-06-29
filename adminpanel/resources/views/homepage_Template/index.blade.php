@@ -118,7 +118,7 @@
 
 
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 
 var photo ="";
 

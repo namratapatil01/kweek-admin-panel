@@ -2,24 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class ZoneController extends Controller
 {
+    use ProvidesMySqlCrud;
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    public function index()
+    protected function moduleSlug(): string
     {
-        return view('zone.index');
-    }
-    public function edit($id)
-    {
-        return view('zone.edit')->with('id',$id);
-    }
-
-    public function create()
-    {
-        return view('zone.create');
+        return 'zones';
     }
 }

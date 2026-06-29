@@ -33,18 +33,18 @@ Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/dashboard/{id?}/{type?}', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
-//customers
+//customers (MySQL — CustomerController replaces Firebase UserController CRUD)
 Route::middleware(['permission:users,users'])->group(function () {
-    Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->name('users');
+    Route::get('/users', [App\Http\Controllers\CustomerController::class, 'index'])->name('users');
 });
 Route::middleware(['permission:users,users.create'])->group(function () {
-    Route::get('/users/create', [App\Http\Controllers\UserController::class, 'create'])->name('users.create');
+    Route::get('/users/create', [App\Http\Controllers\CustomerController::class, 'create'])->name('users.create');
 });
 Route::middleware(['permission:users,users.edit'])->group(function () {
-    Route::get('/users/edit/{id}', [App\Http\Controllers\UserController::class, 'edit'])->name('users.edit');
+    Route::get('/users/edit/{id}', [App\Http\Controllers\CustomerController::class, 'edit'])->name('users.edit');
 });
 Route::middleware(['permission:users,users.view'])->group(function () {
-    Route::get('/users/view/{id}', [App\Http\Controllers\UserController::class, 'view'])->name('users.view');
+    Route::get('/users/view/{id}', [App\Http\Controllers\CustomerController::class, 'show'])->name('users.view');
 });
 Route::get('/users/profile', [App\Http\Controllers\UserController::class, 'profile'])->name('users.profile');
 Route::post('/users/profile/update/{id}', [App\Http\Controllers\UserController::class, 'update'])->name('users.profile.update');
@@ -645,7 +645,6 @@ Route::middleware(['permission:cms,cms.edit'])->group(function () {
 Route::middleware(['permission:cms,cms.create'])->group(function () {
     Route::get('/cms/create', [App\Http\Controllers\CmsController::class, 'create'])->name('cms.create');
 });
-Route::post('/firebase/config', [App\Http\Controllers\FirebaseController::class, 'config'])->name('firebase.config');
 Route::middleware(['permission:dynamic-notifications,dynamic-notification.index'])->group(function () {
     Route::get('dynamic-notification', [App\Http\Controllers\DynamicNotificationController::class, 'index'])->name('dynamic-notification.index');
 });
@@ -812,12 +811,20 @@ Route::middleware(['permission:payout-request-provider,payout-request.provider']
     Route::get('/payoutRequests/providers/{id?}', [App\Http\Controllers\PayoutRequestController::class, 'provider'])->name('payoutRequests.providers');
 });
 
-Route::post('store-firebase-service', [App\Http\Controllers\HomeController::class,'storeFirebaseService'])->name('store-firebase-service');
 Route::post('pay-to-user', [App\Http\Controllers\UserController::class,'payToUser'])->name('pay.user');
 Route::post('check-payout-status', [App\Http\Controllers\UserController::class,'checkPayoutStatus'])->name('check.payout.status');
 
-// MySQL-backed sections endpoint (replaces Firebase sections query after migration)
+// MySQL-backed sections endpoint
 Route::get('api/sections', [App\Http\Controllers\HomeController::class, 'getSections'])->name('api.sections');
+
+Route::middleware(['web'])->prefix('admin-data')->group(function () {
+    Route::get('document/{collection}/{id}', [App\Http\Controllers\AdminDataBridgeController::class, 'getDocument']);
+    Route::post('query', [App\Http\Controllers\AdminDataBridgeController::class, 'query']);
+    Route::post('upsert', [App\Http\Controllers\AdminDataBridgeController::class, 'upsert']);
+    Route::delete('document/{collection}/{id}', [App\Http\Controllers\AdminDataBridgeController::class, 'deleteDocument']);
+    Route::post('upload', [App\Http\Controllers\AdminDataBridgeController::class, 'upload']);
+    Route::post('delete-file', [App\Http\Controllers\AdminDataBridgeController::class, 'deleteFile']);
+});
 
 Route::middleware(['permission:subscription-plans,subscription-plans'])->group(function () {
     Route::get('/subscription-plans', [App\Http\Controllers\SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
@@ -938,3 +945,5 @@ Route::get('owner/parcelorders/{id}', [App\Http\Controllers\ParcelController::cl
 Route::middleware(['permission:drivers,drivers'])->group(function () {
     Route::get('/owner/drivers/{id}', [App\Http\Controllers\OwnerController::class, 'driverList'])->name('owner.driver.list');
 });
+
+require __DIR__ . '/admin_modules.php';

@@ -190,7 +190,7 @@ var total_price=0;
 var total_item_price = 0;
 var total_addon_price = 0;
 var vendorname='';
-var database = firebase.firestore();
+var database = kweekFirestore();
 var ref = database.collection('vendor_orders').where("id","==",id);
 var currentCurrency = '';
 var currencyAtRight = false;

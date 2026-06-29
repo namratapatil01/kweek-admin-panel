@@ -2,29 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class ReviewAttributeController extends Controller
-{   
+{
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    
-	  public function index()
-    {
-        return view("reviewattributes.index");
+        $this->middleware("auth");
     }
 
-     public function edit($id)
+    protected function moduleSlug(): string
     {
-    	return view('reviewattributes.edit')->with('id', $id);
+        return "review-attributes";
     }
-
-    public function create()
-    {
-        return view('reviewattributes.create');
-    }
-
 }
-
-

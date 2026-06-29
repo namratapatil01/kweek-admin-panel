@@ -59,7 +59,7 @@
 @endsection
 @section('scripts')
 <script type="text/javascript">
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
     var driverNearBy = database.collection('settings').doc("DriverNearBy");
     $(document).ready(function () {

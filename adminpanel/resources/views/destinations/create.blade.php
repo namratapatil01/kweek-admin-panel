@@ -131,8 +131,8 @@
 
 <script type="text/javascript">
 
-    var database = firebase.firestore();
-    var storageRef = firebase.storage().ref('images');
+    var database = kweekFirestore();
+    var storageRef = kweekStorage().ref('images');
     var sectionId = getCookie('section_id');
     
     var sections_list = [];

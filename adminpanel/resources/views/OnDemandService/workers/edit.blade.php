@@ -162,12 +162,12 @@
 
 <script>
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
-    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
     var id = "<?php echo $id; ?>";
     var workersRef = database.collection('providers_workers').doc(id);
     var workerImagesCount = 0;
@@ -180,8 +180,8 @@
     var placeholder = database.collection('settings').doc('placeHolderImage');
     var allowed_file_size = '';
     var ownerId = '';
-    var storage = firebase.storage();
-    var storageRef = firebase.storage().ref('images');
+    var storage = kweekStorage();
+    var storageRef = kweekStorage().ref('images');
     var idOfProviderDetailPage="{{@$_GET['id']}}";
     var mapType = 'ONLINE';
     var section_id = getCookie('section_id');
@@ -316,7 +316,7 @@
                         'latitude': latitude,
                         'longitude': longitude,
                         'providerId': providerId,
-                        coordinates: new firebase.firestore.GeoPoint(latitude, longitude),
+                        coordinates: new kweekFirestore.GeoPoint(latitude, longitude),
 
                     }).then(function (result) {
                         if(idOfProviderDetailPage!=''){
@@ -434,18 +434,7 @@
                 if (ownerOldImageFile != "" && ownerphoto != ownerOldImageFile) {
                     var ownerOldImageUrlRef = await storage.refFromURL(ownerOldImageFile);
                     imageBucket = ownerOldImageUrlRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                    if (imageBucket == envBucket) {
-                        await ownerOldImageUrlRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
                     }
-                }
 
                 if (ownerphoto != ownerOldImageFile) {
 

@@ -1,38 +1,20 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
 
 class TaxController extends Controller
 {
+    use ProvidesMySqlCrud;
 
-     public function __construct()
+    public function __construct()
     {
-       $this->middleware('auth');
+        $this->middleware("auth");
     }
 
-
-	  public function index()
+    protected function moduleSlug(): string
     {
-
-        return view("taxes.index");
+        return "taxes";
     }
-
-
-  public function edit($id)
-  {
-      return view('taxes.edit')->with('id',$id);
-  }
-
-   public function create()
-  {
-      return view('taxes.create');
-  }
-
-
 }

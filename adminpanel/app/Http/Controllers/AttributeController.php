@@ -2,29 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class AttributeController extends Controller
-{   
+{
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    
-	  public function index()
-    {
-        return view("attributes.index");
+        $this->middleware("auth");
     }
 
-     public function edit($id)
+    protected function moduleSlug(): string
     {
-    	return view('attributes.edit')->with('id', $id);
+        return "vendor-attributes";
     }
-
-    public function create()
-    {
-        return view('attributes.create');
-    }
-
 }
-
-

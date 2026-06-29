@@ -2,46 +2,44 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\KweekModel;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
- * AppUser model — represents rows in the `app_users` table.
- * This table was migrated from the Firebase `users` collection and holds
- * drivers, customers, and other app-level user records.
+ * Mobile app users (customers, drivers, vendors, etc.).
  */
-class AppUser extends Model
+class AppUser extends Authenticatable
 {
+    use HasApiTokens;
+    use \App\Traits\HasStringPrimaryKey;
+    use \App\Traits\HasJsonPayload;
+
     protected $table = 'app_users';
 
-    // Firebase IDs are strings, not auto-increment integers
-    protected $keyType = 'string';
-    public $incrementing = false;
+    protected $guarded = [];
 
-    protected $fillable = [
-        'id', 'firstName', 'lastName', 'email', 'phoneNumber',
-        'role', 'active', 'isActive', 'isOwner', 'isDocumentVerify',
-        'profilePictureURL', 'serviceType', 'sectionId',
-        'wallet_amount', 'orderCompleted', 'fcmToken',
-        'carName', 'carNumber', 'carColor', 'vehicleType',
-        'carPictureURL', 'driverRate', 'carInfo',
-        'latitude', 'longitude', 'zoneId', 'countryCode', 'carMakes',
-        'vehicleId', 'rideType', 'userBankDetails', 'carProofPictureURL', 'driverProofPictureURL', 'ownerId',
-    ];
+    protected $hidden = ['password'];
 
     protected $casts = [
-        'active'            => 'boolean',
-        'isActive'          => 'boolean',
-        'isOwner'           => 'boolean',
-        'isDocumentVerify'  => 'boolean',
-        'wallet_amount'     => 'float',
-        'orderCompleted'    => 'integer',
-        'userBankDetails'   => 'array',
-        'carInfo'           => 'array',
+        'active' => 'boolean',
+        'isActive' => 'boolean',
+        'isOwner' => 'boolean',
+        'isDocumentVerify' => 'boolean',
+        'wallet_amount' => 'float',
+        'orderCompleted' => 'integer',
+        'userBankDetails' => 'array',
+        'settings' => 'array',
+        'shippingAddress' => 'array',
+        'carInfo' => 'array',
+        'payload' => 'array',
+        'createdAt' => 'datetime',
+        'lastOnlineTimestamp' => 'datetime',
     ];
 
     protected $appends = ['location'];
 
-    public function getLocationAttribute()
+    public function getLocationAttribute(): array
     {
         return [
             'latitude' => $this->latitude,
@@ -49,35 +47,41 @@ class AppUser extends Model
         ];
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Scopes                                                            */
-    /* ------------------------------------------------------------------ */
+    public function vendorOrders()
+    {
+        return $this->hasMany(VendorOrder::class, 'authorID', 'id');
+    }
 
-    /** Only drivers (non-owner). */
+    public function walletEntries()
+    {
+        return $this->hasMany(Wallet::class, 'user_id', 'id');
+    }
+
     public function scopeDrivers($query)
     {
         return $query->where('role', 'driver')->where('isOwner', false);
     }
 
-    /** Document-verified drivers. */
     public function scopeApproved($query)
     {
         return $query->where('isDocumentVerify', true);
     }
 
-    /** Drivers pending document verification. */
     public function scopePending($query)
     {
         return $query->where('isDocumentVerify', false);
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Accessors                                                         */
-    /* ------------------------------------------------------------------ */
-
-    /** Full name helper used by the DataTable. */
     public function getFullNameAttribute(): string
     {
         return trim(($this->firstName ?? '') . ' ' . ($this->lastName ?? ''));
+    }
+
+    public function toDocumentArray(): array
+    {
+        $data = array_merge($this->attributesToArray(), $this->payload ?? []);
+        unset($data['payload'], $data['password'], $data['created_at'], $data['updated_at']);
+
+        return array_filter($data, static fn ($v) => $v !== null);
     }
 }

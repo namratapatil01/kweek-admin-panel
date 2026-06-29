@@ -46,8 +46,8 @@
 
     <script type="text/javascript">
 
-        var database = firebase.firestore();
-        var storageRef = firebase.storage().ref('images');
+        var database = kweekFirestore();
+        var storageRef = kweekStorage().ref('images');
         var appHomeBanners = database.collection('settings').doc("AppHomeBanners");
 
         var app_banners = [];
@@ -118,7 +118,7 @@
                 var photo_remove = $(this).attr('data-img');
                 var status=$(this).attr('data-status');
                 if(status=="old"){
-                    app_banners_to_delete.push(firebase.storage().refFromURL(photo_remove));
+                    app_banners_to_delete.push(kweekStorage().refFromURL(photo_remove));
                 }
                 $("#photo_" + id).remove();
                 index = app_banners.indexOf(photo_remove);
@@ -191,19 +191,9 @@
 
             if (app_banners_to_delete.length > 0) {
                 await Promise.all(app_banners_to_delete.map(async (imageFile, index) => {
-                    var imageUrlRef = await firebase.storage().refFromURL(imageFile);
+                    var imageUrlRef = await kweekStorage().refFromURL(imageFile);
                     imageBucket = imageUrlRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await imageUrlRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-                }));
+                    }));
             }
 
             return imageFiles;

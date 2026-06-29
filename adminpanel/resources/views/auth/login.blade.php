@@ -235,34 +235,22 @@
     </section>
 
     <script src="{{ asset('assets/plugins/jquery/jquery.min.js') }}"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-database.js"></script>
     <script src="{{ asset('js/crypto-js.js') }}"></script>
     <script src="{{ asset('js/jquery.cookie.js') }}"></script>
     <script src="{{ asset('js/jquery.validate.js') }}"></script>
 
     <script type="text/javascript">
-        var database = firebase.firestore();
-
         $(document).ready(function() {
-
-            database.collection('settings').doc("globalSettings").get().then(async function(snapshots) {
-                var globalSettings = snapshots.data();
-                admin_panel_color = globalSettings.admin_panel_color;
-                setCookie('admin_panel_color', admin_panel_color, 365);
-                $('.login-register').css({
-                    'background-color': admin_panel_color
-                });
-            })
-
             @php
+                $globalSettings = \App\Models\Setting::query()->find('globalSettings')?->value ?? [];
                 $firstSection = DB::table('sections')->where('isActive', 1)->orderBy('name', 'asc')->first();
                 $firstSectionId = $firstSection ? $firstSection->id : '';
                 $firstServiceType = $firstSection ? $firstSection->serviceTypeFlag : '';
             @endphp
+            var admin_panel_color = @json($globalSettings['admin_panel_color'] ?? '#000000');
+            setCookie('admin_panel_color', admin_panel_color, 365);
+            $('.login-register').css({ 'background-color': admin_panel_color });
+
             var firstSectionId = '{{ $firstSectionId }}';
             var firstServiceType = '{{ $firstServiceType }}';
             if (firstSectionId && firstServiceType) {

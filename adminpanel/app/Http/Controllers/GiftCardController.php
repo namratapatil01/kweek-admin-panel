@@ -2,25 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class GiftCardController extends Controller
 {
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    public function index()
-    {
-        return view("gift_card.index");
+        $this->middleware("auth");
     }
 
-    public function save($id="")
+    protected function moduleSlug(): string
     {
-        return view('gift_card.save')->with('id', $id);
+        return "gift-cards";
     }
-    public function edit($id)
-    {
-        return view('gift_card.save')->with('id', $id);
-    }
-
 }

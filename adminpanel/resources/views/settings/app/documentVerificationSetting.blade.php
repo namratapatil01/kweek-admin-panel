@@ -46,7 +46,7 @@
  @endsection
 @section('scripts')
 <script>
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref = database.collection('settings').doc("document_verification_settings");
     $(document).ready(function(){
         jQuery("#data-table_processing").show();

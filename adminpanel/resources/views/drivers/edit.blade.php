@@ -307,8 +307,8 @@
         var photo = "";
         var fileName = '';
         var oldProfileFile = '';
-        // var storage = firebase.storage();
-        // var storageRef = firebase.storage().ref('images');
+        // var storage = kweekStorage();
+        // var storageRef = kweekStorage().ref('images');
 
         // Settings, currencies, services, sections — from MySQL
         var placeholderImage = '';
@@ -326,13 +326,7 @@
             if ($("#reset_password").is(":checked")) {
                 var email = $(".user_email").val();
                 alert('Password reset functionality is disabled pending migration to local mail server.');
-                // firebase.auth().sendPasswordResetEmail(email)
-                    .then((res) => {
-                        alert('{{trans("lang.driver_mail_sent")}}');
-                    })
-                    .catch((error) => {
-                        console.log('Error password reset: ', error);
-                    });
+                // alert('{{trans("lang.driver_mail_sent")}}');
             } else {
                 alert('{{trans("lang.error_reset_driver_password")}}');
             }

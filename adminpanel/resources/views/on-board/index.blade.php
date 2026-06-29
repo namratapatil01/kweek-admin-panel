@@ -76,7 +76,7 @@
 
 <script type="text/javascript">
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var placeholder = database.collection('settings').doc('placeHolderImage');
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();

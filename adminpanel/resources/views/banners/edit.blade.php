@@ -201,7 +201,7 @@
 
 <script type="text/javascript">
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var photo = "";
     var fileName = "";
@@ -209,8 +209,8 @@
     var webFileName="";
     var oldWebFile="";
     var oldImageFile = "";
-    var storageRef = firebase.storage().ref('images');
-    var storage = firebase.storage();
+    var storageRef = kweekStorage().ref('images');
+    var storage = kweekStorage();
 
     var id = "<?php echo $id; ?>";
 
@@ -675,19 +675,12 @@
         var newPhoto = '';
         try {
             if (oldImageFile != "" && photo != oldImageFile) {
-                var oldImageUrl = await storage.refFromURL(oldImageFile);
-                imageBucket = oldImageUrl.bucket;
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await oldImageUrl.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
+                try {
+                            await storage.storage.refFromURL(oldImageFile).delete();
+                        } catch (error) {
                             console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-                }
+                        }
+}
                 if (photo != oldImageFile) {
                     photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
                     var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });
@@ -710,7 +703,7 @@
                 if(oldWebFile!=""&& webPhoto!=oldWebFile) {
                     var oldImageUrl=await storage.refFromURL(oldWebFile);
                     imageBucket=oldImageUrl.bucket;
-                    var envBucket="<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
+                    var envBucket="";
                     if(imageBucket==envBucket) {
                         await oldImageUrl.delete().then(() => {
                             console.log("Old file deleted!")

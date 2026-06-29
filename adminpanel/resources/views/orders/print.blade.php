@@ -219,7 +219,7 @@
             var placeHolderImage = snapshots.data();
             place_image = placeHolderImage.image;
         });
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('vendor_orders').where("id", "==", id);
         var currentCurrency = '';
         var currencyAtRight = false;

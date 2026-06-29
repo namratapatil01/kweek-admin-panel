@@ -183,7 +183,7 @@
 @section('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
     <script>
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var days = [];
         var Id = "<?php echo $id; ?>";
         var authorName = '';
@@ -451,10 +451,10 @@
                             'endTime': endTime,
                             'subCategoryId': sub_category,
                             'title': name,
-                            'coordinates': new firebase.firestore.GeoPoint(latitude, longitude),
+                            'coordinates': new kweekFirestore.GeoPoint(latitude, longitude),
                             'g' : {
                                 'geohash' : encodeGeohash(latitude, longitude),
-                                'geopoint' : new firebase.firestore.GeoPoint(latitude, longitude)
+                                'geopoint' : new kweekFirestore.GeoPoint(latitude, longitude)
                             }
                         }).then(function(result) {
                             if (idOfProviderDetailPage != '') {
@@ -473,7 +473,7 @@
                 }
             })
         });
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
         $("#service_image").resizeImg({
             callback: function(base64str) {
                 var val = $('#service_image').val().toLowerCase();
@@ -495,7 +495,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                photosToDelete.push(firebase.storage().refFromURL(photo_remove));
+                photosToDelete.push(kweekStorage().refFromURL(photo_remove));
             }
             $("#photo_" + id).remove();
             index = photos.indexOf(photo_remove);
@@ -526,17 +526,7 @@
             if (photosToDelete.length > 0) {
                 await Promise.all(photosToDelete.map(async (delImage) => {
                     imageBucket = delImage.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                    if (imageBucket == envBucket) {
-                        await delImage.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
-                    }
-                }));
+                    }));
             }
             return newPhoto;
         }

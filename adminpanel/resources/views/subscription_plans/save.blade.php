@@ -182,8 +182,8 @@
 
     var section_id = getCookie('section_id') || null;
     var requestId = "<?php echo $id; ?>";
-    var database = firebase.firestore();
-    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    var database = kweekFirestore();
+    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
     var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
     var pagesize = 20;
     var start = '';
@@ -194,8 +194,8 @@
     var planImageFile = '';
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = firebase.storage().ref('images');
-    var storage = firebase.storage();
+    var storageRef = kweekStorage().ref('images');
+    var storage = kweekStorage();
 
     var enabledSubscriptions = 0; 
     var serviceTypeFlag = '';
@@ -617,17 +617,7 @@
             if (planImageFile != "" && photo != planImageFile) {
                 var oldImageRef = await storage.refFromURL(planImageFile);
                 imageBucket = oldImageRef.bucket;
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-                if (imageBucket == envBucket) {
-                    await oldImageRef.delete().then(() => {
-                        console.log("Old file deleted!")
-                    }).catch((error) => {
-                        console.log("ERR File delete ===", error);
-                    });
-                } else {
-                    console.log('Bucket not matched');
                 }
-            }
             if (photo != planImageFile) {
                 photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
                 var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {

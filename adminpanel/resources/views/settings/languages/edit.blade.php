@@ -160,7 +160,7 @@
 
     var id = "<?php echo $id; ?>";
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var ref = database.collection('settings').doc('languages');
 
@@ -178,9 +178,9 @@
 
     var oldImageFile = "";
 
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
 
-    var storage = firebase.storage();
+    var storage = kweekStorage();
 
 
 
@@ -440,31 +440,12 @@
 
             if (oldImageFile != "" && photo != oldImageFile) {
 
-                var oldImageUrl = await storage.refFromURL(oldImageFile);
-
-                imageBucket = oldImageUrl.bucket;
-
-                var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                if (imageBucket == envBucket) {
-
-                    await oldImageUrl.delete().then(() => {
-
-                        console.log("Old file deleted!")
-
-                    }).catch((error) => {
-
-                        console.log("ERR File delete ===", error);
-
-                    });
-
-                } else {
-
-                    console.log('Bucket not matched');
-
-                }
-
-            }
+                try {
+                            await storage.storage.refFromURL(oldImageFile).delete();
+                        } catch (error) {
+                            console.log("ERR File delete ===", error);
+                        }
+}
 
             if (photo != oldImageFile) {
 

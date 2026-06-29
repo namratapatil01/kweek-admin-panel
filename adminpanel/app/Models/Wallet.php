@@ -2,30 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\KweekModel;
 
-/**
- * Wallet model — represents rows in the `wallet` table.
- * Used for wallet transactions.
- */
-class Wallet extends Model
+class Wallet extends KweekModel
 {
     protected $table = 'wallet';
 
-    // Firebase IDs are strings, not auto-increment integers
-    protected $keyType = 'string';
-    public $incrementing = false;
-
-    protected $fillable = [
-        'id', 'user_id', 'amount', 'note', 'isTopUp',
-        'payment_method', 'payment_status', 'transactionUser',
-        'order_id', 'date'
-    ];
-
     protected $casts = [
         'isTopUp' => 'boolean',
-        'amount'  => 'float',
-        'date'    => 'datetime',
+        'amount' => 'float',
+        'date' => 'datetime',
     ];
 
     public function user()

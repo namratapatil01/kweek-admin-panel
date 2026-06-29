@@ -49,7 +49,7 @@
 
 <script type="text/javascript">
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref = database.collection('settings');
         
 
@@ -71,7 +71,7 @@
           });
         })
 
-var storageRef = firebase.storage().ref('images');
+var storageRef = kweekStorage().ref('images');
 function handleFileSelect(evt) {
   var f = evt.target.files[0];
   var reader = new FileReader();

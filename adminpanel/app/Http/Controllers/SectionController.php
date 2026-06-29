@@ -2,29 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class SectionController extends Controller
-{   
+{
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    
-	  public function index()
-    {
-        return view("section.index");
+        $this->middleware("auth");
     }
 
-     public function edit($id)
+    protected function moduleSlug(): string
     {
-    	return view('section.edit')->with('id', $id);
+        return "sections";
     }
-
-    public function create()
-    {
-        return view('section.create');
-    }
-
 }
-
-

@@ -3,44 +3,18 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SendScheduledOrderNotification extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:send-scheduled-order-notification';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Executes the scheduleNotification.js file';
+    protected $description = 'Send scheduled order notifications via MySQL';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        $node_path = env('NODE_PATH', '');
+        Log::info('Scheduled order notifications are handled by MySQL-backed application services.');
 
-        if (! empty($node_path)) {
-
-            // Run the JS file using Node.js
-            $command = $node_path . ' --no-experimental-fetch --max-old-space-size=1024 ' . storage_path('app/firebase/scheduleNotification.js');
-            \Log::info("Running command: " . $command);
-            $output = shell_exec($command . " /dev/null 2>&1");
-
-            \Log::info('Schedule notification Output: ' . $output);
-
-            $this->info('Schedule notification process executed.');
-        } else {
-
-            // Log the output
-            \Log::info('schedule notification Output: Node path is not defined');
-        }
+        return self::SUCCESS;
     }
 }

@@ -2,28 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
 
-class brandController extends Controller
+class BrandController extends Controller
 {
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware("auth");
     }
 
-  
-    public function brand()
+    protected function moduleSlug(): string
     {
-        return view('brands.index');
+        return "brands";
     }
-    public function brandEdit($id)
-    {
-        return view('brands.edit')->with('id',$id);
-    }
-
-    public function brandCreate()
-    {
-        return view('brands.create');
-    }
-
 }

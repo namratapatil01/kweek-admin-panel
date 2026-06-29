@@ -235,7 +235,7 @@
 
 
 
-var database = firebase.firestore();
+var database = kweekFirestore();
 
 var stripeData = database.collection('settings').doc('stripeSettings');
 

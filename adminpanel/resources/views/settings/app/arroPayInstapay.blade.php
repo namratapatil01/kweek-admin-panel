@@ -113,7 +113,7 @@
 
 @section('scripts')
 <script type="text/javascript">
-var database = firebase.firestore();
+var database = kweekFirestore();
 var ref = database.collection('settings').doc('arropay_instapay_settings');
 
 $(document).ready(function() {

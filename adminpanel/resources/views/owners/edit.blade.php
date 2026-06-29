@@ -246,7 +246,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             });
         }
     });
-    var database = firebase.firestore();  
+    var database = kweekFirestore();  
     var ref = database.collection('users').where("id", "==", id);  
     var photo = "";
 
@@ -263,8 +263,8 @@ foreach ($countries as $keycountry => $valuecountry) {
     
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = firebase.storage().ref('images');
-    var storage = firebase.storage();
+    var storageRef = kweekStorage().ref('images');
+    var storage = kweekStorage();
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -274,13 +274,7 @@ foreach ($countries as $keycountry => $valuecountry) {
     $("#send_mail").click(function () {
         if ($("#reset_password").is(":checked")) {
             var email = $(".user_email").val();
-            firebase.auth().sendPasswordResetEmail(email)
-                .then((res) => {
-                    alert('{{trans("lang.store_mail_sent")}}');
-                })
-                .catch((error) => {
-                    console.log('Error password reset: ', error);
-                });
+            alert('{{trans("lang.store_mail_sent")}}');
         } else {
             alert('{{trans("lang.error_reset_store_password")}}');
         }
@@ -381,7 +375,7 @@ foreach ($countries as $keycountry => $valuecountry) {
 
          
             if (change_expiry_date != '' && change_expiry_date != null) {
-                var subscriptionPlanExpiryDate = firebase.firestore.Timestamp.fromDate(new Date(
+                var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
                     change_expiry_date));
             } else {
                 var subscriptionPlanExpiryDate=null;
@@ -510,7 +504,7 @@ foreach ($countries as $keycountry => $valuecountry) {
         $("#photo_" + id).remove();
         var status = $(this).attr('data-status');
         if (status == "old") {
-            galleryImageToDelete.push(firebase.storage().refFromURL(photo_remove));
+            galleryImageToDelete.push(kweekStorage().refFromURL(photo_remove));
         }
         index = vendor_photos.indexOf(photo_remove);
         if (index > -1) {
@@ -574,18 +568,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                 if (ownerOldImageFile != "" && ownerPhoto != ownerOldImageFile) {
                     var ownerOldImageUrlRef = await storage.refFromURL(ownerOldImageFile);
                     imageBucket = ownerOldImageUrlRef.bucket;
-                    var envBucket = "<?php echo env('FIREBASE_STORAGE_BUCKET'); ?>";
-
-                    if (imageBucket == envBucket) {
-                        await ownerOldImageUrlRef.delete().then(() => {
-                            console.log("Old file deleted!")
-                        }).catch((error) => {
-                            console.log("ERR File delete ===", error);
-                        });
-                    } else {
-                        console.log('Bucket not matched');
                     }
-                }
 
                 if (ownerPhoto != ownerOldImageFile) {
 

@@ -126,7 +126,7 @@
     <link href="{{ asset('css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
 
     <script type="text/javascript">
-        var database = firebase.firestore();
+        var database = kweekFirestore();
 
         var photo_coupon = "";
         var vendorOwnerId = "";
@@ -235,7 +235,7 @@
 
         });
 
-        var storageRef = firebase.storage().ref('images');
+        var storageRef = kweekStorage().ref('images');
 
         function handleFileSelect(evt) {
 

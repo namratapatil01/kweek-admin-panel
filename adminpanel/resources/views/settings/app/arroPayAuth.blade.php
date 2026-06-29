@@ -88,7 +88,7 @@
 
 @section('scripts')
 <script type="text/javascript">
-var database = firebase.firestore();
+var database = kweekFirestore();
 var ref = database.collection('settings').doc('arropay_auth_settings');
 var loginUrl = '{{ url("settings/payment/arropay-auth/login") }}';
 
@@ -100,7 +100,7 @@ function showAuthStatus(message, type) {
         .text(message);
 }
 
-function saveToFirestore(extra) {
+function saveToDatabase(extra) {
     var payload = {
         baseUrl: $(".arropay_auth_base_url").val(),
         loginEndpoint: $(".arropay_auth_login_endpoint").val(),
@@ -174,7 +174,7 @@ $(document).ready(function() {
                 $(".arropay_auth_token").val(response.token);
                 $(".arropay_auth_last_login").val(lastLoginAt);
 
-                saveToFirestore({
+                saveToDatabase({
                     tokenExpiresAt: response.expires_at || null,
                     lastLoginAt: lastLoginAt
                 }).then(function() {
@@ -197,7 +197,7 @@ $(document).ready(function() {
     });
 
     $(".edit-setting-btn").click(function() {
-        saveToFirestore().then(function() {
+        saveToDatabase().then(function() {
             window.location.href = '{{ url("settings/payment/arropay-auth") }}';
         });
     });

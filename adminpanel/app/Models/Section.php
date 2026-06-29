@@ -2,10 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\KweekModel;
 
-class Section extends Model
+class Section extends KweekModel
 {
-    use HasFactory;
+    protected $table = 'sections';
+
+    protected $casts = [
+        'payload' => 'array',
+        'isActive' => 'boolean',
+        'dine_in_active' => 'boolean',
+        'is_product_details' => 'boolean',
+        'enableCashbackOffer' => 'boolean',
+    ];
+
+    public function vendors()
+    {
+        return $this->hasMany(Vendor::class, 'section_id', 'id');
+    }
 }

@@ -418,7 +418,7 @@
 
     var id = '<?php echo $id; ?>';
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
 
 
@@ -1537,7 +1537,7 @@ $(function () {
 
                                 'amount': parseFloat(priceadd),
 
-                                'date': firebase.firestore.FieldValue.serverTimestamp(),
+                                'date': kweekFirestore.FieldValue.serverTimestamp(),
 
                                 'id': wId,
 

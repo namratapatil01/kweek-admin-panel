@@ -56,7 +56,7 @@
 
     <script>
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var intRegex = /^\d+$/;
         var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
         var planId = '{{ $id }}';

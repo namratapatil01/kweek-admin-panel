@@ -594,7 +594,7 @@
         var commissionModel = false;
         var paymentMethod = '';
 
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var subscriptionBusinessModel = database.collection('settings').doc("vendor");
         subscriptionBusinessModel.get().then(async function(snapshots) {
             var subscriptionSetting = snapshots.data();
@@ -1368,7 +1368,7 @@
             async function callWalletTransaction(status) {
                 var orderStatus = status;
 
-                var date = firebase.firestore.FieldValue.serverTimestamp();
+                var date = kweekFirestore.FieldValue.serverTimestamp();
 
                 var courierCompanyName = $("#courierCompanyName").val();
 
@@ -2459,10 +2459,8 @@
                 $("#zone_err").append("{{ trans('lang.select_zone_help') }}");
             } else {
                 var id = database.collection('tmp').doc().id;
-                firebase.auth().createUserWithEmailAndPassword(email, password)
-                    .then(async function(firebaseUser) {
-                        user_id = firebaseUser.user.uid;
-                        database.collection('users').doc(user_id).set({
+                user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
+database.collection('users').doc(user_id).set({
                             'firstName': userFirstName,
                             'lastName': userLastName,
                             'email': email,
@@ -2470,7 +2468,7 @@
                             'phoneNumber': userPhone,
                             'role': 'driver',
                             'id': user_id,
-                            'createdAt': firebase.firestore.FieldValue.serverTimestamp(),
+                            'createdAt': kweekFirestore.FieldValue.serverTimestamp(),
                             'provider': "email",
                             'appIdentifier': "web",
                             'vendorID': vendorId,
@@ -2539,7 +2537,7 @@
                         const walletId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletId).set({
                             amount: vendorBaseAmount,
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            date: kweekFirestore.FieldValue.serverTimestamp(),
                             id: walletId,
                             isTopUp: false,
                             order_id: orderData.id,
@@ -2552,7 +2550,7 @@
                         const walletTaxId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletTaxId).set({
                             amount: vendorTaxAmount,
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            date: kweekFirestore.FieldValue.serverTimestamp(),
                             id: walletTaxId,
                             isTopUp: false,
                             order_id: orderData.id,
@@ -2583,7 +2581,7 @@
                         const walletId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletId).set({
                             amount: customerAmount,
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            date: kweekFirestore.FieldValue.serverTimestamp(),
                             id: walletId,
                             isTopUp: true,
                             order_id: orderData.id,

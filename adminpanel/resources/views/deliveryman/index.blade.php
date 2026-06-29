@@ -168,7 +168,7 @@
         var section_id = getCookie('section_id') || '';
         var sectionType = getCookie('service_type') || '';                                                       
                      
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var ref;
         var id = "{{ $id }}";
         if (id != '') {
@@ -272,9 +272,9 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) {
-                    var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
                     refData = refData.where('createdAt', '>=', fromDate);
-                    var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                     refData = refData.where('createdAt', '<=', toDate);
                 }
             }
@@ -655,26 +655,6 @@
             });
         });
         async function deleteDriverData(driverId) {
-            //delete user from authentication  
-            var dataObject = {
-                "data": {
-                    "uid": driverId
-                }
-            };
-            var projectId = '<?php echo env('FIREBASE_PROJECT_ID'); ?>';
-            jQuery.ajax({
-                url: 'https://us-central1-' + projectId + '.cloudfunctions.net/deleteUser',
-                method: 'POST',
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify(dataObject),
-                success: function(data) {
-                    console.log('Delete user success:', data.result);
-                },
-                error: function(xhr, status, error) {
-                    var responseText = JSON.parse(xhr.responseText);
-                    console.log('Delete user error:', responseText.error);
-                }
-            });
         }
 
         async function getRestaurant(vendorid) {

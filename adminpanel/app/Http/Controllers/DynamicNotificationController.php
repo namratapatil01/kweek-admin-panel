@@ -2,23 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class DynamicNotificationController extends Controller
 {
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware("auth");
     }
 
-    public function index()
+    protected function moduleSlug(): string
     {
-        return view("dynamic_notifications.index");
+        return "dynamic-notifications";
     }
-
-
-    public function save($id = null)
-    {
-        return view('dynamic_notifications.create')->with('id', $id);
-    }
-
 }

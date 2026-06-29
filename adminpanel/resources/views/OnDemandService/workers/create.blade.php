@@ -165,12 +165,12 @@
 
 <script>
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
 
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
-    var createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
     var workerImagesCount = 0;
     var ownerphoto = '';
     var ownerFileName = '';
@@ -265,10 +265,8 @@
                 window.scrollTo(0, 0);
             } else {
                 jQuery("#data-table_processing").show();
-                firebase.auth().createUserWithEmailAndPassword(email, password)
-                    .then(async function (firebaseUser) {
-                        user_id = firebaseUser.user.uid;
-                        await storeImageData().then(async (IMG) => {
+                user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('worker_' + Date.now());
+                await storeImageData().then(async (IMG) => {
                             geoFirestore.collection('providers_workers').doc(user_id).set({
                                 'firstName': userFirstName,
                                 'lastName': userLastName,
@@ -287,7 +285,7 @@
                                 'longitude': longitude,
                                 'online': false,
                                 'providerId': providerId,
-                                coordinates: new firebase.firestore.GeoPoint(latitude, longitude),
+                                coordinates: new kweekFirestore.GeoPoint(latitude, longitude),
                             }).then(function (result) {
                                 if(provider_id==''){
                                      window.location.href = '{{ route("ondemand.workers.index")}}';
@@ -295,22 +293,13 @@
                                     window.location.href = '{{ route("ondemand.workers.index",@$_GET['id'])}}';
                                 }
                             });
-                        }).catch(err => {
-                            jQuery("#data-table_processing").hide();
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + err + "</p>");
-                            window.scrollTo(0, 0);
-
-                        })
-                    }).catch(err => {
-                        jQuery("#data-table_processing").hide();
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + err + "</p>");
-                        window.scrollTo(0, 0);
-
-                    })
+                }).catch(err => {
+                    jQuery("#data-table_processing").hide();
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>" + err + "</p>");
+                    window.scrollTo(0, 0);
+                });
             }
         })
     })
@@ -379,7 +368,7 @@
         initialize(id);
     });
 
-    var storageRef = firebase.storage().ref('images');
+    var storageRef = kweekStorage().ref('images');
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();

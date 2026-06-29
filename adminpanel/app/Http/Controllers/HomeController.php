@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -48,7 +47,6 @@ class HomeController extends Controller
 
     /**
      * Return active sections from MySQL as JSON.
-     * Replaces the Firebase sections query after the Firebase → MySQL migration.
      */
     public function getSections(Request $request)
     {
@@ -61,12 +59,5 @@ class HomeController extends Controller
             ]);
 
         return response()->json(['data' => $sections]);
-    }
-
-    public function storeFirebaseService(Request $request)
-    {
-        if (!empty($request->serviceJson) && !Storage::disk('local')->has('firebase/credentials.json')) {
-            Storage::disk('local')->put('firebase/credentials.json', file_get_contents(base64_decode($request->serviceJson)));
-        }
     }
 }

@@ -269,7 +269,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/printThis/1.15.0/printThis.js"></script>
     <script>
         var id = "<?php echo $id; ?>";
-        var database = firebase.firestore();
+        var database = kweekFirestore();
         var placeholder = database.collection('settings').doc('placeHolderImage');
         var vendorFcm = '';
         placeholder.get().then(async function(snapshotsimage) {
@@ -475,8 +475,8 @@
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) {
                     $('#data-table_processing').show();
-                    var fromDate = firebase.firestore.Timestamp.fromDate(new Date(from));
-                    var toDate = firebase.firestore.Timestamp.fromDate(new Date(to));
+                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
                     await database.collection('advertisements').doc(id).update({
                         'startDate': fromDate,
                         'endDate': toDate

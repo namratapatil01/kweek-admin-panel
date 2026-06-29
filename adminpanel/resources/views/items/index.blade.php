@@ -190,7 +190,7 @@
         }
     }
 
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;

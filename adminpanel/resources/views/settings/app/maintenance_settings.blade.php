@@ -52,7 +52,7 @@
  @endsection
 @section('scripts')
 <script>
-    var database = firebase.firestore();
+    var database = kweekFirestore();
     var ref = database.collection('settings').doc("maintenance_settings");
     $(document).ready(function(){
         jQuery("#data-table_processing").show();

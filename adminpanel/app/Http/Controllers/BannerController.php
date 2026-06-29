@@ -2,29 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+
 class BannerController extends Controller
-{   
+{
+    use ProvidesMySqlCrud;
 
     public function __construct()
     {
-        $this->middleware('auth');
-    }
-    
-	  public function index()
-    {
-        return view("banners.index");
+        $this->middleware("auth");
     }
 
-     public function edit($id)
+    protected function moduleSlug(): string
     {
-    	return view('banners.edit')->with('id', $id);
+        return "banner-items";
     }
-
-    public function create()
-    {
-        return view('banners.create');
-    }
-
 }
-
-

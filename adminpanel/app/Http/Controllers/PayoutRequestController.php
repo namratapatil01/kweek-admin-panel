@@ -141,6 +141,8 @@ class PayoutRequestController extends Controller
                 'error'           => $e->getMessage()
             ], 500);
         }
+    }
+
     public function acceptDriverRequest(Request $request)
     {
         try {
