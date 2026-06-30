@@ -68,6 +68,13 @@
                                     </select>
                                 @elseif($type === 'json')
                                     <textarea name="{{ $name }}" class="form-control" rows="4">{{ is_array($value) ? json_encode($value) : $value }}</textarea>
+                                @elseif($type === 'color')
+                                    <input type="color" name="{{ $name }}" class="form-control form-control-color" value="{{ $value ?: '#0000ff' }}">
+                                @elseif(in_array($type, ['image', 'file'], true))
+                                    <input type="file" name="{{ $name }}" class="form-control" accept="{{ $field['accept'] ?? 'image/*' }}">
+                                    @if($isEdit && $value)
+                                        <small class="text-muted d-block mt-1">{{ $value }}</small>
+                                    @endif
                                 @else
                                     <input type="{{ $type }}" name="{{ $name }}" class="form-control" value="{{ $value }}">
                                 @endif

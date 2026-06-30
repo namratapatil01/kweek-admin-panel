@@ -1,6 +1,7 @@
 @php
 $user = Auth::user();
 $role_has_permission = App\Models\Permission::where('role_id', $user->role_id)->pluck('permission')->toArray();
+$isSuperAdmin = (int) $user->role_id === 1;
 $service_type = @$_COOKIE['service_type'];
 if (empty($service_type) || $service_type == 'undefined') {
     $service_type = request()->route('type');
@@ -18,7 +19,7 @@ if (empty($service_type)) {
 }
 
 // Super Admin bypass: ensure all permissions are available
-if ($user->role_id == 1 && empty($role_has_permission)) {
+if ($isSuperAdmin && empty($role_has_permission)) {
     $role_has_permission = DB::table('permissions')->where('role_id', 1)->pluck('permission')->toArray();
 }
 @endphp
@@ -51,12 +52,13 @@ if ($user->role_id == 1 && empty($role_has_permission)) {
         @endif
         
         @if (
+            $isSuperAdmin ||
             in_array('roles', $role_has_permission) || 
             in_array('admins', $role_has_permission)
             )
             <li class="nav-subtitle"><span class="nav-subtitle-span">{{ trans('lang.access_management') }}</span></li>
 
-            @if (in_array('roles', $role_has_permission))
+            @if ($isSuperAdmin || in_array('roles', $role_has_permission))
             <li><a class="waves-effect waves-dark" href="{!! url('role') !!}" aria-expanded="false">
                     <i class="ri-map-pin-user-fill"></i>
                     <span class="hide-menu">{{ trans('lang.role_plural') }}</span>
@@ -64,7 +66,7 @@ if ($user->role_id == 1 && empty($role_has_permission)) {
             </li>
             @endif
 
-            @if (in_array('admins', $role_has_permission))
+            @if ($isSuperAdmin || in_array('admins', $role_has_permission))
             <li><a class="waves-effect waves-dark" href="{!! url('admin-users') !!}" aria-expanded="false">
                     <i class="ri-user-2-fill"></i>
                     <span class="hide-menu">{{ trans('lang.admin_plural') }}</span>

@@ -27,6 +27,11 @@ class PermissionMiddleware
         }
 
         $user = auth()->user();
+
+        if ((int) $user->role_id === 1) {
+            return $next($request);
+        }
+
         $role_has_permissions = Permission::where('role_id', $user->role_id)->pluck('permission')->toArray();
 
         $role_has_permissions = array_unique($role_has_permissions);

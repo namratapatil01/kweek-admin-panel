@@ -60,4 +60,16 @@ class HomeController extends Controller
 
         return response()->json(['data' => $sections]);
     }
+
+    /**
+     * Return service types for section forms (replaces Firebase services collection).
+     */
+    public function getServices()
+    {
+        $services = DB::table('services')
+            ->orderBy('name')
+            ->get(['id', 'name', 'flag']);
+
+        return response()->json(['data' => $services]);
+    }
 }

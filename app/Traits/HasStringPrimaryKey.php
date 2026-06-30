@@ -4,7 +4,13 @@ namespace App\Traits;
 
 trait HasStringPrimaryKey
 {
-    public $incrementing = false;
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
 
-    protected $keyType = 'string';
+    public function getKeyType(): string
+    {
+        return 'string';
+    }
 }

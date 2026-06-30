@@ -616,7 +616,7 @@ class DriverController extends Controller
     {
         try {
             $services = \DB::table('services')
-                ->whereIn('flag', ['rental-service','delivery-service','parcel_delivery','cab-service','ecommerce-service'])
+                ->orderBy('name')
                 ->get(['name', 'flag']);
             return response()->json(['services' => $services]);
         } catch (\Exception $e) {

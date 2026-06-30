@@ -17,7 +17,7 @@
 
                     <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
 
-                    <li class="breadcrumb-item"><a href="{!! route('section') !!}">{{ trans('lang.section_plural') }}</a>
+                    <li class="breadcrumb-item"><a href="{!! route($indexRoute ?? 'sections.index') !!}">{{ trans('lang.section_plural') }}</a>
 
                     </li>
 
@@ -399,7 +399,7 @@
 
             </button>
 
-            <a href="{!! route('section') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            <a href="{!! route($indexRoute ?? 'sections.index') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
 
         </div>
 
@@ -421,16 +421,6 @@
 
 @section('scripts')
     <script type="text/javascript">
-        var database = kweekFirestore();
-
-        var ref = database.collection('sections');
-
-
-
-        var services = database.collection('services');
-
-
-
         var photo = "";
 
         var fileName = "";
@@ -443,38 +433,36 @@
 
         var placeholderImage = '';
 
-        var placeholder = database.collection('settings').doc('placeHolderImage');
-
         var htmlTemplate = "";
 
-        var storageRef = kweekStorage().ref('images');
+        var adminDataUpsertUrl = '{{ url('admin-data/upsert') }}';
+        var adminDataUploadUrl = '{{ url('admin-data/upload') }}';
+        var csrfToken = '{{ csrf_token() }}';
+        var sectionListUrl = '{{ route($indexRoute ?? 'sections.index') }}';
 
-
-
-        placeholder.get().then(async function(snapshotsimage) {
-
-            var placeholderImageData = snapshotsimage.data();
-
-            placeholderImage = placeholderImageData.image;
-
-        })
+        fetch('{{ url('admin-data/document/settings/placeHolderImage') }}', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(response) {
+            return response.json();
+        }).then(function(result) {
+            if (result.data && result.data.image) {
+                placeholderImage = result.data.image;
+            }
+        }).catch(function() {});
 
         var theme_1_url = '{!! url('images/app_homepage_theme_1.png') !!}';
         var theme_2_url = '{!! url('images/app_homepage_theme_2.png') !!}';
 
-        var refDriver = database.collection('settings').doc("DriverNearBy");
-
-        refDriver.get().then(async function(snapshots) {
-
-            var radios = snapshots.data();
-
+        fetch('{{ url('admin-data/document/settings/DriverNearBy') }}', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(response) {
+            return response.json();
+        }).then(function(result) {
+            var radios = result.data || {};
             if (radios.hasOwnProperty('distanceType')) {
-
                 $("#set_distance_type").text(radios.distanceType);
-
             }
-
-        });
+        }).catch(function() {});
 
 
 
@@ -520,20 +508,18 @@
 
 
 
-            services.get().then(async function(snapshots) {
-
-                snapshots.docs.forEach((listval) => {
-
-                    var data = listval.data();
-
+            fetch('{{ route('api.services') }}', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function(response) {
+                return response.json();
+            }).then(async function(result) {
+                (result.data || []).forEach(function(data) {
                     $('#service_type').append($("<option></option>")
-
                         .attr("value", data.name).attr("flag", data.flag)
-
                         .text(data.name));
-
-                })
-
+                });
+            }).catch(function(err) {
+                console.error('Failed to load service types:', err);
             });
 
 
@@ -717,7 +703,27 @@
                     sectionData.markerIcon = markerIcon;
                 }
 
-                await database.collection('sections').doc(id_section).set(sectionData);
+                const upsertResponse = await fetch(adminDataUpsertUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        collection: 'sections',
+                        id: id_section,
+                        data: sectionData,
+                        merge: false,
+                    }),
+                });
+
+                const upsertResult = await upsertResponse.json();
+                if (!upsertResponse.ok || !upsertResult.success) {
+                    $(".error_top").show().html("<p>" + (upsertResult.message || 'Failed to save section.') + "</p>");
+                    window.scrollTo(0, 0);
+                    return;
+                }
 
                 if (service_type == 'Multivendor Delivery Service' ||
                     service_type == 'On Demand Service' ||
@@ -725,7 +731,10 @@
                     await addCommissionModel(id_section);
                 }
 
-                window.location.href = '{{ route('section') }}';
+                setCookie('section_id', id_section, 1);
+                setCookie('service_type', service_type_flag || '', 1);
+
+                window.location.href = sectionListUrl;
 
             });
 
@@ -733,31 +742,43 @@
 
 
         async function addCommissionModel(sectionId) {
-            var tempId = database.collection("tmp").doc().id;
+            var tempId = 'commission_' + sectionId;
             var features = {
                 'chat': true,
                 'qrCodeGenerate': true,
                 'ownerMobileApp': true
             };
-            await database.collection('subscription_plans').doc(tempId).set({
-                'createdAt': kweekFirestore.FieldValue.serverTimestamp(),
-                'description': 'Commission apply per order',
-                'expiryDay': '-1',
-                'features': features,
-                'id': tempId,
-                'image': placeholderImage,
-                'isEnable': true,
-                'itemLimit': '-1',
-                'name': 'Commission Base Plan',
-                'orderLimit': '-1',
-                'place': '0',
-                'plan_points': ['Access to all features easily.'],
-                'price': '0',
-                'type': 'free',
-                'sectionId': sectionId,
-                'isCommissionPlan': true
 
-            })
+            await fetch(adminDataUpsertUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    collection: 'subscription_plans',
+                    id: tempId,
+                    data: {
+                        'description': 'Commission apply per order',
+                        'expiryDay': '-1',
+                        'features': features,
+                        'id': tempId,
+                        'image': placeholderImage,
+                        'isEnable': true,
+                        'itemLimit': '-1',
+                        'name': 'Commission Base Plan',
+                        'orderLimit': '-1',
+                        'place': '0',
+                        'plan_points': ['Access to all features easily.'],
+                        'price': '0',
+                        'type': 'free',
+                        'sectionId': sectionId,
+                        'isCommissionPlan': true
+                    },
+                    merge: false,
+                }),
+            });
         }
 
         function handleFileSelect(evt) {
@@ -811,10 +832,10 @@
 
             try {
                 if (!photo || photo.trim() === '') {
-                    throw "{{ trans('lang.vendor_image_help') }}"; // show image validation message
+                    throw "{{ trans('lang.vendor_image_help') }}";
                 }
 
-                if (photo.startsWith('https://')) {
+                if (photo.startsWith('http://') || photo.startsWith('https://')) {
                     return photo;
                 }
 
@@ -825,27 +846,42 @@
                     'image/jpeg',
                     'image/jpg',
                     'image/png',
-                    'image/gif'
+                    'image/gif',
+                    'image/svg+xml'
                 ];
 
                 if (!allowedTypes.includes(contentType)) {
-                    throw "Please upload only JPG, JPEG, PNG, or GIF images.";
+                    throw "Please upload only JPG, JPEG, PNG, GIF, or SVG images.";
                 }
 
-                const base64Data = photo.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, "");
-
-                const uploadTask = await storageRef.child(fileName).putString(base64Data, 'base64', {
-                    contentType: contentType
+                const blob = await fetch(photo).then(function(response) {
+                    return response.blob();
                 });
 
-                const downloadURL = await uploadTask.ref.getDownloadURL();
-                newPhoto = downloadURL;
-                photo = downloadURL;
+                const formData = new FormData();
+                formData.append('file', blob, fileName || 'section-image');
+                formData.append('directory', 'sections');
 
+                const response = await fetch(adminDataUploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw result.message || 'Image upload failed.';
+                }
+
+                newPhoto = result.url;
+                photo = result.url;
             } catch (err) {
                 $(".error_top").show().html("<p>" + err + "</p>");
                 window.scrollTo(0, 0);
-                throw err; 
+                throw err;
             }
 
             return newPhoto;

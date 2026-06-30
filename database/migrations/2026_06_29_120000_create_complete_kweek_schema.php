@@ -138,27 +138,22 @@ return new class extends Migration
         ]);
 
         $this->createOrderTable('parcel_orders', [
-            'driverId' => true,
             'driverID' => true,
             'parcelCategoryID' => true,
-            'sectionId' => true,
         ]);
 
         $this->createOrderTable('rental_orders', [
             'driverId' => true,
             'vehicleId' => true,
-            'paymentMethod' => 'string',
         ]);
 
         $this->createOrderTable('provider_orders', [
             'workerId' => true,
-            'payment_method' => 'string',
         ]);
 
         $this->createOrderTable('rides', [
             'driverId' => true,
             'vehicleId' => true,
-            'paymentMethod' => 'string',
             'scheduleDateTime' => 'timestamp',
         ]);
 
@@ -226,7 +221,6 @@ return new class extends Migration
         Schema::create('driver_payouts', function (Blueprint $table) {
             $table->string('id', 64)->primary();
             $table->string('driverID', 64)->nullable()->index();
-            $table->string('driverId', 64)->nullable()->index();
             $table->string('vendorID', 64)->nullable()->index();
             $table->decimal('amount', 15, 2)->default(0);
             $table->string('paymentStatus', 32)->nullable()->index();
@@ -340,11 +334,13 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::table('users', function (Blueprint $table) {
-            if (! Schema::hasColumn('users', 'role_id')) {
-                $table->unsignedBigInteger('role_id')->nullable()->after('password');
-            }
-        });
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                if (! Schema::hasColumn('users', 'role_id')) {
+                    $table->unsignedBigInteger('role_id')->nullable()->after('password');
+                }
+            });
+        }
 
         Schema::table('personal_access_tokens', function (Blueprint $table) {
             if (! Schema::hasColumn('personal_access_tokens', 'tokenable_type')) {

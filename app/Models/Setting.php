@@ -12,7 +12,7 @@ class Setting extends KweekModel
         'value' => 'array',
     ];
 
-    public function getPayloadAttribute(): array
+    public function getPayloadAttribute($value): array
     {
         return $this->value ?? [];
     }

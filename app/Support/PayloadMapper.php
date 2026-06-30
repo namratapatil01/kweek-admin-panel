@@ -17,7 +17,16 @@ class PayloadMapper
         $overflow = [];
 
         foreach ($data as $key => $value) {
+            if ($value === '') {
+                $value = null;
+            }
+
             if (in_array($key, $fillableColumns, true)) {
+                if (is_array($value) && ! in_array($key, $jsonColumns, true)) {
+                    $overflow[$key] = $value;
+                    continue;
+                }
+
                 $attributes[$key] = $value;
             } elseif (in_array($key, $jsonColumns, true)) {
                 $attributes[$key] = is_array($value) ? $value : json_decode((string) $value, true);

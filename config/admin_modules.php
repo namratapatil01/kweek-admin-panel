@@ -17,7 +17,7 @@ return [
         ],
         'form' => [
             ['name' => 'name', 'type' => 'text', 'label' => 'Name', 'required' => true],
-            ['name' => 'serviceType', 'type' => 'text', 'label' => 'Service Type'],
+            ['name' => 'serviceType', 'type' => 'select', 'label' => 'Service Type', 'required' => true, 'options' => []],
             ['name' => 'isActive', 'type' => 'checkbox', 'label' => 'Active'],
             ['name' => 'sectionImage', 'type' => 'image', 'label' => 'Image'],
             ['name' => 'color', 'type' => 'text', 'label' => 'Color'],
@@ -166,6 +166,7 @@ return [
     ],
     'coupons' => [
         'model' => \App\Models\Coupon::class,
+        'legacy_route' => 'coupons',
         'label' => 'Coupons',
         'permission' => 'coupons',
         'searchable' => ['code'],
@@ -188,6 +189,7 @@ return [
         'model' => \App\Models\SubscriptionPlan::class,
         'view' => 'subscription_plans',
         'route' => 'subscription-plans',
+        'index_route' => 'subscription-plans.index',
         'label' => 'Subscription Plans',
         'permission' => 'subscription-plans',
         'searchable' => ['name'],
@@ -296,6 +298,7 @@ return [
         'model' => \App\Models\GiftCard::class,
         'view' => 'gift_cards',
         'route' => 'gift-cards',
+        'index_route' => 'gift-card.index',
         'label' => 'Gift Cards',
         'permission' => 'gift-card',
         'searchable' => ['title'],
@@ -407,6 +410,7 @@ return [
         'model' => \App\Models\VendorOrder::class,
         'view' => 'vendor_orders',
         'route' => 'orders',
+        'legacy_route' => 'orders',
         'label' => 'Orders',
         'permission' => 'orders',
         'searchable' => ['status', 'authorID', 'vendorID'],
@@ -422,6 +426,7 @@ return [
     ],
     'rides' => [
         'model' => \App\Models\Ride::class,
+        'legacy_route' => 'rides',
         'label' => 'Rides',
         'permission' => 'rides',
         'searchable' => ['status', 'authorID'],
@@ -437,6 +442,7 @@ return [
     ],
     'vendors' => [
         'model' => \App\Models\Vendor::class,
+        'legacy_route' => 'vendors',
         'label' => 'Vendors',
         'permission' => 'vendors',
         'searchable' => ['title', 'phonenumber'],
@@ -459,6 +465,7 @@ return [
     'users' => [
         'model' => \App\Models\AppUser::class,
         'table' => 'app_users',
+        'legacy_route' => 'users',
         'label' => 'Customers',
         'permission' => 'users',
         'scope' => 'customers',
@@ -677,6 +684,7 @@ return [
         'model' => \App\Models\EmailTemplate::class,
         'view' => 'email_templates',
         'route' => 'email-templates',
+        'index_route' => 'email-templates.index',
         'label' => 'Email Templates',
         'permission' => 'email-template',
         'searchable' => ['type', 'subject'],
