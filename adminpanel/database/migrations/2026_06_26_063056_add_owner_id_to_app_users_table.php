@@ -11,8 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('app_users') || Schema::hasColumn('app_users', 'ownerId')) {
+            return;
+        }
+
         Schema::table('app_users', function (Blueprint $table) {
-            $table->string('ownerId', 36)->nullable()->after('isOwner');
+            if (Schema::hasColumn('app_users', 'isOwner')) {
+                $table->string('ownerId', 36)->nullable()->after('isOwner');
+            } else {
+                $table->string('ownerId', 36)->nullable();
+            }
         });
     }
 

@@ -13,6 +13,10 @@ class CreateWalletTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('wallet')) {
+            return;
+        }
+
         Schema::create('wallet', function (Blueprint $table) {
             $table->string('id', 50)->primary();
             $table->string('user_id', 50)->nullable();

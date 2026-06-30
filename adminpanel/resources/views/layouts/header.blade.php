@@ -1,6 +1,10 @@
 @php
 $user = Auth::user();
 $role_has_permission = App\Models\Permission::where('role_id', $user->role_id)->pluck('permission')->toArray();
+$isSuperAdmin = (int) $user->role_id === 1;
+if ($isSuperAdmin && empty($role_has_permission)) {
+    $role_has_permission = DB::table('permissions')->where('role_id', 1)->pluck('permission')->toArray();
+}
 $service_type = @$_COOKIE['service_type'];
 if (empty($service_type) || $service_type == 'undefined') {
     $service_type = request()->route('type');
@@ -43,7 +47,7 @@ if (empty($service_type)) {
 </div>
 <div class="navbar-collapse sidebar-nav">
     <ul class="navbar-nav mr-auto mt-md-0 header-user-menu sidebarnav p-l-20">
-        @if (in_array('users', $role_has_permission))
+        @if ($isSuperAdmin || in_array('users', $role_has_permission))
         <li class="nav-item text-light">
            <a class="nav-link" href="{!! url('users') !!}" aria-expanded="false">
                 <i class="mdi mdi-account-multiple"></i>
@@ -51,7 +55,7 @@ if (empty($service_type)) {
             </a>
         </li>
         @endif
-        @if (in_array('zone', $role_has_permission))
+        @if ($isSuperAdmin || in_array('zone', $role_has_permission))
         <li class="nav-item text-light">
             <a class="nav-link" href="{!! url('zone') !!}" aria-expanded="false">
                 <i class="mdi mdi-map-marker-circle"></i>
@@ -59,15 +63,16 @@ if (empty($service_type)) {
             </a>
         </li>
         @endif
-        @if (in_array('section-service', $role_has_permission))
+        @if ($isSuperAdmin || in_array('section-service', $role_has_permission))
         <li class="nav-item text-light">
-           <a class="nav-link" href="{!! url('section') !!}" aria-expanded="false">
+           <a class="nav-link" href="{!! route('sections.index') !!}" aria-expanded="false">
                 <i class="mdi mdi-clipboard-text"></i>
                 <span class="hide-menu">{{ trans('lang.section_plural') }}</span>
             </a>
         </li>
         @endif
         @if (
+        $isSuperAdmin ||
         in_array('app-banners-setting', $role_has_permission) ||
         in_array('global-setting', $role_has_permission) ||
         in_array('currency', $role_has_permission) ||
@@ -92,55 +97,55 @@ if (empty($service_type)) {
                 </a>
               <div class="dropdown-menu dropdown-setting scale-down sidebar-nav">  
                 <ul class="sidebarnav">
-                    @if (in_array('global-setting', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('global-setting', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/globals') !!}"><i class="mdi mdi-web"></i> {{ trans('lang.app_setting_globals') }}</a></li>
                     @endif
-                    @if (in_array('currency', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('currency', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/currencies') !!}"><i class="mdi mdi-currency-usd"></i> {{ trans('lang.currency_plural') }}</a></li>
                     @endif
-                    @if (in_array('business-model', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('business-model', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/businessModel') !!}"><i class="mdi mdi-domain"></i> {{ trans('lang.business_model_settings') }}</a></li>
                     @endif
-                    @if (in_array('tax', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('tax', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('tax') !!}"><i class="mdi mdi-database"></i> {{ trans('lang.tax_setting') }}</a></li>
                     @endif
-                    @if (in_array('payment-method', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('payment-method', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/payment/stripe') !!}"><i class="mdi mdi-credit-card"></i> {{ trans('lang.app_setting_payment') }}</a></li>
                     @endif
-                    @if (in_array('radius', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('radius', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/radiusConfiguration') !!}"><i class="mdi mdi-map-marker-radius"></i> {{ trans('lang.radios_configuration') }}</a></li>
                     @endif
-                    @if (in_array('app-banners-setting', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('app-banners-setting', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/banners') !!}"><i class="mdi mdi-page-layout-body"></i> {{ trans('lang.app_setting_banners') }}</a></li>
                     @endif
-                    @if (in_array('scheduleOrderNotification', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('scheduleOrderNotification', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/scheduleOrderNotification') !!}"><i class="mdi mdi-bell-outline"></i> {{ trans('lang.schedule_order_notification_title') }}</a></li>
                     @endif
-                    @if (in_array('delivery-charge', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('delivery-charge', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/deliveryCharge') !!}"><i class="mdi mdi-truck-delivery"></i> {{ trans('lang.delivery_charge') }}</a></li>
                     @endif
-                    @if (in_array('document-verification', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('document-verification', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/documentVerification') !!}"><i class="mdi mdi-file-document"></i> {{ trans('lang.document_verification') }}</a></li>
                     @endif
-                    @if (in_array('language', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('language', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/languages') !!}"><i class="mdi mdi-translate"></i> {{ trans('lang.languages') }}</a></li>
                     @endif
-                    @if (in_array('special-offer', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('special-offer', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/specialOffer') !!}"><i class="mdi mdi-percent"></i> {{ trans('lang.special_offer') }}</a></li>
                     @endif
-                    @if (in_array('settings-maintenance', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('settings-maintenance', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('settings/app/maintenance') !!}"><i class="mdi mdi-settings"></i> {{ trans('lang.maintenance_mode_settings') }}</a></li>
                     @endif
-                    @if (in_array('terms', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('terms', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('termsAndConditions') !!}"><i class="mdi mdi-file"></i> {{ trans('lang.terms_and_conditions') }}</a></li>
                     @endif
-                    @if (in_array('privacy', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('privacy', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('privacyPolicy') !!}"><i class="mdi mdi-file-check"></i> {{ trans('lang.privacy_policy') }}</a></li>
                     @endif
-                    @if (in_array('home-page', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('home-page', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('homepageTemplate') !!}"><i class="mdi mdi-page-layout-body"></i> {{ trans('lang.homepageTemplate') }}</a></li>
                     @endif
-                    @if (in_array('footer', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('footer', $role_has_permission))
                     <li><a class="nav-link"href="{!! url('footerTemplate') !!}"><i class="mdi mdi-page-layout-footer"></i> {{ trans('lang.footer_template') }}</a></li>
                     @endif
                 </ul>
@@ -149,6 +154,7 @@ if (empty($service_type)) {
         @endif
 
         @if (
+        $isSuperAdmin ||
         in_array('banners', $role_has_permission) ||
         in_array('cms', $role_has_permission) ||
         in_array('on-board', $role_has_permission) ||
@@ -161,7 +167,7 @@ if (empty($service_type)) {
             </a>
             <div class="dropdown-menu dropdown-setting scale-down sidebar-nav">  
                 <ul class="sidebarnav">
-                    @if (in_array('banners', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('banners', $role_has_permission))
                     <li><a class="waves-effect waves-dark nav-link" href="{!! url('banners') !!}" aria-expanded="false">
                             <i class="mdi mdi-monitor-multiple "></i>
                             <span class="hide-menu">{{ trans('lang.menu_items') }}</span>
@@ -169,7 +175,7 @@ if (empty($service_type)) {
                     </li>
                     @endif
 
-                    @if (in_array('cms', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('cms', $role_has_permission))
                     <li><a class="waves-effect waves-dark nav-link" href="{!! url('cms') !!}" aria-expanded="false">
                             <i class="mdi mdi-book-open-page-variant"></i>
                             <span class="hide-menu">{{ trans('lang.cms_plural') }}</span>
@@ -177,7 +183,7 @@ if (empty($service_type)) {
                     </li>
                     @endif
 
-                    @if (in_array('on-board', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('on-board', $role_has_permission))
                     <li><a class="waves-effect waves-dark nav-link onboard_menu" href="{!! url('on-board') !!}" aria-expanded="false">
                             <i class="mdi mdi-cellphone"></i>
                             <span class="hide-menu">{{ trans('lang.on_board_plural') }}</span>
@@ -185,7 +191,7 @@ if (empty($service_type)) {
                     </li>
                     @endif
 
-                    @if (in_array('email-template', $role_has_permission))
+                    @if ($isSuperAdmin || in_array('email-template', $role_has_permission))
                     <li><a class="waves-effect waves-dark nav-link" href="{!! url('email-templates') !!}" aria-expanded="false">
                             <i class="mdi mdi-email"></i>
                             <span class="hide-menu">{{ trans('lang.email_templates') }}</span>
@@ -242,11 +248,28 @@ if (empty($service_type)) {
         </li>
     </ul>
     <div class="navbar-nav my-lg-0 multi-service-nav">
-        <div class="nav-item dropdown" id="activeSection">
+        @php
+            $headerSections = \Illuminate\Support\Facades\DB::table('sections')
+                ->where('isActive', 1)
+                ->orderBy('name')
+                ->get(['id', 'name', 'serviceType', 'serviceTypeFlag', 'sectionImage']);
+            $cookieSectionId = request()->cookie('section_id', '');
+            $cookieServiceType = request()->cookie('service_type', '');
+            $activeHeaderSection = $headerSections->first(function ($section) use ($cookieSectionId, $cookieServiceType) {
+                return $section->id === $cookieSectionId
+                    && ($cookieServiceType === '' || $section->serviceTypeFlag === $cookieServiceType);
+            });
+            if (!$activeHeaderSection && $headerSections->isNotEmpty()) {
+                $activeHeaderSection = $headerSections->first();
+            }
+            $activeSectionImage = $activeHeaderSection?->sectionImage ?: asset('images/kweek_icon.png');
+            $activeSectionLabel = $activeHeaderSection?->name ?: trans('lang.select_section');
+        @endphp
+        <div class="nav-item dropdown" id="sectionPicker">
             <a class="nav-link dropdown-toggle waves-effect waves-dark" href="#" id="activeSectionLink"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <img src="{{ asset('images/kweek_icon.png') }}" onerror="this.onerror=null; this.src='{{ asset('images/logo-light-icon.png') }}';" id="activeSectionLogo" style="height:40px; margin-right:5px;" alt="KWEEK">
-                <span id="activeSectionName"> {{ trans('lang.select_section') }}</span>
+                <img src="{{ $activeSectionImage }}" onerror="this.onerror=null; this.src='{{ asset('images/logo-light-icon.png') }}';" id="activeSectionLogo" style="height:40px; margin-right:5px;" alt="KWEEK">
+                <span id="activeSectionName">{{ $activeSectionLabel }}</span>
             </a>
             <div class="dropdown-menu dropdown-service scale-up">
                 <div class="dropdown-service_inner">
@@ -254,9 +277,20 @@ if (empty($service_type)) {
                         <h2>{{ trans('lang.modules_section') }}</h2>
                         <p>{{ trans('lang.select_module_monitor') }}</p>
                     </div>
-                    <div id="sections_header"></div>
+                    <div id="sections_header">
+                        @include('layouts.partials.sections-picker', [
+                            'headerSections' => $headerSections,
+                            'activeHeaderSection' => $activeHeaderSection,
+                        ])
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    @if($activeHeaderSection && ($cookieSectionId !== $activeHeaderSection->id || $cookieServiceType !== ($activeHeaderSection->serviceTypeFlag ?? '')))
+        <script>
+            setCookie('section_id', @json($activeHeaderSection->id), 1);
+            setCookie('service_type', @json($activeHeaderSection->serviceTypeFlag ?? ''), 1);
+        </script>
+    @endif
 </div>

@@ -306,21 +306,57 @@
         async function getServiceSections() {
             try {
                 const response = await fetch('{{ route('api.sections') }}', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
                 });
+
+                if (!response.ok) {
+                    throw new Error('Sections request failed with status ' + response.status);
+                }
+
                 const json = await response.json();
                 const sectionsContainer = document.getElementById('sections_header');
+                if (!sectionsContainer) {
+                    return;
+                }
+
                 sectionsContainer.innerHTML = buildServiceSectionsHTML(json.data || []);
             } catch (err) {
                 console.error('Failed to load sections from MySQL:', err);
             }
         }
 
-        function buildServiceSectionsHTML(sections) {
-            var html = '';
-            var addSectionRoute = "{{ route('section.create') }}";
+        function resolveActiveSection(sections) {
             var idSecActive = getCookie('section_id') || '';
             var typeSecActive = getCookie('service_type') || '';
+            var fallbackImg = "{{ asset('images/kweek_icon.png') }}";
+
+            var matched = sections.find(function (section) {
+                return section.id === idSecActive
+                    && (!typeSecActive || section.serviceTypeFlag === typeSecActive);
+            });
+
+            if (!matched && sections.length > 0) {
+                matched = sections[0];
+                setCookie('section_id', matched.id, 1);
+                setCookie('service_type', matched.serviceTypeFlag || '', 1);
+            }
+
+            if (matched) {
+                $('#activeSectionLogo').attr('src', matched.sectionImage || fallbackImg);
+                $('#activeSectionName').text(matched.name || 'Unnamed Section');
+            }
+
+            return matched;
+        }
+
+        function buildServiceSectionsHTML(sections) {
+            var html = '';
+            var addSectionRoute = "{{ route('sections.create') }}";
+            var activeSection = resolveActiveSection(sections);
             var fallbackImg = "{{ asset('images/kweek_icon.png') }}";
 
             sections.forEach(function(data) {
@@ -330,13 +366,8 @@
                 var sectionId = data.id;
                 var sectionTypeFlag = data.serviceTypeFlag || '';
                 var sectionRoute = "{{ route('dashboard') }}/" + sectionId + "/" + sectionTypeFlag;
-                var isSelected = (sectionId === idSecActive && sectionTypeFlag === typeSecActive);
+                var isSelected = activeSection && sectionId === activeSection.id;
                 var selectedClass = isSelected ? 'selected-section' : '';
-
-                if (isSelected) {
-                    $('#activeSectionLogo').attr('src', sectionImage || fallbackImg);
-                    $('#activeSectionName').text(sectionName);
-                }
 
                 html += '<div class="col-md-4">' +
                     '<div class="service-list-box ' + selectedClass + '"' +
@@ -348,6 +379,10 @@
                     '<p>' + sectionDescription + '</p>' +
                     '</div></div>';
             });
+
+            if (sections.length === 0) {
+                html += '<div class="col-md-12"><p class="text-muted mb-3">{{ trans('lang.no_record_found') }}</p></div>';
+            }
 
             html += '<div class="col-md-12">' +
                 '<div class="service-list-box" data-section-url="' + addSectionRoute + '" data-section-id="" data-section-type="">' +

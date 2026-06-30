@@ -67,10 +67,17 @@ Route::middleware(['auth'])->group(function () use ($moduleControllers) {
         $config = config("admin_modules.{$slug}", []);
         $routeName = $config['route'] ?? str_replace('_', '-', $slug);
         $permission = $config['permission'] ?? $slug;
+        $indexRouteName = $config['index_route'] ?? "{$routeName}.index";
+        $legacyRouteName = $config['legacy_route'] ?? null;
 
-        Route::middleware(["permission:{$permission},{$permission}"])->group(function () use ($controller, $routeName) {
+        Route::middleware(["permission:{$permission},{$permission}"])->group(function () use ($controller, $routeName, $indexRouteName, $legacyRouteName) {
             Route::get("{$routeName}/datatable", [$controller, 'datatable'])->name("{$routeName}.datatable");
-            Route::resource($routeName, $controller);
+            Route::resource($routeName, $controller)->names([
+                'index' => $indexRouteName,
+            ]);
+            if ($legacyRouteName && $legacyRouteName !== $indexRouteName) {
+                Route::get($routeName, [$controller, 'index'])->name($legacyRouteName);
+            }
             Route::post("{$routeName}/bulk-delete", [$controller, 'destroy'])->name("{$routeName}.bulk-destroy");
         });
     }

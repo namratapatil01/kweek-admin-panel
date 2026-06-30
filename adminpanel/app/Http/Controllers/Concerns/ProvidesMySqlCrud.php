@@ -170,11 +170,14 @@ trait ProvidesMySqlCrud
             $start = (int) $request->input('start', 0);
             $length = (int) $request->input('length', 10);
             $search = $request->input('search.value', '');
-            $orderCol = (int) $request->input('order.0.column', 0);
+            $orderCol = (int) $request->input('order.0.column', 2);
             $orderDir = $request->input('order.0.dir', 'desc');
 
-            $columns = array_merge(['id'], array_column($this->moduleConfig()['columns'] ?? [], 'field'));
-            $sortBy = $columns[$orderCol] ?? 'created_at';
+            $dataColumns = array_column($this->moduleConfig()['columns'] ?? [], 'field');
+            $sortIndex = $orderCol - 2;
+            $sortBy = ($sortIndex >= 0 && isset($dataColumns[$sortIndex]))
+                ? $dataColumns[$sortIndex]
+                : 'created_at';
 
             $filters = array_filter([
                 'search' => $search,
@@ -216,12 +219,11 @@ trait ProvidesMySqlCrud
         $id = $record->id;
         $row = [];
 
-        $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
-        $canDelete = in_array(($config['permission'] ?? '') . '.delete', $permissions, true);
+        $canDelete = $this->userCanDeleteModule($config);
 
-        if ($canDelete) {
-            $row[] = '<input type="checkbox" class="row-select" data-id="' . e($id) . '">';
-        }
+        $row[] = $canDelete
+            ? '<input type="checkbox" class="row-select" data-id="' . e($id) . '">'
+            : '';
 
         $actions = '<span class="action-btn">';
         $actions .= '<a href="' . route($route . '.show', $id) . '" title="View"><i class="mdi mdi-eye"></i></a>';
@@ -239,7 +241,9 @@ trait ProvidesMySqlCrud
             $value = data_get($record, $field);
 
             if (($column['type'] ?? null) === 'boolean') {
-                $row[] = $value ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>';
+                $row[] = filter_var($value, FILTER_VALIDATE_BOOLEAN)
+                    ? '<span class="badge badge-success">Yes</span>'
+                    : '<span class="badge badge-secondary">No</span>';
             } elseif (($column['type'] ?? null) === 'datetime' && $value) {
                 $row[] = e((string) $value);
             } else {
@@ -248,6 +252,18 @@ trait ProvidesMySqlCrud
         }
 
         return $row;
+    }
+
+    protected function userCanDeleteModule(array $config): bool
+    {
+        $user = auth()->user();
+        if ($user && (int) $user->role_id === 1) {
+            return true;
+        }
+
+        $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
+
+        return in_array(($config['permission'] ?? '') . '.delete', $permissions, true);
     }
 
     /** Legacy route aliases used by existing web.php */

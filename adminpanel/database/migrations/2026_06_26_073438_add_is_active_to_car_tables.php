@@ -11,12 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('car_makes', function (Blueprint $table) {
-            $table->boolean('isActive')->default(1)->after('name');
-        });
-        Schema::table('car_models', function (Blueprint $table) {
-            $table->boolean('isActive')->default(1)->after('car_make_id');
-        });
+        if (Schema::hasTable('car_makes') && ! Schema::hasColumn('car_makes', 'isActive')) {
+            Schema::table('car_makes', function (Blueprint $table) {
+                $table->boolean('isActive')->default(1)->after('name');
+            });
+        }
+
+        if (Schema::hasTable('car_models') && ! Schema::hasColumn('car_models', 'isActive')) {
+            Schema::table('car_models', function (Blueprint $table) {
+                $table->boolean('isActive')->default(1)->after('car_make_id');
+            });
+        }
     }
 
     /**

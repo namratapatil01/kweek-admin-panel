@@ -260,9 +260,6 @@ Route::middleware(['permission:rides,rides.edit'])->group(function () {
     Route::get('/rides/edit/{id}', [App\Http\Controllers\RideController::class, 'edit'])->name('rides.edit');
 });
 
-Route::middleware(['permission:orders,orders'])->group(function () {
-    Route::get('/orders/', [App\Http\Controllers\OrderController::class, 'index'])->name('orders');
-});
 Route::middleware(['permission:orders,orders.edit'])->group(function () {
     Route::get('/orders/edit/{id}', [App\Http\Controllers\OrderController::class, 'edit'])->name('orders.edit');
 });
@@ -816,6 +813,7 @@ Route::post('check-payout-status', [App\Http\Controllers\UserController::class,'
 
 // MySQL-backed sections endpoint
 Route::get('api/sections', [App\Http\Controllers\HomeController::class, 'getSections'])->name('api.sections');
+Route::get('api/services', [App\Http\Controllers\HomeController::class, 'getServices'])->name('api.services');
 
 Route::middleware(['web'])->prefix('admin-data')->group(function () {
     Route::get('document/{collection}/{id}', [App\Http\Controllers\AdminDataBridgeController::class, 'getDocument']);

@@ -17,7 +17,7 @@
 
                     <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
 
-                    <li class="breadcrumb-item"><a href="{!! route('section') !!}">{{ trans('lang.section_plural') }}</a>
+                    <li class="breadcrumb-item"><a href="{!! route($indexRoute ?? 'sections.index') !!}">{{ trans('lang.section_plural') }}</a>
 
                     </li>
 
@@ -394,7 +394,7 @@
 
             </button>
 
-            <a href="{!! route('section') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            <a href="{!! route($indexRoute ?? 'sections.index') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
 
         </div>
 
@@ -416,16 +416,6 @@
     <script type="text/javascript">
         var id = "<?php echo $id; ?>";
 
-        var database = kweekFirestore();
-
-        var ref = database.collection('sections').where("id", "==", id);
-
-
-
-        var services = database.collection('services');
-
-
-
         var theme_1_url = '{!! url('images/app_homepage_theme_1.png') !!}';
         var theme_2_url = '{!! url('images/app_homepage_theme_2.png') !!}';
 
@@ -435,41 +425,38 @@
 
         var placeholderImage = '';
 
-        var placeholder = database.collection('settings').doc('placeHolderImage');
-
-        var storageRef = kweekStorage().ref('images');
-
-        var storage = kweekStorage();
-
         var photo = "";
 
         var fileName = "";
 
         var oldImageFile = '';
 
-        placeholder.get().then(async function(snapshotsimage) {
+        var adminDataUpsertUrl = '{{ url('admin-data/upsert') }}';
+        var adminDataUploadUrl = '{{ url('admin-data/upload') }}';
+        var adminDataDocumentUrl = '{{ url('admin-data/document/sections') }}/' + encodeURIComponent(id);
+        var csrfToken = '{{ csrf_token() }}';
+        var sectionListUrl = '{{ route($indexRoute ?? 'sections.index') }}';
 
-            var placeholderImageData = snapshotsimage.data();
-
-            placeholderImage = placeholderImageData.image;
-
-        })
-
-
-
-        var refDriver = database.collection('settings').doc("DriverNearBy");
-
-        refDriver.get().then(async function(snapshots) {
-
-            var radios = snapshots.data();
-
-            if (radios.hasOwnProperty('distanceType')) {
-
-                $("#set_distance_type").text(radios.distanceType);
-
+        fetch('{{ url('admin-data/document/settings/placeHolderImage') }}', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(response) {
+            return response.json();
+        }).then(function(result) {
+            if (result.data && result.data.image) {
+                placeholderImage = result.data.image;
             }
+        }).catch(function() {});
 
-        });
+        fetch('{{ url('admin-data/document/settings/DriverNearBy') }}', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(response) {
+            return response.json();
+        }).then(function(result) {
+            var radios = result.data || {};
+            if (radios.hasOwnProperty('distanceType')) {
+                $("#set_distance_type").text(radios.distanceType);
+            }
+        }).catch(function() {});
 
 
 
@@ -509,33 +496,32 @@
 
             jQuery("#data-table_processing").show();
 
-            services.get().then(async function(snapshots) {
-
-                snapshots.docs.forEach((listval) => {
-
-                    var data = listval.data();
-
+            fetch('{{ route('api.services') }}', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function(response) {
+                return response.json();
+            }).then(async function(result) {
+                (result.data || []).forEach(function(data) {
                     $('#service_type').append($("<option></option>")
-
                         .attr("value", data.name).attr("flag", data.flag)
-
                         .text(data.name));
-
-                })
-
-            })
-
-
-
-            ref.get().then(async function(snapshots) {
+                });
+            }).catch(function(err) {
+                console.error('Failed to load service types:', err);
+            });
 
 
 
-                if (snapshots.docs) {
+            fetch(adminDataDocumentUrl, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function(response) {
+                return response.json();
+            }).then(async function(result) {
+                var section = result.data;
 
-
-
-                    var section = snapshots.docs[0].data();
+                if (!section) {
+                    return;
+                }
 
                     $("#name").val(section.name);
 
@@ -691,11 +677,9 @@
 
                     }
 
-                }
-
-            })
-
-            jQuery("#data-table_processing").hide();
+            }).finally(function() {
+                jQuery("#data-table_processing").hide();
+            });
 
 
 
@@ -900,11 +884,30 @@ if (radiusServices.includes(service_type)) {
 
                     
 
-                    database.collection('sections').doc(id).update(sectionData).then(async function(result) {
+                    const upsertResponse = await fetch(adminDataUpsertUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            collection: 'sections',
+                            id: id,
+                            data: sectionData,
+                            merge: true,
+                        }),
+                    });
 
-                        window.location.href = '{{ route('section') }}';
+                    const upsertResult = await upsertResponse.json();
+                    if (!upsertResponse.ok || !upsertResult.success) {
+                        jQuery("#data-table_processing").hide();
+                        $(".error_top").show().html("<p>" + (upsertResult.message || 'Failed to update section.') + "</p>");
+                        window.scrollTo(0, 0);
+                        return;
+                    }
 
-                    })
+                    window.location.href = sectionListUrl;
 
 
                 }
@@ -972,50 +975,50 @@ if (radiusServices.includes(service_type)) {
         }
 
         async function storeImageData() {
-
             var newPhoto = '';
 
             try {
-
-                if (oldImageFile != "" && photo != oldImageFile) {
-
-                    try {
-                            await storage.storage.refFromURL(oldImageFile).delete();
-                        } catch (error) {
-                            console.log("ERR File delete ===", error);
-                        }
-}
-
-                if (photo != oldImageFile) {
-
-                    photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
-
-                    var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {
-                        contentType: 'image/jpg'
-                    });
-
-                    var downloadURL = await uploadTask.ref.getDownloadURL();
-
-                    newPhoto = downloadURL;
-
-                    photo = downloadURL;
-
-
-
-                } else {
-
-                    newPhoto = photo;
-
+                if (photo === oldImageFile || photo === '') {
+                    return oldImageFile || photo;
                 }
 
+                if (photo.startsWith('http://') || photo.startsWith('https://')) {
+                    return photo;
+                }
+
+                const mimeMatch = photo.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,/);
+                const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+                const blob = await fetch(photo).then(function(response) {
+                    return response.blob();
+                });
+
+                const formData = new FormData();
+                formData.append('file', blob, fileName || 'section-image');
+                formData.append('directory', 'sections');
+
+                const response = await fetch(adminDataUploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw result.message || 'Image upload failed.';
+                }
+
+                newPhoto = result.url;
+                photo = result.url;
             } catch (error) {
-
                 console.log("ERR ===", error);
-
+                throw error;
             }
 
             return newPhoto;
-
         }
 
 
