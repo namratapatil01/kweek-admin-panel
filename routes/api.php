@@ -1,39 +1,12 @@
 <?php
 
-<<<<<<< HEAD
-use Illuminate\Http\Request;
-=======
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
->>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-<<<<<<< HEAD
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-// Proxy for ArroPay API v2 auth login.
-// Example:
-// POST /api/v2/auth/login
-// body: {"apiSecret":"1234"}
-// ArroPay apiKey/apiSecret are loaded from Firebase settings/arropay_auth_settings.
-Route::post('v2/auth/login', [\App\Http\Controllers\ArroPayV2AuthApiController::class, 'login']);
-
-// ArroPay bank disbursement API (INSTAPAY / PESONET).
-=======
 | KWEEK REST API
 |--------------------------------------------------------------------------
 |
@@ -84,7 +57,6 @@ Route::prefix('v1')->group(function () {
 // Legacy ArroPay routes (payment gateway — not Firestore CRUD)
 Route::post('v2/auth/login', [\App\Http\Controllers\ArroPayV2AuthApiController::class, 'login']);
 
->>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
 Route::prefix('v1/disbursement')->group(function () {
     Route::post('banks', [\App\Http\Controllers\ArroPayDisbursementController::class, 'banks']);
     Route::post('initiatebankwithdraw', [\App\Http\Controllers\ArroPayDisbursementController::class, 'initiateBankWithdraw']);

@@ -2,14 +2,6 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Section extends Model
-{
-    use HasFactory;
-=======
 use App\Models\Concerns\KweekModel;
 
 class Section extends KweekModel
@@ -28,5 +20,4 @@ class Section extends KweekModel
     {
         return $this->hasMany(Vendor::class, 'section_id', 'id');
     }
->>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
 }

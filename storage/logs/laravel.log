@@ -21191,9 +21191,6 @@
 [2026-06-26 08:19:12] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
 [2026-06-26 09:29:44] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
 [2026-06-26 10:46:55] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
-<<<<<<< HEAD
-[2026-06-29 05:37:53] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
-=======
 [2026-06-29 09:43:30] production.ERROR: syntax error, unexpected token "public" {"exception":"[object] (ParseError(code: 0): syntax error, unexpected token \"public\" at /Users/sujiyan/Desktop/KWEEK/kweek-admin-panel/adminpanel/app/Http/Controllers/PayoutRequestController.php:144)
 [stacktrace]
 #0 /Users/sujiyan/Desktop/KWEEK/kweek-admin-panel/adminpanel/vendor/composer/ClassLoader.php(427): Composer\\Autoload\\{closure}('/Users/sujiyan/...')
@@ -21224,4 +21221,3 @@
 #25 /Users/sujiyan/Desktop/KWEEK/kweek-admin-panel/adminpanel/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
 #26 {main}
 "} 
->>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
