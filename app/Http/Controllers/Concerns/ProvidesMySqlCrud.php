@@ -45,6 +45,17 @@ trait ProvidesMySqlCrud
         return $this->moduleConfig()['route'];
     }
 
+    protected function indexRouteName(): string
+    {
+        $config = $this->moduleConfig();
+        $routeName = $this->routePrefix();
+        $indexRoute = $config['index_route'] ?? ($config['legacy_route'] ?? "{$routeName}.index");
+        if (!\Route::has($indexRoute) && \Route::has($routeName)) {
+            $indexRoute = $routeName;
+        }
+        return $indexRoute;
+    }
+
     protected function moduleViewData(array $extra = []): array
     {
         $config = $this->moduleConfig();
@@ -53,6 +64,7 @@ trait ProvidesMySqlCrud
             'module' => $config,
             'moduleSlug' => $this->moduleSlug(),
             'routePrefix' => $this->routePrefix(),
+            'indexRoute' => $this->indexRouteName(),
             'viewPrefix' => $this->viewPrefix(),
             'label' => $config['label'] ?? ucfirst($this->moduleSlug()),
             'columns' => $config['columns'] ?? [],
@@ -84,7 +96,7 @@ trait ProvidesMySqlCrud
             $this->crudService()->store($validated);
 
             return redirect()
-                ->route($this->routePrefix() . '.index')
+                ->route($this->indexRouteName())
                 ->with('success', trans('lang.saved_successfully'));
         } catch (Throwable $e) {
             Log::error(static::class . '@store', ['error' => $e->getMessage()]);
@@ -126,7 +138,7 @@ trait ProvidesMySqlCrud
             $this->crudService()->update($id, $validated);
 
             return redirect()
-                ->route($this->routePrefix() . '.index')
+                ->route($this->indexRouteName())
                 ->with('success', trans('lang.update_success'));
         } catch (Throwable $e) {
             Log::error(static::class . '@update', ['error' => $e->getMessage()]);
@@ -150,7 +162,7 @@ trait ProvidesMySqlCrud
             }
 
             return redirect()
-                ->route($this->routePrefix() . '.index')
+                ->route($this->indexRouteName())
                 ->with('success', trans('lang.delete_success'));
         } catch (Throwable $e) {
             Log::error(static::class . '@destroy', ['error' => $e->getMessage()]);
@@ -181,10 +193,19 @@ trait ProvidesMySqlCrud
 
             $filters = array_filter([
                 'search' => $search,
-                'section_id' => $request->input('section_id'),
-                'sectionId' => $request->input('sectionId') ?: $request->cookie('section_id'),
                 'status' => $request->input('status'),
             ]);
+
+            if ($this->moduleSlug() !== 'users') {
+                if ($request->filled('section_id')) {
+                    $filters['section_id'] = $request->input('section_id');
+                }
+                $secId = $request->input('sectionId') ?: $request->cookie('section_id');
+                if ($secId) {
+                    $filters['sectionId'] = $secId;
+                    $filters['section_id'] = $secId;
+                }
+            }
 
             $result = $this->crudService()->datatable($filters, $start, $length, $sortBy, $orderDir);
 
@@ -219,6 +240,18 @@ trait ProvidesMySqlCrud
         $id = $record->id;
         $row = [];
 
+        static $placeholderImage = null;
+        if ($placeholderImage === null) {
+            $placeholderImage = asset('images/default_user.png');
+            $placeholderRaw = \DB::table('settings')->where('id', 'placeHolderImage')->value('value');
+            if ($placeholderRaw) {
+                $decoded = json_decode($placeholderRaw, true);
+                if (!empty($decoded['image'])) {
+                    $placeholderImage = $decoded['image'];
+                }
+            }
+        }
+
         $canDelete = $this->userCanDeleteModule($config);
 
         $row[] = $canDelete
@@ -246,6 +279,16 @@ trait ProvidesMySqlCrud
                     : '<span class="badge badge-secondary">No</span>';
             } elseif (($column['type'] ?? null) === 'datetime' && $value) {
                 $row[] = e((string) $value);
+            } elseif (
+                in_array(strtolower($field), ['photo', 'image', 'coverimage', 'profilepictureurl', 'flag'], true) || 
+                (is_string($value) && preg_match('/\.(jpg|jpeg|png|gif|webp|svg)/i', $value)) ||
+                (is_string($value) && (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) && (str_contains($value, 'firebasestorage') || str_contains($value, 'storage/')))
+            ) {
+                if ($value) {
+                    $row[] = '<img class="rounded" style="width:50px; height:50px; object-fit:cover;" src="' . e($value) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">';
+                } else {
+                    $row[] = '<img class="rounded" style="width:50px; height:50px; object-fit:cover;" src="' . e($placeholderImage) . '" alt="placeholder">';
+                }
             } else {
                 $row[] = e((string) ($value ?? ''));
             }
