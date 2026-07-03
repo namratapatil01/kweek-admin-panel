@@ -71,10 +71,17 @@
             appHomeBanners.get().then(async function (snapshots) {
                 
                 var data = snapshots.data();
-                app_banners = data.banners;
-                if (Array.isArray(data.banners) && data.banners.length > 0) {
+                app_banners = data.banners || [];
+                if (typeof app_banners === 'string') {
+                    try {
+                        app_banners = JSON.parse(app_banners);
+                    } catch (e) {
+                        app_banners = [];
+                    }
+                }
+                if (Array.isArray(app_banners) && app_banners.length > 0) {
                     let banners_html = '';
-                    data.banners.forEach((photo) => {
+                    app_banners.forEach((photo) => {
                         photocount++;
                         banners_html = banners_html + '<span class="image-item" id="photo_' + photocount + '"><span class="remove-btn" data-id="' + photocount + '" data-img="' + photo + '" data-status="old"><i class="fa fa-remove"></i></span><img width="100px" id="" height="auto" src="' + photo + '" onerror="this.onerror=null;this.src=\'' + place_image + '\'"></span>';
                     })
