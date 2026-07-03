@@ -85,7 +85,6 @@ class DummyDriversSeeder extends Seeder
                 'isDocumentVerify'     => $isDocVerify,
                 'serviceType'          => $svcType,
                 'carName'              => $carModel,
-                'carMakes'             => $carMake,
                 'carNumber'            => $plateNum,
                 'carColor'             => $carColor,
                 'vehicleType'          => $vehType,

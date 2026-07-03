@@ -39,17 +39,17 @@ class DriverFormDropdownSeeder extends Seeder
         $rentSecId = !empty($rentalSections) ? $rentalSections[0] : null;
 
         $vTypes = [
-            ['id' => Str::uuid()->toString(), 'name' => 'Hatchback', 'sectionId' => $secId],
-            ['id' => Str::uuid()->toString(), 'name' => 'Sedan', 'sectionId' => $secId],
-            ['id' => Str::uuid()->toString(), 'name' => 'SUV', 'sectionId' => $secId],
-            ['id' => Str::uuid()->toString(), 'name' => 'Luxury', 'sectionId' => $secId],
+            ['id' => Str::uuid()->toString(), 'name' => 'Hatchback'],
+            ['id' => Str::uuid()->toString(), 'name' => 'Sedan'],
+            ['id' => Str::uuid()->toString(), 'name' => 'SUV'],
+            ['id' => Str::uuid()->toString(), 'name' => 'Luxury'],
         ];
         DB::table('vehicle_types')->insert($vTypes);
 
         $rTypes = [
-            ['id' => Str::uuid()->toString(), 'name' => 'Mini', 'sectionId' => $rentSecId],
-            ['id' => Str::uuid()->toString(), 'name' => 'Sedan', 'sectionId' => $rentSecId],
-            ['id' => Str::uuid()->toString(), 'name' => 'SUV 7-Seater', 'sectionId' => $rentSecId],
+            ['id' => Str::uuid()->toString(), 'name' => 'Mini'],
+            ['id' => Str::uuid()->toString(), 'name' => 'Sedan'],
+            ['id' => Str::uuid()->toString(), 'name' => 'SUV 7-Seater'],
         ];
         DB::table('rental_vehicle_types')->insert($rTypes);
     }
