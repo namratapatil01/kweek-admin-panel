@@ -12,7 +12,7 @@ class FileStorageService
     {
         $this->validateFile($file);
 
-        $disk = config('filesystems.default', 'local');
+        $disk = $visibility === 'public' ? 'public' : config('filesystems.default', 'local');
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $path = trim($directory, '/') . '/' . $filename;
 
@@ -34,7 +34,12 @@ class FileStorageService
 
     public function delete(string $path, ?string $disk = null): bool
     {
-        $disk = $disk ?? config('filesystems.default', 'local');
+        if ($disk === null) {
+            if (Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->delete($path);
+            }
+            $disk = config('filesystems.default', 'local');
+        }
 
         return Storage::disk($disk)->delete($path);
     }

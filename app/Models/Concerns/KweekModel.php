@@ -25,4 +25,15 @@ abstract class KweekModel extends Model
 
         return array_filter($data, static fn ($value) => $value !== null);
     }
+
+    public function getAttribute($key)
+    {
+        $value = parent::getAttribute($key);
+
+        if ($value === null && is_array($this->payload) && isset($this->payload[$key])) {
+            return $this->payload[$key];
+        }
+
+        return $value;
+    }
 }
