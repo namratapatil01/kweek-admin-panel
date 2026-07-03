@@ -32,7 +32,7 @@ class StoreModuleRequest extends FormRequest
                 $fieldRules[] = 'nullable';
             }
 
-            $fieldRules[] = match ($field['type'] ?? 'text') {
+            $typeRules = match ($field['type'] ?? 'text') {
                 'email' => 'email',
                 'number' => 'numeric',
                 'checkbox' => 'boolean',
@@ -40,6 +40,10 @@ class StoreModuleRequest extends FormRequest
                 'password' => 'string|min:6',
                 default => 'string',
             };
+
+            foreach (explode('|', $typeRules) as $r) {
+                $fieldRules[] = $r;
+            }
 
             $rules[$name] = $fieldRules;
         }
