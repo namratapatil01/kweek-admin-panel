@@ -26,7 +26,7 @@ class FirestoreSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         $settingsMap = [
-            'settings_0' => 'banners',
+            'settings_0' => 'AppHomeBanners',
             'settings_2' => 'rental_booking',
             'settings_3' => 'ContactUs',
             'settings_4' => 'DeliveryCharge',
@@ -198,6 +198,14 @@ class FirestoreSeeder extends Seeder
 
                 // Special override for settings table where all columns go into 'value'
                 if ($targetTable === 'settings') {
+                    foreach ($payload as $pKey => $pVal) {
+                        if (is_string($pVal) && isset($pVal[0]) && ($pVal[0] === '[' || $pVal[0] === '{')) {
+                            $decoded = json_decode($pVal, true);
+                            if (json_last_error() === JSON_ERROR_NONE) {
+                                $payload[$pKey] = $decoded;
+                            }
+                        }
+                    }
                     $attributes = [
                         'id' => $targetIdStr,
                         'value' => json_encode($payload),

@@ -4,7 +4,7 @@ return [
     'upload' => [
         'max_size_kb' => (int) env('KWEEK_UPLOAD_MAX_KB', 10240),
         'allowed_mimes' => [
-            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml',
             'application/pdf', 'video/mp4', 'video/webm',
         ],
     ],
