@@ -465,6 +465,7 @@ return [
     'users' => [
         'model' => \App\Models\AppUser::class,
         'table' => 'app_users',
+        'route' => 'users',
         'legacy_route' => 'users',
         'label' => 'Customers',
         'permission' => 'users',

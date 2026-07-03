@@ -3,6 +3,7 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
         function bridgeRequest(path, options) {
+            options = options || {};
             const headers = Object.assign({
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
@@ -29,22 +30,24 @@
             };
         }
 
-        function makeSnapshot(id, data) {
+        function makeSnapshot(id, data, collectionName) {
             const exists = data != null;
             return {
                 id: id,
                 exists: exists,
+                ref: makeDocRef(collectionName, id),
                 data: function () { return exists ? data : undefined; },
                 get: function (field) { return exists ? data[field] : undefined; },
             };
         }
 
-        function makeQuerySnapshot(docs) {
+        function makeQuerySnapshot(docs, collectionName) {
             const mapped = docs.map(function (row) {
                 const id = row.id || row._id || '';
                 return {
                     id: id,
                     exists: true,
+                    ref: makeDocRef(collectionName, id),
                     data: function () { return row; },
                     get: function (field) { return row[field]; },
                 };
@@ -74,7 +77,7 @@
                 path: collectionName + '/' + docId,
                 get: function () {
                     return bridgeRequest('/document/' + encodeURIComponent(collectionName) + '/' + encodeURIComponent(docId))
-                        .then(function (json) { return makeSnapshot(docId, json.data || null); });
+                        .then(function (json) { return makeSnapshot(docId, json.data || null, collectionName); });
                 },
                 set: function (data) {
                     return bridgeRequest('/upsert', {
@@ -140,7 +143,7 @@
                             startAt: options.startAt || null,
                             endAt: options.endAt || null,
                         }),
-                    }).then(function (json) { return makeQuerySnapshot(json.data || []); });
+                    }).then(function (json) { return makeQuerySnapshot(json.data || [], collectionName); });
                 },
                 onSnapshot: function (callback, errorCallback) {
                     let knownIds = new Set();
@@ -243,10 +246,28 @@
                             return new Blob([arr], { type: contentType });
                         })()
                         : new Blob([data], { type: contentType });
-                    const file = new File([blob], 'upload', { type: contentType });
+
+                    let filename = 'upload';
+                    let directory = path || 'images';
+                    const parts = (path || '').split('/');
+                    if (parts.length > 1) {
+                        filename = parts.pop();
+                        directory = parts.join('/');
+                    } else if (parts.length === 1 && parts[0] !== 'images' && parts[0] !== '') {
+                        filename = parts[0];
+                        directory = 'images';
+                    }
+                    if (filename.indexOf('.') === -1) {
+                        const ext = contentType.split('/')[1];
+                        if (ext && ext !== 'octet-stream') {
+                            filename += '.' + (ext === 'jpeg' ? 'jpg' : ext);
+                        }
+                    }
+
+                    const file = new File([blob], filename, { type: contentType });
                     const formData = new FormData();
                     formData.append('file', file);
-                    formData.append('directory', path || 'images');
+                    formData.append('directory', directory);
                     return bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
                         .then(function (json) {
                             const url = json.url;
@@ -258,9 +279,27 @@
                         });
                 },
                 put: function (file) {
+                        let filename = file.name;
+                        let directory = path || 'images';
+                        const parts = (path || '').split('/');
+                        if (parts.length > 1) {
+                            filename = parts.pop();
+                            directory = parts.join('/');
+                        } else if (parts.length === 1 && parts[0] !== 'images' && parts[0] !== '') {
+                            filename = parts[0];
+                            directory = 'images';
+                        }
+                        if (filename.indexOf('.') === -1) {
+                            const ext = file.type.split('/')[1];
+                            if (ext && ext !== 'octet-stream') {
+                                filename += '.' + (ext === 'jpeg' ? 'jpg' : ext);
+                            }
+                        }
+
+                        const targetFile = new File([file], filename, { type: file.type });
                         const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('directory', path || 'images');
+                        formData.append('file', targetFile);
+                        formData.append('directory', directory);
                         return bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
                             .then(function (json) {
                                 const url = json.url;

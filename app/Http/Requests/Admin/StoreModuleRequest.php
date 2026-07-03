@@ -32,14 +32,15 @@ class StoreModuleRequest extends FormRequest
                 $fieldRules[] = 'nullable';
             }
 
-            $fieldRules[] = match ($field['type'] ?? 'text') {
-                'email' => 'email',
-                'number' => 'numeric',
-                'checkbox' => 'boolean',
-                'json' => 'json',
-                'password' => 'string|min:6',
-                default => 'string',
+            $typeRules = match ($field['type'] ?? 'text') {
+                'email' => ['email'],
+                'number' => ['numeric'],
+                'checkbox' => ['boolean'],
+                'json' => ['json'],
+                'password' => ['string', 'min:6'],
+                default => ['string'],
             };
+            $fieldRules = array_merge($fieldRules, $typeRules);
 
             $rules[$name] = $fieldRules;
         }

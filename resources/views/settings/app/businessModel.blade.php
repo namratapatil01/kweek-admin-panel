@@ -464,17 +464,19 @@
 
                                 'On Demand Service') {
 
-                                return await database.collection('vendors').where('section_id',
+                                const snap = await database.collection('vendors').where('section_id',
 
                                     '==', sectionId).get();
+                                return snap.docs || [];
 
                             } else if (foodRestaurantType === 'all' && serviceType ==
 
                                 'On Demand Service') {
 
-                                return await database.collection('users').where('role', '==',
+                                const snap = await database.collection('users').where('role', '==',
 
                                     'provider').where('section_id','==', sectionId).get();
+                                return snap.docs || [];
 
                             } else {
 

@@ -17,7 +17,7 @@
         <div class="col-md-7 align-self-center">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
-                <li class="breadcrumb-item"><a href="{{ route($routePrefix . '.index') }}">{{ $label }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ route($indexRoute) }}">{{ $label }}</a></li>
                 <li class="breadcrumb-item active">{{ $isEdit ? trans('lang.edit') : trans('lang.create') }}</li>
             </ol>
         </div>
@@ -45,7 +45,7 @@
                             @php
                                 $name = $field['name'];
                                 $type = $field['type'] ?? 'text';
-                                $value = old($name, $isEdit ? data_get($record, $name) : null);
+                                $value = old($name, $isEdit ? (data_get($record, $name) ?? data_get($record, "payload.{$name}")) : null);
                             @endphp
                             <div class="col-md-6 mb-3">
                                 <label class="control-label">{{ $field['label'] }}</label>
@@ -73,7 +73,10 @@
                                 @elseif(in_array($type, ['image', 'file'], true))
                                     <input type="file" name="{{ $name }}" class="form-control" accept="{{ $field['accept'] ?? 'image/*' }}">
                                     @if($isEdit && $value)
-                                        <small class="text-muted d-block mt-1">{{ $value }}</small>
+                                        <div class="mt-2">
+                                            <img src="{{ $value }}" class="rounded shadow-sm" style="max-width:150px; max-height:150px; object-fit:cover;" onerror="this.onerror=null;this.src='/images/default_user.png'">
+                                            <small class="text-muted d-block mt-1">{{ $value }}</small>
+                                        </div>
                                     @endif
                                 @else
                                     <input type="{{ $type }}" name="{{ $name }}" class="form-control" value="{{ $value }}">
@@ -84,7 +87,7 @@
 
                     <div class="form-group mt-3">
                         <button type="submit" class="btn btn-primary">{{ trans('lang.save') }}</button>
-                        <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary">{{ trans('lang.cancel') }}</a>
+                        <a href="{{ route($indexRoute) }}" class="btn btn-secondary">{{ trans('lang.cancel') }}</a>
                     </div>
                 </form>
             </div>
