@@ -55,7 +55,7 @@ class FileStorageService
     {
         $maxKb = (int) config('kweek.upload.max_size_kb', 10240);
         $allowed = config('kweek.upload.allowed_mimes', [
-            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml',
             'application/pdf', 'video/mp4',
         ]);
 

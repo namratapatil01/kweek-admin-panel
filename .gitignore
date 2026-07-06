@@ -1,20 +1,41 @@
+# Dependencies
 /node_modules
-/public/hot
-/public/storage
-/storage/*.key
 /vendor
+/adminpanel/vendor
+
+# Environment Files
 .env
 .env.backup
+/adminpanel/.env
+
+# Laravel Storage
+/public/storage
+/storage/*.key
+/adminpanel/storage
+
+# Laravel Log Files
+/storage/logs/*.log
+
+# Hot Reload
+/public/hot
+
+# PHPUnit Cache
 .phpunit.result.cache
+
+# Docker
 docker-compose.override.yml
+
+# Laravel Homestead
 Homestead.json
 Homestead.yaml
+
+# Package Manager Logs
 npm-debug.log
 yarn-error.log
+
+# IDE Settings
 /.idea
 /.vscode
-credentials.json
 
-/adminpanel/vendor
-/adminpanel/.env
-/adminpanel/storage
+# Credentials
+credentials.json

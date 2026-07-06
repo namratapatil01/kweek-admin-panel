@@ -21191,8 +21191,12 @@
 [2026-06-26 08:19:12] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
 [2026-06-26 09:29:44] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
 [2026-06-26 10:46:55] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
+<<<<<<< HEAD
 [2026-06-29 05:37:53] local.ERROR: DriverController@getMeta error: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'key' in 'where clause' (Connection: mysql, SQL: select `value` from `settings` where `key` = placeHolderImage limit 1)  
 [2026-07-03 06:43:06] local.ERROR: No application encryption key has been specified. {"exception":"[object] (Illuminate\\Encryption\\MissingAppKeyException(code: 0): No application encryption key has been specified. at C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:79)
+=======
+[2026-06-29 09:43:30] production.ERROR: syntax error, unexpected token "public" {"exception":"[object] (ParseError(code: 0): syntax error, unexpected token \"public\" at /Users/sujiyan/Desktop/KWEEK/kweek-admin-panel/adminpanel/app/Http/Controllers/PayoutRequestController.php:144)
+>>>>>>> f605f7be7e7bd4a5403f398761f566249ab6bf8a
 [stacktrace]
 #0 C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(320): Illuminate\\Encryption\\EncryptionServiceProvider->Illuminate\\Encryption\\{closure}('')
 #1 C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php(77): tap('', Object(Closure))
@@ -21239,6 +21243,7 @@
 #42 C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\server.php(21): require_once('C:\\\\Users\\\\Admin\\\\...')
 #43 {main}
 "} 
+<<<<<<< HEAD
 [2026-07-03 06:43:14] local.ERROR: No application encryption key has been specified. {"exception":"[object] (Illuminate\\Encryption\\MissingAppKeyException(code: 0): No application encryption key has been specified. at C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\vendor\\laravel\\framework\\src\\Illuminate\\Encryption\\EncryptionServiceProvider.php:79)
 [stacktrace]
 #0 C:\\Users\\Admin\\Desktop\\kweek\\kweek-admin-panel\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(320): Illuminate\\Encryption\\EncryptionServiceProvider->Illuminate\\Encryption\\{closure}('')
@@ -37953,3 +37958,6 @@
 #19 {main}
 >>>>>>> dfa32586849c6db2a3bda4e08419bf11d3238a8d
 "} 
+=======
+>>>>>>> 4c9a071090dc3b20faed875c7d70567ba65ae18f
+>>>>>>> f605f7be7e7bd4a5403f398761f566249ab6bf8a
