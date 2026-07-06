@@ -743,6 +743,7 @@ Route::middleware(['permission:providers,providers'])->group(function () {
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
+    Route::post('/providers/api/store-provider', [App\Http\Controllers\ProvidersController::class, 'storeProvider'])->name('providers.store-provider');
 });
 Route::middleware(['permission:providers,providers.edit'])->group(function () {
     Route::get('/providers/edit/{id}', [App\Http\Controllers\ProvidersController::class, 'edit'])->name('providers.edit');
