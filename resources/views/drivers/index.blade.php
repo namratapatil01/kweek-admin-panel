@@ -97,9 +97,10 @@
                 </div>
             </div>
         </div>
-    @endsection
+    </div>
+@endsection
 
-    @section('scripts')
+@section('scripts')
 
         <script type="text/javascript">
 
@@ -282,6 +283,4 @@
 
         </script>
 
-            var rows = document.getElementsByTagName("table")[0].rows;
-        </script>
     @endsection
