@@ -364,7 +364,7 @@
 
     var id = '<?php echo $id; ?>';
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
   
 
@@ -547,7 +547,7 @@
 
                     $('.total_count').text(0); 
 
-                    console.error("No data found in Firestore.");
+                    console.error("No data found in database.");
 
                     $('#data-table_processing').hide(); // Hide loader
 
@@ -756,7 +756,7 @@ $(function () {
 
                 draw: data.draw,
 
-                recordsTotal: totalRecords, // Total number of records in Firestore
+                recordsTotal: totalRecords, // Total number of records in database
 
                 recordsFiltered: totalRecords, // Number of records after filtering (if any)
 
@@ -768,7 +768,7 @@ $(function () {
 
         }).catch(function (error) {
 
-            console.error("Error fetching data from Firestore:", error);
+            console.error("Error fetching data from database:", error);
 
             $('#data-table_processing').hide(); // Hide loader
 
@@ -1498,7 +1498,7 @@ $(function () {
 
                                 'amount': parseFloat(priceadd),
 
-                                'date': kweekFirestore.FieldValue.serverTimestamp(),
+                                'date': kweekDb.FieldValue.serverTimestamp(),
 
                                 'id': wId,
 

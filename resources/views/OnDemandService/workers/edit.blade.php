@@ -162,12 +162,12 @@
 
 <script>
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var id = "<?php echo $id; ?>";
     var workersRef = database.collection('providers_workers').doc(id);
     var workerImagesCount = 0;
@@ -180,8 +180,8 @@
     var placeholder = database.collection('settings').doc('placeHolderImage');
     var allowed_file_size = '';
     var ownerId = '';
-    var storage = kweekStorage();
-    var storageRef = kweekStorage().ref('images');
+    var storage = kweekFileStore();
+    var storageRef = kweekFileStore().ref('images');
     var idOfProviderDetailPage="{{@$_GET['id']}}";
     var mapType = 'ONLINE';
     var section_id = getCookie('section_id');
@@ -324,7 +324,7 @@
 
                 await storeImageData().then(async (IMG) => {
 
-                    database.collection('providers_workers').doc(id).update({
+                    geoQuery.collection('providers_workers').doc(id).update({
                         'firstName': userFirstName,
                         'lastName': userLastName,
                         'email': email,
@@ -337,7 +337,7 @@
                         'latitude': latitude,
                         'longitude': longitude,
                         'providerId': providerId,
-                        coordinates: new kweekFirestore.GeoPoint(latitude, longitude),
+                        coordinates: new kweekDb.GeoPoint(latitude, longitude),
 
                     }).then(function (result) {
                         if(idOfProviderDetailPage!=''){

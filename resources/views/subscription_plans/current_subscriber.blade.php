@@ -56,7 +56,7 @@
 
     <script>
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var intRegex = /^\d+$/;
         var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
         var planId = '{{ $id }}';
@@ -109,7 +109,7 @@
                     $('#data-table_processing').show();
                     await subscriberListRef.orderBy('subscriptionExpiryDate', 'desc').get().then(async function(querySnapshot) {
                         if (querySnapshot.empty) {
-                            console.error("No data found in Firestore.");
+                            console.error("No data found in database.");
                             $('#data-table_processing').hide(); // Hide loader
                             callback({
                                 draw: data.draw,
@@ -192,7 +192,7 @@
                             data: records
                         });
                     }).catch(function(error) {
-                        console.error("Error fetching data from Firestore:", error);
+                        console.error("Error fetching data from database:", error);
                         $('#data-table_processing').hide();
                         callback({
                             draw: data.draw,

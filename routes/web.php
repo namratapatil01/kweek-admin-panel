@@ -33,7 +33,7 @@ Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/dashboard/{id?}/{type?}', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
-//customers (MySQL — CustomerController replaces Firebase UserController CRUD)
+//customers (MySQL — CustomerController)
 Route::middleware(['permission:users,users'])->group(function () {
     Route::get('/users', [App\Http\Controllers\CustomerController::class, 'index'])->name('users');
     Route::get('/users-list', [App\Http\Controllers\CustomerController::class, 'index'])->name('users.index');

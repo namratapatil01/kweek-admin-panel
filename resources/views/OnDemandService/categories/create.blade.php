@@ -90,7 +90,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('provider_categories');
     var ref_category = database.collection('provider_categories');
     var ref_sections = database.collection('sections');
@@ -187,7 +187,7 @@
             }
         });
     });
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
     async function storeImageData() {
         var newPhoto = '';
         try {

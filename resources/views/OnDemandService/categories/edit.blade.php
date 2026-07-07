@@ -86,7 +86,7 @@
 <script type="text/javascript">
 
     var id = "<?php echo $id;?>";
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref_category = database.collection('provider_categories');
     var ref_sections = database.collection('sections');
     var ref = database.collection('provider_categories').doc(id);
@@ -185,8 +185,8 @@
             }
         });
     });
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();

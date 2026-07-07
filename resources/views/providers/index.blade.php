@@ -96,7 +96,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('users').where("role", "==", "provider");
     if(section_id){
         ref = ref.where('section_id', 'in', [section_id, '']);
@@ -148,9 +148,9 @@
             var from = moment(daterangepicker.startDate).toDate();
             var to = moment(daterangepicker.endDate).toDate();
             if (from && to) { 
-                var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                var fromDate = kweekDb.Timestamp.fromDate(new Date(from));
                 ref = ref.where('createdAt', '>=', fromDate);
-                var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
+                var toDate = kweekDb.Timestamp.fromDate(new Date(to));
                 ref = ref.where('createdAt', '<=', toDate);
             }
         }
@@ -220,7 +220,7 @@
                 ref.get().then(async function (querySnapshot) {
                     if (querySnapshot.empty) {
                         $('.total_count').text(0);
-                        console.error("No data found in Firestore.");
+                        console.error("No data found in database.");
                         $('#data-table_processing').hide(); // Hide loader
                         callback({
                             draw: data.draw,
@@ -310,13 +310,13 @@
                     $('#data-table_processing').hide(); // Hide loader
                     callback({
                         draw: data.draw,
-                        recordsTotal: totalRecords, // Total number of records in Firestore
+                        recordsTotal: totalRecords, // Total number of records in database
                         recordsFiltered: totalRecords, // Number of records after filtering (if any)
                         filteredData: filteredRecords,
                         data: records // The actual data to display in the table
                     });
                 }).catch(function (error) {
-                    console.error("Error fetching data from Firestore:", error);
+                    console.error("Error fetching data from database:", error);
                     $('#data-table_processing').hide(); // Hide loader
                     callback({
                         draw: data.draw,

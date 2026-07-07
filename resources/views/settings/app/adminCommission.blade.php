@@ -61,7 +61,7 @@
 
 <script type="text/javascript">
     
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('settings').doc("AdminCommission");
     var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
 

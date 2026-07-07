@@ -93,15 +93,15 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-	var database = kweekFirestore();
+	var database = kweekDb();
 	var photo = "";
 	var fileName = "";
 	var oldImageFile = "";
 	var placeholderImage = '';
 	var id = "<?php echo $id; ?>";
 	var ref = database.collection('rental_vehicle_type').where('id', '==', id);
-	var storageRef = kweekStorage().ref('images');
-	var storage = kweekStorage();
+	var storageRef = kweekFileStore().ref('images');
+	var storage = kweekFileStore();
 	var placeholder = database.collection('settings').doc('placeHolderImage');
 	placeholder.get().then(async function (snapshotsimage) {
 		var placeholderImageData = snapshotsimage.data();

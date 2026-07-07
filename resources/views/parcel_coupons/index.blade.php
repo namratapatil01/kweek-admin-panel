@@ -95,7 +95,7 @@ if ($.inArray('parcel.coupons.delete', user_permissions) >= 0) {
             checkDeletePermission = true;
 }
 
-var database = kweekFirestore();
+var database = kweekDb();
 var offest = 1;
 var pagesize = 10;
 var end = null;
@@ -236,7 +236,7 @@ $(document).ready(function () {
                 });
 
             } catch (error) {
-                console.error("Error fetching data from Firestore:", error);
+                console.error("Error fetching data from database:", error);
                 $('#data-table_processing').hide();
                 callback({
                     draw: data.draw,

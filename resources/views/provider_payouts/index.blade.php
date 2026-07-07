@@ -117,7 +117,7 @@
 <script type="text/javascript">
 
 
-    var database = kweekFirestore();
+    var database = kweekDb();
     var id = '<?php echo $id; ?>';
 
     var intRegex = /^\d+$/;
@@ -203,7 +203,7 @@
             await ref.get().then(async function (querySnapshot) {
                 if (querySnapshot.empty) {
                     $('.total_count').text(0); 
-                    console.error("No data found in Firestore.");
+                    console.error("No data found in database.");
                     $('#data-table_processing').hide(); // Hide loader
                     callback({
                         draw: data.draw,
@@ -304,13 +304,13 @@ $(function () {
             $('#data-table_processing').hide(); // Hide loader
             callback({
                 draw: data.draw,
-                recordsTotal: totalRecords, // Total number of records in Firestore
+                recordsTotal: totalRecords, // Total number of records in database
                 recordsFiltered: totalRecords, // Number of records after filtering (if any)
                 filteredData: filteredRecords,
                 data: records // The actual data to display in the table
             });
         }).catch(function (error) {
-            console.error("Error fetching data from Firestore:", error);
+            console.error("Error fetching data from database:", error);
             $('#data-table_processing').hide(); // Hide loader
             callback({
                 draw: data.draw,

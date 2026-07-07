@@ -166,15 +166,15 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) { 
-                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekDb.Timestamp.fromDate(new Date(from));
                     ref = ref.where('createdAt', '>=', fromDate);
-                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekDb.Timestamp.fromDate(new Date(to));
                     ref = ref.where('createdAt', '<=', toDate);
                 }
             }
             $('#parcelTable').DataTable().ajax.reload();
         });
-    var database = kweekFirestore();
+    var database = kweekDb();
     var offest = 1;
     var pagesize = 10;
     var end = null;
@@ -359,7 +359,7 @@
                         data: formattedRecords
                     });
                 } catch (error) {
-                    console.error("Error fetching data from Firestore:", error);
+                    console.error("Error fetching data from database:", error);
                     $('#data-table_processing').hide();
                     callback({
                         draw: data.draw,

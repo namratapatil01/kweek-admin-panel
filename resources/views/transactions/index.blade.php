@@ -165,7 +165,7 @@
 @endsection
 @section('scripts')
     <script>
-        var database = kweekFirestore();
+        var database = kweekDb();
         var id = '<?php echo $id; ?>';
         var offest = 1;
         var pagesize = 10;

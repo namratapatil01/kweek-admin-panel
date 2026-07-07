@@ -160,7 +160,7 @@
 
     var id = "<?php echo $id; ?>";
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var ref = database.collection('settings').doc('languages');
 
@@ -178,9 +178,9 @@
 
     var oldImageFile = "";
 
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
 
-    var storage = kweekStorage();
+    var storage = kweekFileStore();
 
 
 

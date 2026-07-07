@@ -132,15 +132,15 @@
 
 <script type="text/javascript">
 
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref_sections = database.collection('sections');
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
 
     var sections_list = [];
     var photo = "";
     var fileName = '';
     var oldImageFile = "";
-    var storage = kweekStorage();
+    var storage = kweekFileStore();
 
     var id = "<?php echo $id; ?>";
     var ref = database.collection('popular_destinations').where("id", "==", id);

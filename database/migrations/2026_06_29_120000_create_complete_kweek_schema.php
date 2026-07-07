@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Complete KWEEK schema migrated from Firebase Firestore.
+ * Complete KWEEK schema for MySQL.
  *
  * PK strategy: string document IDs (Firebase-compatible, max 64 chars).
  * Hybrid storage: indexed scalar columns + JSON payload for nested/array fields.
@@ -318,22 +318,6 @@ return new class extends Migration
             });
         }
 
-        Schema::create('reports', function (Blueprint $table) {
-            $table->id();
-            $table->string('type', 64)->nullable()->index();
-            $table->string('source')->nullable();
-            $table->string('dest')->nullable();
-            $table->timestamp('createdAt')->nullable();
-            $table->json('payload')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('heartbeats', function (Blueprint $table) {
-            $table->id();
-            $table->timestamp('timestamp')->nullable();
-            $table->timestamps();
-        });
-
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
                 if (! Schema::hasColumn('users', 'role_id')) {
@@ -352,7 +336,6 @@ return new class extends Migration
     public function down(): void
     {
         $tables = [
-            'heartbeats', 'reports',
             'chat_worker', 'chat_store', 'chat_provider', 'chat_driver', 'chat_admin',
             'favorite_providers', 'favorite_services', 'favorite_items', 'favorite_vendors',
             'notifications', 'stories', 'withdraw_methods', 'referrals', 'ratings',

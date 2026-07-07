@@ -460,7 +460,7 @@
 
     var id = '<?php echo $id; ?>';
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var offest = 1;
 
