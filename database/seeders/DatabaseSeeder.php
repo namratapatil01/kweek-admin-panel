@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             DefaultSettingsSeeder::class,
             DriverFormDropdownSeeder::class,
             DummyDriversSeeder::class,
-            LegacyCollectionSeeder::class,
+            // One-time fs_* → MySQL migration. Run manually: php artisan db:seed --class=LegacyCollectionSeeder
             KweekBrandingSeeder::class,
             SectionSeeder::class,
             ServiceTypeSeeder::class,
