@@ -168,7 +168,7 @@
                 }
                 $(function() {
                     $('#datetimepicker1').datepicker({
-                        dateFormat: 'mm/dd/yyyy'
+                        format: 'mm/dd/yyyy'
                     });
                 });
 
@@ -217,21 +217,25 @@
                     if (coupon.hasOwnProperty("expiresAt")) {
 
                         try {
-                            var date1 = coupon.expiresAt.toDate().toDateString();
+                            var date1;
+                            if (typeof coupon.expiresAt.toDate === 'function') {
+                                date1 = coupon.expiresAt.toDate();
+                            } else {
+                                date1 = new Date(coupon.expiresAt);
+                            }
                             var date = new Date(date1);
                             var dd = String(date.getDate()).padStart(2, '0');
                             var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
                             var yyyy = date.getFullYear();
                             var expiresDate = mm + '/' + dd + '/' + yyyy;
                         } catch (err) {
-
+                            console.error("Error parsing expiresAt:", err);
                             var date1 = '';
                             var date = '';
                             var dd = '';
                             var mm = '';
                             var yyyy = '';
                             var expiresDate = '';
-
                         }
                         var $datepicker = $('.date_picker');
                         $datepicker.datepicker();
