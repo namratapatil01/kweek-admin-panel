@@ -253,11 +253,13 @@
                         if (searchValue) {
                             var date = '';
                             var time = '';
-                            if (childData.hasOwnProperty("expiresAt")) {
+                            if (childData.hasOwnProperty("expiresAt") && childData.expiresAt) {
                                 try {
-                                    date = childData.expiresAt.toDate().toDateString();
-                                    time = childData.expiresAt.toDate().toLocaleTimeString('en-US');
+                                    var expDate = typeof childData.expiresAt.toDate === 'function' ? childData.expiresAt.toDate() : new Date(childData.expiresAt);
+                                    date = expDate.toDateString();
+                                    time = expDate.toLocaleTimeString('en-US');
                                 } catch (err) {
+                                    console.error(err);
                                 }
                             }
                             var expireAt = date + '<br> ' + time;
@@ -283,10 +285,13 @@
 
                         if (orderByField === 'expiresAt') {
                             try {
-                                aValue = a[orderByField] ? new Date(a[orderByField].toDate()).getTime() : 0;
-                                bValue = b[orderByField] ? new Date(b[orderByField].toDate()).getTime() : 0;
+                                var aDate = a[orderByField] ? (typeof a[orderByField].toDate === 'function' ? a[orderByField].toDate() : new Date(a[orderByField])) : null;
+                                var bDate = b[orderByField] ? (typeof b[orderByField].toDate === 'function' ? b[orderByField].toDate() : new Date(b[orderByField])) : null;
+                                aValue = aDate ? aDate.getTime() : 0;
+                                bValue = bDate ? bDate.getTime() : 0;
                             } catch (err) {
-
+                                aValue = 0;
+                                bValue = 0;
                             }
                         }
                         if(orderByField === 'discount') {
@@ -455,12 +460,13 @@
         }
         var date = '';
         var time = '';
-        if (val.hasOwnProperty("expiresAt")) {
+        if (val.hasOwnProperty("expiresAt") && val.expiresAt) {
             try {
-                date = val.expiresAt.toDate().toDateString();
-                time = val.expiresAt.toDate().toLocaleTimeString('en-US');
+                var expDate = typeof val.expiresAt.toDate === 'function' ? val.expiresAt.toDate() : new Date(val.expiresAt);
+                date = expDate.toDateString();
+                time = expDate.toLocaleTimeString('en-US');
             } catch (err) {
-
+                console.error(err);
             }
             html.push('<td class="dt-time">' + date + '<br> ' + time + '</td>');
         } else {
