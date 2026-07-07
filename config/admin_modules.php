@@ -28,6 +28,9 @@ return [
     'taxes' => [
         'model' => \App\Models\Tax::class,
         'route' => 'tax',
+        'view' => 'taxes',
+        'index_route' => 'tax',
+        'legacy_route' => 'tax',
         'label' => 'Taxes',
         'permission' => 'tax',
         'searchable' => ['title', 'country', 'type'],
