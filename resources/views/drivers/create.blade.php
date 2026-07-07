@@ -272,6 +272,8 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     var section_id = '';
     var service_type = '';
+    var photo = '';
+    var fileName = '';
 
     // Zone, CarMake, CarModel, VehicleType are now from MySQL
 

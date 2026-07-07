@@ -33,14 +33,18 @@ class StoreModuleRequest extends FormRequest
             }
 
             $typeRules = match ($field['type'] ?? 'text') {
-                'email' => ['email'],
-                'number' => ['numeric'],
-                'checkbox' => ['boolean'],
-                'json' => ['json'],
-                'password' => ['string', 'min:6'],
-                default => ['string'],
+                'email' => 'email',
+                'number' => 'numeric',
+                'checkbox' => 'boolean',
+                'json' => 'json',
+                'password' => 'string|min:6',
+                default => 'string',
             };
             $fieldRules = array_merge($fieldRules, $typeRules);
+
+            foreach (explode('|', $typeRules) as $r) {
+                $fieldRules[] = $r;
+            }
 
             $rules[$name] = $fieldRules;
         }

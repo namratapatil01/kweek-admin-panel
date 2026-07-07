@@ -4,15 +4,18 @@
 
         function bridgeRequest(path, options) {
             options = options || {};
-            const headers = Object.assign({
+            const baseHeaders = {
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json',
-            }, options.headers || {});
+            };
             if (!(options.body instanceof FormData)) {
-                headers['Content-Type'] = 'application/json';
+                baseHeaders['Content-Type'] = 'application/json';
             }
-            return fetch(bridgeBase + path, Object.assign({ credentials: 'same-origin', headers }, options))
+            const headers = Object.assign({}, baseHeaders, options.headers || {});
+            const fetchOptions = Object.assign({ credentials: 'same-origin' }, options);
+            fetchOptions.headers = headers;
+            return fetch(bridgeBase + path, fetchOptions)
                 .then((response) => response.json());
         }
 
@@ -30,26 +33,61 @@
             };
         }
 
+        function deepConvertTimestamps(obj) {
+            if (obj === null || obj === undefined) return obj;
+            if (Array.isArray(obj)) {
+                return obj.map(deepConvertTimestamps);
+            }
+            if (typeof obj === 'object') {
+                if ((obj.seconds !== undefined || obj._seconds !== undefined) && 
+                    (obj.nanoseconds !== undefined || obj._nanoseconds !== undefined)) {
+                    const secs = obj.seconds !== undefined ? obj.seconds : obj._seconds;
+                    return makeTimestamp(new Date(secs * 1000));
+                }
+                
+                for (let key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        const val = obj[key];
+                        if (typeof val === 'string' && val.trim() !== '') {
+                            const isDateKey = /date|createdat|updatedat|expiresat|expiry/i.test(key);
+                            const isDateString = /^\d{4}-\d{2}-\d{2}/.test(val) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val);
+                            if (isDateKey || isDateString) {
+                                const parsed = Date.parse(val);
+                                if (!isNaN(parsed)) {
+                                    obj[key] = makeTimestamp(new Date(parsed));
+                                }
+                            }
+                        } else if (typeof val === 'object') {
+                            obj[key] = deepConvertTimestamps(val);
+                        }
+                    }
+                }
+            }
+            return obj;
+        }
+
         function makeSnapshot(id, data, collectionName) {
             const exists = data != null;
+            const convertedData = exists ? deepConvertTimestamps(data) : {};
             return {
                 id: id,
                 exists: exists,
                 ref: makeDocRef(collectionName, id),
-                data: function () { return exists ? data : undefined; },
-                get: function (field) { return exists ? data[field] : undefined; },
+                data: function () { return convertedData; },
+                get: function (field) { return convertedData[field]; },
             };
         }
 
         function makeQuerySnapshot(docs, collectionName) {
             const mapped = docs.map(function (row) {
                 const id = row.id || row._id || '';
+                const convertedRow = deepConvertTimestamps(row);
                 return {
                     id: id,
                     exists: true,
                     ref: makeDocRef(collectionName, id),
-                    data: function () { return row; },
-                    get: function (field) { return row[field]; },
+                    data: function () { return convertedRow; },
+                    get: function (field) { return convertedRow[field]; },
                 };
             });
             return {
@@ -229,6 +267,84 @@
         kweekFirestore.GeoPoint = kweekFirestoreApi.GeoPoint;
         kweekFirestore.Timestamp = kweekFirestoreApi.Timestamp;
 
+        function makeUploadTask(promise) {
+            let onProgress = null;
+            let onError = null;
+            let onComplete = null;
+            let completed = false;
+            let taskResult = null;
+            let taskError = null;
+
+            const task = {
+                on: function (event, progress, error, complete) {
+                    if (event === 'state_changed') {
+                        onProgress = progress;
+                        onError = error;
+                        onComplete = complete;
+                        
+                        if (completed) {
+                            if (taskError) {
+                                if (onError) onError(taskError);
+                            } else {
+                                if (onComplete) onComplete();
+                            }
+                        }
+                    }
+                },
+                then: function (onSuccess, onFailure) {
+                    return promise.then(onSuccess, onFailure);
+                },
+                catch: function (onFailure) {
+                    return promise.catch(onFailure);
+                },
+                snapshot: {
+                    bytesTransferred: 0,
+                    totalBytes: 100,
+                    ref: {
+                        getDownloadURL: function () {
+                            return promise.then(function (res) {
+                                return res.ref.getDownloadURL();
+                            });
+                        }
+                    }
+                },
+                ref: {
+                    getDownloadURL: function () {
+                        return promise.then(function (res) {
+                            return res.ref.getDownloadURL();
+                        });
+                    }
+                }
+            };
+
+            promise.then(
+                function (res) {
+                    completed = true;
+                    taskResult = res;
+                    task.snapshot.bytesTransferred = 100;
+                    task.snapshot.totalBytes = 100;
+                    task.snapshot.ref = res.ref;
+                    task.ref = res.ref;
+                    
+                    if (onProgress) {
+                        try { onProgress({ bytesTransferred: 100, totalBytes: 100 }); } catch (e) {}
+                    }
+                    if (onComplete) {
+                        try { onComplete(); } catch (e) {}
+                    }
+                },
+                function (err) {
+                    completed = true;
+                    taskError = err;
+                    if (onError) {
+                        try { onError(err); } catch (e) {}
+                    }
+                }
+            );
+
+            return task;
+        }
+
         function makeStorageRef(path) {
             return {
                 child: function (name) {
@@ -268,7 +384,8 @@
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('directory', directory);
-                    return bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
+                    
+                    const promise = bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
                         .then(function (json) {
                             const url = json.url;
                             return {
@@ -277,6 +394,7 @@
                                 },
                             };
                         });
+                    return makeUploadTask(promise);
                 },
                 put: function (file) {
                         let filename = file.name;
@@ -300,7 +418,8 @@
                         const formData = new FormData();
                         formData.append('file', targetFile);
                         formData.append('directory', directory);
-                        return bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
+                        
+                        const promise = bridgeRequest('/upload', { method: 'POST', body: formData, headers: {} })
                             .then(function (json) {
                                 const url = json.url;
                                 return {
@@ -309,24 +428,26 @@
                                     },
                                 };
                             });
+                        return makeUploadTask(promise);
                     },
                 };
         }
-        const kweekStorage = {
-            ref: function (path) { return makeStorageRef(path || 'images'); },
-            refFromURL: function (url) { return kweekStorage.storage.refFromURL(url); },
-            storage: {
-                ref: function (path) { return kweekStorage.ref(path); },
-                refFromURL: function (url) {
-                    return {
-                        delete: function () {
-                            return bridgeRequest('/delete-file', {
-                                method: 'POST',
-                                body: JSON.stringify({ url: url }),
-                            });
-                        },
-                    };
-                },
+        function kweekStorage() {
+            return kweekStorage;
+        }
+        kweekStorage.ref = function (path) { return makeStorageRef(path || 'images'); };
+        kweekStorage.refFromURL = function (url) { return kweekStorage.storage.refFromURL(url); };
+        kweekStorage.storage = {
+            ref: function (path) { return kweekStorage.ref(path); },
+            refFromURL: function (url) {
+                return {
+                    delete: function () {
+                        return bridgeRequest('/delete-file', {
+                            method: 'POST',
+                            body: JSON.stringify({ url: url }),
+                        });
+                    },
+                };
             },
         };
 

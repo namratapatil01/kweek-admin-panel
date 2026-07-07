@@ -36,12 +36,18 @@ Route::get('/dashboard/{id?}/{type?}', [App\Http\Controllers\HomeController::cla
 //customers (MySQL — CustomerController replaces Firebase UserController CRUD)
 Route::middleware(['permission:users,users'])->group(function () {
     Route::get('/users', [App\Http\Controllers\CustomerController::class, 'index'])->name('users');
+    Route::get('/users-list', [App\Http\Controllers\CustomerController::class, 'index'])->name('users.index');
+    Route::post('/users', [App\Http\Controllers\CustomerController::class, 'store'])->name('users.store');
 });
 Route::middleware(['permission:users,users.create'])->group(function () {
     Route::get('/users/create', [App\Http\Controllers\CustomerController::class, 'create'])->name('users.create');
 });
 Route::middleware(['permission:users,users.edit'])->group(function () {
     Route::get('/users/edit/{id}', [App\Http\Controllers\CustomerController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{id}', [App\Http\Controllers\CustomerController::class, 'update'])->name('users.update');
+});
+Route::middleware(['permission:users,users.delete'])->group(function () {
+    Route::delete('/users/{id}', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('users.destroy');
 });
 Route::middleware(['permission:users,users.view'])->group(function () {
     Route::get('/users/view/{id}', [App\Http\Controllers\CustomerController::class, 'show'])->name('users.view');
@@ -737,6 +743,7 @@ Route::middleware(['permission:providers,providers'])->group(function () {
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
+    Route::post('/providers/api/store-provider', [App\Http\Controllers\ProvidersController::class, 'storeProvider'])->name('providers.store-provider');
 });
 Route::middleware(['permission:providers,providers.edit'])->group(function () {
     Route::get('/providers/edit/{id}', [App\Http\Controllers\ProvidersController::class, 'edit'])->name('providers.edit');
