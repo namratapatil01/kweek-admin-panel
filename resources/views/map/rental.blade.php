@@ -67,7 +67,7 @@
     <script type="text/javascript">
 
         var section_id = getCookie('section_id') || '';
-        var database = kweekFirestore();
+        var database = kweekDb();
         var map;
         var marker;
         var markers = [];
@@ -76,7 +76,7 @@
         var mapType = 'ONLINE';
 
         $(document).ready(function () {
-            var database = kweekFirestore();
+            var database = kweekDb();
              database.collection('sections').where('id','==',section_id).get().then(async function (snapshots) {
                 if (snapshots.docs.length > 0) {
                     snapshots.docs.forEach((doc) => {

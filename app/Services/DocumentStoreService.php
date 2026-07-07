@@ -377,7 +377,41 @@ class DocumentStoreService
 
         if (in_array($op, ['!=', 'NOT_EQUAL'], true)) {
             $query->where($column, '!=', $value);
+
+            return;
         }
+
+        $comparisonMap = [
+            '>=' => '>=',
+            '<=' => '<=',
+            '>' => '>',
+            '<' => '<',
+            'GREATER_THAN_OR_EQUAL' => '>=',
+            'LESS_THAN_OR_EQUAL' => '<=',
+        ];
+
+        if (isset($comparisonMap[$op])) {
+            $query->where($column, $comparisonMap[$op], $this->normalizeFilterValue($value));
+
+            return;
+        }
+    }
+
+    protected function normalizeFilterValue(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (isset($value['seconds'])) {
+            return date('Y-m-d H:i:s', (int) $value['seconds']);
+        }
+
+        if (isset($value['_seconds'])) {
+            return date('Y-m-d H:i:s', (int) $value['_seconds']);
+        }
+
+        return $value;
     }
 
     protected function resolveColumn(string $field, array $columns): string
@@ -409,6 +443,13 @@ class DocumentStoreService
         $payload = $row['payload'] ?? null;
         if (is_string($payload)) {
             $payload = json_decode($payload, true);
+        }
+
+        if (empty($row['createdAt']) && !empty($row['created_at'])) {
+            $row['createdAt'] = $row['created_at'];
+        }
+        if (empty($row['updatedAt']) && !empty($row['updated_at'])) {
+            $row['updatedAt'] = $row['updated_at'];
         }
 
         unset($row['payload'], $row['created_at'], $row['updated_at']);

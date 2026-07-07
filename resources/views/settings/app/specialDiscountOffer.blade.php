@@ -36,7 +36,7 @@
 @endsection
 @section('scripts')
 <script type="text/javascript">
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('settings').doc("specialDiscountOffer");
     var photo = "";
     $(document).ready(function () {

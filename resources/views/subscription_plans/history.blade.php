@@ -175,7 +175,7 @@
     <script>
         
         var section_id = getCookie('section_id') || '';
-        var database = kweekFirestore();
+        var database = kweekDb();
         var intRegex = /^\d+$/;
         var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
         var refData = database.collection('subscription_history');
@@ -395,7 +395,7 @@
                             data: records
                         });
                     }).catch(function(error) {
-                        console.error("Error fetching data from Firestore:", error);
+                        console.error("Error fetching data from database:", error);
                         $('#data-table_processing').hide();
                         callback({
                             draw: data.draw,

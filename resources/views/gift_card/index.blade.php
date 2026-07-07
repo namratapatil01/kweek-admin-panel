@@ -92,7 +92,7 @@
     if ($.inArray('gift-card.delete', user_permissions) >= 0) {
         checkDeletePermission = true;
     }
-    var database = kweekFirestore();
+    var database = kweekDb();
     var offest = 1;
     var pagesize = 10;
     var ref = database.collection('gift_cards');

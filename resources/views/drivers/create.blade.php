@@ -272,6 +272,8 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     var section_id = '';
     var service_type = '';
+    var photo = '';
+    var fileName = '';
 
     // Zone, CarMake, CarModel, VehicleType are now from MySQL
 
@@ -613,7 +615,7 @@ foreach ($countries as $keycountry => $valuecountry) {
         });
     });
 
-    // var storageRef = kweekStorage().ref('images'); // Firebase removed
+    // var storageRef = kweekFileStore().ref('images'); // MySQL only
     function handleFileSelect(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();
@@ -650,7 +652,7 @@ foreach ($countries as $keycountry => $valuecountry) {
         newPhoto['profile'] = '';
         try {
             if (photo != "") {
-                // Return base64 string directly to save in MySQL (bypassing Firebase Storage)
+                // Return base64 string directly to save in MySQL (bypassing MySQL file storage)
                 newPhoto['profile'] = photo;
             }
         } catch (error) {

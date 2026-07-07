@@ -194,7 +194,7 @@
 
         <script>
 
-            var database = kweekFirestore();
+            var database = kweekDb();
 
             var restaurant = database.collection('settings').doc("vendor");
 

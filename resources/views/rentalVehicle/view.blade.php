@@ -190,7 +190,7 @@
 <script type="text/javascript">
 
     var id = "<?php echo $id;?>";
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('users').where("id", "==", id);
     var photo = "";
     var vendorOwnerId = "";

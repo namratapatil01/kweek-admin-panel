@@ -67,7 +67,7 @@
 @section('scripts')
 <script>
     var id = "<?php echo $id;?>";
-    var database = kweekFirestore();
+    var database = kweekDb();
     var allDriver = database.collection('users').where('role','==','driver');
     var ref = database.collection('users').where("id", "==", id);
     var docsRef = database.collection('documents').where('enable', '==', true).where('type','==','driver');

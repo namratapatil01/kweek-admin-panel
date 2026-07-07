@@ -307,8 +307,8 @@
         var photo = "";
         var fileName = '';
         var oldProfileFile = '';
-        // var storage = kweekStorage();
-        // var storageRef = kweekStorage().ref('images');
+        // var storage = kweekFileStore();
+        // var storageRef = kweekFileStore().ref('images');
 
         // Settings, currencies, services, sections — from MySQL
         var placeholderImage = '';
@@ -763,7 +763,7 @@
             newPhoto['profile'] = '';
             if (photo != '' && photo != oldProfileFile) {
                 try {
-                    // Bypass Firebase Storage completely due to missing API keys
+                    // Bypass MySQL file storage completely due to missing API keys
                     // and just return the base64 string directly to backend
                     newPhoto['profile'] = photo;
                 } catch (error) {

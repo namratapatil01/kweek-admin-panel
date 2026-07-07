@@ -52,7 +52,7 @@
 
 <script type="text/javascript">
 
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('vendor_attributes');
 var id_attribute = "<?php echo uniqid();?>";
 var attribute_length=1;

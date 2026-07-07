@@ -81,7 +81,7 @@
 <script type="text/javascript">
 
 var id = "<?php echo $id;?>";
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('notifications').where("id", "==", id);
 var users = database.collection('users').where("fcmToken", "!=", "");
 var pagesize = 20;
@@ -162,7 +162,7 @@ $(document).ready(function () {
                             message: message,
                             subject: subject,
                             role: role,
-                            createdAt: kweekFirestore.FieldValue.serverTimestamp()
+                            createdAt: kweekDb.FieldValue.serverTimestamp()
                         });
                         $(".success_top").show();
                         $(".success_top").html("");

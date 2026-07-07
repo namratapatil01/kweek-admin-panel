@@ -79,7 +79,7 @@
 @endsection
 @section('scripts')
 <script type="text/javascript">
-    var database = kweekFirestore();
+    var database = kweekDb();
     var offest = 1;
     var pagesize = 10; 
     var end = null;

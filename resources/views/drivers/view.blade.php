@@ -269,8 +269,8 @@
             $(".currentCurrency").text(currentCurrency);
         });
 
-        // Email templates still from Firestore (no MySQL table yet)
-        var database = kweekFirestore();
+        // Email templates still from database (no MySQL table yet)
+        var database = kweekDb();
         var email_templates = database.collection('email_templates').where('type', '==', 'wallet_topup');
 
         $(document).ready(async function () {
@@ -429,7 +429,7 @@
         });
         // });
         $("#add-wallet-btn").click(function () {
-            var date = kweekFirestore.FieldValue.serverTimestamp();
+            var date = kweekDb.FieldValue.serverTimestamp();
             var amount = $('#amount').val();
             if (amount == '' || amount <= 0) {
                 $('#wallet_error').text('{{trans("lang.add_wallet_amount_error")}}');

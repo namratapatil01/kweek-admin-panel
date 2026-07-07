@@ -243,7 +243,7 @@
 @section('scripts')
     <script type="text/javascript">
         var id = "{{$id}}";        
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref = database.collection('users').where("id", "==", id);
         var photo = "";
         var vendorOwnerId = "";
@@ -415,7 +415,7 @@
         });
         // });
         $("#add-wallet-btn").click(function () {
-            var date = kweekFirestore.FieldValue.serverTimestamp();
+            var date = kweekDb.FieldValue.serverTimestamp();
             var amount = $('#amount').val();
             if (amount == '' || amount <= 0) {
                 $('#wallet_error').text('{{trans("lang.add_wallet_amount_error")}}');

@@ -12,7 +12,14 @@ class ProviderOrder extends KweekModel
         'payload' => 'array',
         'taxSetting' => 'array',
         'author' => 'array',
+        'driver' => 'array',
+        'vendor' => 'array',
         'provider' => 'array',
+        'products' => 'array',
+        'address' => 'array',
+        'receiver' => 'array',
+        'sender' => 'array',
+        'rejectedByDrivers' => 'array',
         'createdAt' => 'datetime',
     ];
 }

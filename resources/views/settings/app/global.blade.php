@@ -758,7 +758,7 @@
 
 @section('scripts')
     <script type="text/javascript">
-        var database = kweekFirestore();
+        var database = kweekDb();
 
         var ref = database.collection('settings').doc("globalSettings");
 
@@ -1799,7 +1799,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-        var storageRef = kweekStorage().ref('images');
+        var storageRef = kweekFileStore().ref('images');
 
 
 
@@ -2149,7 +2149,7 @@ if (globalSettings.defaultCountryCode) {
 
                     var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
 
-                    var uploadTask = kweekStorage().ref('/').child(filename).put(theFile);
+                    var uploadTask = kweekFileStore().ref('/').child(filename).put(theFile);
 
                     uploadTask.on('state_changed', function(snapshot) {
 

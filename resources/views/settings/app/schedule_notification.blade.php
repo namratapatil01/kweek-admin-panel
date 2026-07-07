@@ -60,7 +60,7 @@
     @endsection
     @section('scripts')
     <script>
-        var database=kweekFirestore();
+        var database=kweekDb();
         var ref=database.collection('settings').doc("scheduleOrderNotification");
        
         $(document).ready(function() {

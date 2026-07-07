@@ -293,7 +293,7 @@
 
         var active_id = "{{$id}}";
         var active_type = "{{$type}}";
-        var db = kweekFirestore();
+        var db = kweekDb();
         var currency = db.collection('settings');
 
         var currentCurrency = '';
@@ -439,11 +439,11 @@
                 endOfLastPeriod = new Date(startOfThisPeriod.getTime() - 1);
             }
 
-            // Firestore timestamps
-            const startTS = kweekFirestore.Timestamp.fromDate(startOfThisPeriod);
-            const endTS = kweekFirestore.Timestamp.fromDate(endOfThisPeriod);
-            const startLastTS = startOfLastPeriod ? kweekFirestore.Timestamp.fromDate(startOfLastPeriod) : null;
-            const endLastTS = endOfLastPeriod ? kweekFirestore.Timestamp.fromDate(endOfLastPeriod) : null;
+            // database timestamps
+            const startTS = kweekDb.Timestamp.fromDate(startOfThisPeriod);
+            const endTS = kweekDb.Timestamp.fromDate(endOfThisPeriod);
+            const startLastTS = startOfLastPeriod ? kweekDb.Timestamp.fromDate(startOfLastPeriod) : null;
+            const endLastTS = endOfLastPeriod ? kweekDb.Timestamp.fromDate(endOfLastPeriod) : null;
 
             let ordersQuery = db.collection('vendor_orders')
                 .where('status', 'in', ["Order Completed"])
@@ -744,18 +744,18 @@
             if (filterType === 'year' && year) {
                 let startOfYear = new Date(year, 0, 1);
                 let endOfYear = new Date(year, 11, 31, 23, 59, 59);
-                startTS = kweekFirestore.Timestamp.fromDate(startOfYear);
-                endTS = kweekFirestore.Timestamp.fromDate(endOfYear);
+                startTS = kweekDb.Timestamp.fromDate(startOfYear);
+                endTS = kweekDb.Timestamp.fromDate(endOfYear);
             } else if (filterType === 'month' && year && month) {
                 let startOfMonth = new Date(year, month - 1, 1);
                 let endOfMonth = new Date(year, month, 0, 23, 59, 59);
-                startTS = kweekFirestore.Timestamp.fromDate(startOfMonth);
-                endTS = kweekFirestore.Timestamp.fromDate(endOfMonth);
+                startTS = kweekDb.Timestamp.fromDate(startOfMonth);
+                endTS = kweekDb.Timestamp.fromDate(endOfMonth);
             } else if (filterType === 'custom' && startDate && endDate) {
                 let start = toStartOfDay(startDate);
                 let end = toEndOfDay(endDate);
-                startTS = kweekFirestore.Timestamp.fromDate(start);
-                endTS = kweekFirestore.Timestamp.fromDate(end);
+                startTS = kweekDb.Timestamp.fromDate(start);
+                endTS = kweekDb.Timestamp.fromDate(end);
             }
 
             const statuses = {
@@ -798,14 +798,14 @@
             let startTS = null;
             let endTS = null;
             if (filterType === 'year' && year) {
-                startTS = kweekFirestore.Timestamp.fromDate(new Date(year, 0, 1));
-                endTS = kweekFirestore.Timestamp.fromDate(new Date(year, 11, 31, 23, 59, 59));
+                startTS = kweekDb.Timestamp.fromDate(new Date(year, 0, 1));
+                endTS = kweekDb.Timestamp.fromDate(new Date(year, 11, 31, 23, 59, 59));
             } else if (filterType === 'month' && year && month) {
-                startTS = kweekFirestore.Timestamp.fromDate(new Date(year, month - 1, 1));
-                endTS = kweekFirestore.Timestamp.fromDate(new Date(year, month, 0, 23, 59, 59));
+                startTS = kweekDb.Timestamp.fromDate(new Date(year, month - 1, 1));
+                endTS = kweekDb.Timestamp.fromDate(new Date(year, month, 0, 23, 59, 59));
             } else if (filterType === 'custom' && startDate && endDate) {
-                startTS = kweekFirestore.Timestamp.fromDate(toStartOfDay(startDate));
-                endTS = kweekFirestore.Timestamp.fromDate(toEndOfDay(endDate));
+                startTS = kweekDb.Timestamp.fromDate(toStartOfDay(startDate));
+                endTS = kweekDb.Timestamp.fromDate(toEndOfDay(endDate));
             }
 
             const append_listvendors = document.getElementById('append_list');
@@ -1322,11 +1322,11 @@
                 endOfThisPeriod = toEndOfDay(endDate);
             }
 
-            // Firestore Timestamps
-            const startThisTS = kweekFirestore.Timestamp.fromDate(startOfThisPeriod);
-            const endThisTS = kweekFirestore.Timestamp.fromDate(endOfThisPeriod);
-            const startLastTS = startOfLastPeriod ? kweekFirestore.Timestamp.fromDate(startOfLastPeriod) : null;
-            const endLastTS = endOfLastPeriod ? kweekFirestore.Timestamp.fromDate(endOfLastPeriod) : null;
+            // database timestamps
+            const startThisTS = kweekDb.Timestamp.fromDate(startOfThisPeriod);
+            const endThisTS = kweekDb.Timestamp.fromDate(endOfThisPeriod);
+            const startLastTS = startOfLastPeriod ? kweekDb.Timestamp.fromDate(startOfLastPeriod) : null;
+            const endLastTS = endOfLastPeriod ? kweekDb.Timestamp.fromDate(endOfLastPeriod) : null;
 
             Promise.all([
                 // All-time

@@ -786,11 +786,11 @@
 
                         if (from && to) {
 
-                            var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                            var fromDate = kweekDb.Timestamp.fromDate(new Date(from));
 
                             ref = ref.where('createdAt', '>=', fromDate);
 
-                            var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
+                            var toDate = kweekDb.Timestamp.fromDate(new Date(to));
 
                             ref = ref.where('createdAt', '<=', toDate);
 
@@ -822,7 +822,7 @@
 
 
 
-                var database = kweekFirestore();
+                var database = kweekDb();
 
                 var offest = 1;
 
@@ -846,9 +846,9 @@
 
                 endOfToday.setHours(23, 59, 59, 999);
 
-                var startTimestamp = kweekFirestore.Timestamp.fromDate(startOfToday);
+                var startTimestamp = kweekDb.Timestamp.fromDate(startOfToday);
 
-                var endTimestamp = kweekFirestore.Timestamp.fromDate(endOfToday);
+                var endTimestamp = kweekDb.Timestamp.fromDate(endOfToday);
 
                 if (id != '') {
 
@@ -1552,7 +1552,7 @@
 
                             } catch (error) {
 
-                                console.error("Error fetching data from Firestore:", error);
+                                console.error("Error fetching data from database:", error);
 
                                 $('#data-table_processing').hide();
 

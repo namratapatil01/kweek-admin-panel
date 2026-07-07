@@ -13,9 +13,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
+            SuperAdminPermissionsSeeder::class,
+            DefaultSettingsSeeder::class,
             DriverFormDropdownSeeder::class,
             DummyDriversSeeder::class,
-            FirestoreSeeder::class,
+            // One-time fs_* → MySQL migration. Run manually: php artisan db:seed --class=LegacyCollectionSeeder
+            KweekBrandingSeeder::class,
             SectionSeeder::class,
             ServiceTypeSeeder::class,
         ]);

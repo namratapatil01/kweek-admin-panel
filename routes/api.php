@@ -54,7 +54,7 @@ Route::prefix('v1')->group(function () {
     });
 });
 
-// Legacy ArroPay routes (payment gateway — not Firestore CRUD)
+// Legacy ArroPay routes (payment gateway)
 Route::post('v2/auth/login', [\App\Http\Controllers\ArroPayV2AuthApiController::class, 'login']);
 
 Route::prefix('v1/disbursement')->group(function () {

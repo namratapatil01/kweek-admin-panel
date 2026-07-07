@@ -168,7 +168,7 @@
         var section_id = getCookie('section_id') || '';
         var sectionType = getCookie('service_type') || '';                                                       
                      
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref;
         var id = "{{ $id }}";
         if (id != '') {
@@ -272,9 +272,9 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) {
-                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekDb.Timestamp.fromDate(new Date(from));
                     refData = refData.where('createdAt', '>=', fromDate);
-                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekDb.Timestamp.fromDate(new Date(to));
                     refData = refData.where('createdAt', '<=', toDate);
                 }
             }
@@ -378,7 +378,7 @@
                         const querySnapshot = await ref.orderBy('createdAt', 'desc').get();
                         if (!querySnapshot || querySnapshot.empty) {
                             $('.total_count').text(0);
-                            console.error("No data found in Firestore.");
+                            console.error("No data found in database.");
                             $('#data-table_processing').hide(); // Hide loader
                             callback({
                                 draw: data.draw,
@@ -485,7 +485,7 @@
                             data: formattedRecords
                         });
                     } catch (error) {
-                        console.error("Error fetching data from Firestore:", error);
+                        console.error("Error fetching data from database:", error);
                         jQuery('#overlay').hide();
                         callback({
                             draw: data.draw,

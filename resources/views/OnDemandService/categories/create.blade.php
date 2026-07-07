@@ -90,7 +90,7 @@
 <script type="text/javascript">
 
     var section_id = getCookie('section_id') || '';
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('provider_categories');
     var ref_category = database.collection('provider_categories');
     var ref_sections = database.collection('sections');
@@ -106,19 +106,39 @@
     })
     $(document).ready(function () {
 
-        ref_category.where('parentCategoryId', '==', null).where('sectionId', '==', section_id).get().then(async function (snapshots) {
-            if (snapshots.docs.length > 0) {
-                $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    $('#parent_category_id').append($("<option></option>")
-                        .attr("value", data.id)
-                        .text(data.title));
-                });
-            } else {
-                $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
-            }
-        });
+        if (section_id) {
+            ref_category.where('parentCategoryId', '==', null).where('sectionId', '==', section_id).get().then(async function (snapshots) {
+                if (snapshots.docs.length > 0) {
+                    $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#parent_category_id').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.title));
+                    });
+                } else {
+                    $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
+                }
+            }).catch(function(error) {
+                console.error('Error loading categories:', error);
+            });
+        } else {
+            ref_category.where('parentCategoryId', '==', null).get().then(async function (snapshots) {
+                if (snapshots.docs.length > 0) {
+                    $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#parent_category_id').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.title));
+                    });
+                } else {
+                    $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
+                }
+            }).catch(function(error) {
+                console.error('Error loading categories:', error);
+            });
+        }
         
         jQuery("#data-table_processing").show();
         ref.get().then(async function (snapshots) {
@@ -167,7 +187,7 @@
             }
         });
     });
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
     async function storeImageData() {
         var newPhoto = '';
         try {

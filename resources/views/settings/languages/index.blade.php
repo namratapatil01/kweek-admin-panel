@@ -91,7 +91,7 @@
 
 <script type="text/javascript">
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
 
 

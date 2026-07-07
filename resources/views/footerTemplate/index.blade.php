@@ -110,7 +110,7 @@
 
 
 
-var database = kweekFirestore();
+var database = kweekDb();
 
 var photo = "";
 

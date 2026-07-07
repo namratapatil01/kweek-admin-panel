@@ -190,7 +190,7 @@
 
 
 
-        var database = kweekFirestore();
+        var database = kweekDb();
 
 
 
@@ -214,7 +214,7 @@
 
 
 
-            var database = kweekFirestore();
+            var database = kweekDb();
              database.collection('sections').where('id','==',section_id).get().then(async function (snapshots) {
 
                 if (snapshots.docs.length > 0) {

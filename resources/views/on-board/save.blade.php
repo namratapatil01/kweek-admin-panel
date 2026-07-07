@@ -176,15 +176,15 @@
 
 
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
 
 
     var requestId = "{{$id}}";
 
-     var storage = kweekStorage();
+     var storage = kweekFileStore();
 
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
 
     var photo = "";
 

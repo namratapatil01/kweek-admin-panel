@@ -104,7 +104,7 @@
 
     var section_id = getCookie('section_id') || '';
     var id = "<?php echo $id; ?>";
-    var database = kweekFirestore();
+    var database = kweekDb();
     
     var ref = database.collection('vendor_categories').where("id", "==", id);
     var ref_review_attributes = database.collection('review_attributes');
@@ -115,8 +115,8 @@
     var catImageFile = "";
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storage = kweekStorage();
-    var storageRef = kweekStorage().ref('images');
+    var storage = kweekFileStore();
+    var storageRef = kweekFileStore().ref('images');
     var order = 0;
     let sectionData = '';
 

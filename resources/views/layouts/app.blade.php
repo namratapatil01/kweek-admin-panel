@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="kweek-data-bridge" content="{{ url('admin-data') }}">
+    <meta name="kweek-mysql-api" content="{{ url('admin-data') }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('images/kweek_icon.png') }}">
     <!-- Fonts -->
@@ -156,24 +156,29 @@
             }
         });
     </script>
-    <script src="{{ asset('js/kweek-data-bridge.js') }}"></script>
+    <script src="{{ asset('js/kweek-mysql-client.js') }}"></script>
     <script type="text/javascript">
 
         var languages_list_main = [];
-        var database = window.kweekFirestore();
-        var geoFirestore = window.kweekGeoFirestore;
-        var createdAtman = window.kweekFirestore.Timestamp.fromDate(new Date());
+        var database = window.kweekDb();
+        var geoQuery = window.kweekGeoQuery;
+        var createdAtman = window.kweekDb.Timestamp.fromDate(new Date());
         var createdAt = { _nanoseconds: createdAtman.nanoseconds, _seconds: createdAtman.seconds };
         var mapType = 'ONLINE';
 
         var sosInitialized = false; 
         database.collection('SOS').onSnapshot((snapshot) => {
-            if (!sosInitialized) {               
+            if (!sosInitialized) {
                 sosInitialized = true;
                 return;
             }
 
-            snapshot.docChanges().forEach((change) => {
+            const changes = snapshot.docChanges ? snapshot.docChanges() : [];
+            if (!Array.isArray(changes)) {
+                return;
+            }
+
+            changes.forEach((change) => {
                 if (change.type === "added") {
                     var data = change.doc.data();
                     Swal.fire({
@@ -193,17 +198,23 @@
         
         var ref = database.collection('settings').doc("globalSettings");
         ref.get().then(async function (snapshots) {
-            var globalSettings = snapshots.data();
-            $("#app_name").html(globalSettings.applicationName);
-            $("#logo_web").attr('src', globalSettings.appLogo);
-            document.documentElement.style.setProperty('--admin-panel-color', globalSettings.admin_panel_color);
+            var globalSettings = snapshots.data() || {};
+            if (globalSettings.applicationName) {
+                $("#app_name").html(globalSettings.applicationName);
+            }
+            if (globalSettings.appLogo) {
+                $("#logo_web").attr('src', globalSettings.appLogo);
+            }
+            if (globalSettings.admin_panel_color) {
+                document.documentElement.style.setProperty('--admin-panel-color', globalSettings.admin_panel_color);
+            }
         });
         
         var placeholderImage = '';
         var placeholder = database.collection('settings').doc('placeHolderImage');
         placeholder.get().then(async function (snapshotsimage) {
-            var placeholderImageData = snapshotsimage.data();
-            placeholderImage = placeholderImageData.image;
+            var placeholderImageData = snapshotsimage.data() || {};
+            placeholderImage = placeholderImageData.image || '';
         })
         
         $(document).ready(async function () {
@@ -224,23 +235,21 @@
         var langcount = 0;
         var languages_list = database.collection('settings').doc('languages');
         languages_list.get().then(async function (snapshotslang) {
-            snapshotslang = snapshotslang.data();
-            if (snapshotslang != undefined) {
-                snapshotslang = snapshotslang.list;
-                languages_list_main = snapshotslang;
-                snapshotslang.forEach((data) => {
-                    if (data.isActive == true) {
-                        langcount++;
-                        $('#language_dropdown').append($("<option></option>").attr("value", data.slug).text(data.title));
-                    }
-                });
-                if (langcount > 1) {
-                    $("#language_dropdown_box").css('visibility', 'visible');
+            var languageSettings = snapshotslang.data() || {};
+            var languageList = Array.isArray(languageSettings.list) ? languageSettings.list : [];
+            languages_list_main = languageList;
+            languageList.forEach((data) => {
+                if (data.isActive == true) {
+                    langcount++;
+                    $('#language_dropdown').append($("<option></option>").attr("value", data.slug).text(data.title));
                 }
-                <?php if (session()->get('locale')) { ?>
-                    $("#language_dropdown").val("<?php    echo session()->get('locale'); ?>");
-                <?php } ?>
+            });
+            if (langcount > 1) {
+                $("#language_dropdown_box").css('visibility', 'visible');
             }
+            <?php if (session()->get('locale')) { ?>
+                $("#language_dropdown").val("<?php    echo session()->get('locale'); ?>");
+            <?php } ?>
         });
 
         var url = "{{ route('changeLang') }}";
@@ -356,10 +365,11 @@
         function buildServiceSectionsHTML(sections) {
             var html = '';
             var addSectionRoute = "{{ route('sections.create') }}";
-            var activeSection = resolveActiveSection(sections);
+            var sectionList = Array.isArray(sections) ? sections : [];
+            var activeSection = resolveActiveSection(sectionList);
             var fallbackImg = "{{ asset('images/kweek_icon.png') }}";
 
-            sections.forEach(function(data) {
+            sectionList.forEach(function(data) {
                 var sectionName = data.name || 'Unnamed Section';
                 var sectionDescription = data.serviceType || '';
                 var sectionImage = data.sectionImage || fallbackImg;
@@ -380,7 +390,7 @@
                     '</div></div>';
             });
 
-            if (sections.length === 0) {
+            if (sectionList.length === 0) {
                 html += '<div class="col-md-12"><p class="text-muted mb-3">{{ trans('lang.no_record_found') }}</p></div>';
             }
 
@@ -515,7 +525,7 @@
 
         const deleteImageFromBucket = async (imageUrl) => {
             try {
-                const storageRef = kweekStorage().ref();
+                const storageRef = kweekFileStore().ref();
                 // Check if the imageUrl is a full URL or just a child path
                 let oldImageUrlRef;
                 if (imageUrl.includes('https://')) {

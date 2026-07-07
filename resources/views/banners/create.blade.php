@@ -197,14 +197,14 @@
 
 <script type="text/javascript">
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var photo = "";
     var fileName = "";
     var webPhoto="";
     var webFileName="";
     var photo_position2 = "";
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
     var ref_sections = database.collection('sections');
     var sections_list = [];
 

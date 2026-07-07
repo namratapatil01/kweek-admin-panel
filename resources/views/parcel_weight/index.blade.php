@@ -109,7 +109,7 @@
 
     <script type="text/javascript">
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var arrayParcelWeight = [];
 
         var parcel_weight = database.collection('parcel_weight');
