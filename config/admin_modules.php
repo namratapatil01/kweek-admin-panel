@@ -508,10 +508,11 @@ return [
         'model' => \App\Models\AppNotification::class,
         'label' => 'Notifications',
         'permission' => 'notification',
-        'searchable' => ['subject', 'role'],
+        'searchable' => ['subject', 'message'],
         'columns' => [
             ['field' => 'subject', 'label' => 'Subject'],
-            ['field' => 'role', 'label' => 'Role'],
+            ['field' => 'message', 'label' => 'Message'],
+            ['field' => 'created_at', 'label' => 'Date Created'],
         ],
         'form' => [
             ['name' => 'subject', 'type' => 'text', 'label' => 'Subject', 'required' => true],
@@ -527,8 +528,10 @@ return [
         'permission' => 'dynamic-notification',
         'searchable' => ['type', 'subject'],
         'columns' => [
-            ['field' => 'type', 'label' => 'Type'],
+            ['field' => 'service_type', 'label' => 'Service Type'],
+            ['field' => 'type', 'label' => 'Notification Type'],
             ['field' => 'subject', 'label' => 'Subject'],
+            ['field' => 'message', 'label' => 'Message'],
         ],
         'form' => [
             ['name' => 'type', 'type' => 'text', 'label' => 'Type', 'required' => true],

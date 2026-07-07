@@ -40,7 +40,6 @@ class StoreModuleRequest extends FormRequest
                 'password' => 'string|min:6',
                 default => 'string',
             };
-            $fieldRules = array_merge($fieldRules, $typeRules);
 
             foreach (explode('|', $typeRules) as $r) {
                 $fieldRules[] = $r;
