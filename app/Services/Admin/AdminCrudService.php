@@ -79,7 +79,13 @@ class AdminCrudService
         $sortColumn = $this->hasColumn($sortBy) ? $sortBy : 'created_at';
         $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
-        $items = $query->orderBy($sortColumn, $direction)
+        if ($sortColumn === 'created_at' && $this->hasColumn('createdAt')) {
+            $query->orderByRaw('COALESCE(created_at, createdAt) ' . $direction);
+        } else {
+            $query->orderBy($sortColumn, $direction);
+        }
+
+        $items = $query
             ->skip($start)
             ->take($length > 0 ? $length : 15)
             ->get();

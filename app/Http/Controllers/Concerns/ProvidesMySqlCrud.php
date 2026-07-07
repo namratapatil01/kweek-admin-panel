@@ -71,6 +71,8 @@ trait ProvidesMySqlCrud
             'formFields' => $config['form'] ?? [],
             'readonly' => (bool) ($config['readonly'] ?? false),
             'permission' => $config['permission'] ?? $this->moduleSlug(),
+            'defaultSortColumnIndex' => $this->defaultSortColumnIndex($config),
+            'defaultSortDirection' => $config['default_sort_dir'] ?? 'desc',
         ], $extra);
     }
 
@@ -277,8 +279,11 @@ trait ProvidesMySqlCrud
                 $row[] = filter_var($value, FILTER_VALIDATE_BOOLEAN)
                     ? '<span class="badge badge-success">Yes</span>'
                     : '<span class="badge badge-secondary">No</span>';
-            } elseif (($column['type'] ?? null) === 'datetime' && $value) {
-                $row[] = e((string) $value);
+            } elseif (($column['type'] ?? null) === 'datetime') {
+                if (! $value && $field === 'created_at') {
+                    $value = data_get($record, 'createdAt');
+                }
+                $row[] = $value ? e((string) $value) : '';
             } elseif (
                 in_array(strtolower($field), ['photo', 'image', 'coverimage', 'profilepictureurl', 'flag'], true) || 
                 (is_string($value) && preg_match('/\.(jpg|jpeg|png|gif|webp|svg)/i', $value)) ||
@@ -295,6 +300,15 @@ trait ProvidesMySqlCrud
         }
 
         return $row;
+    }
+
+    protected function defaultSortColumnIndex(array $config): int
+    {
+        $dataColumns = array_column($config['columns'] ?? [], 'field');
+        $defaultSort = $config['default_sort'] ?? ($dataColumns[0] ?? 'created_at');
+        $index = array_search($defaultSort, $dataColumns, true);
+
+        return $index !== false ? $index + 2 : 2;
     }
 
     protected function userCanDeleteModule(array $config): bool

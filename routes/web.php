@@ -886,6 +886,8 @@ Route::post('/send-ad-notification', [App\Http\Controllers\AdvertisementsControl
 
 Route::middleware(['permission:zone,zone.list'])->group(function () {
     Route::get('zone', [App\Http\Controllers\ZoneController::class, 'index'])->name('zone');
+    Route::get('/zone/location-search', [App\Http\Controllers\ZoneController::class, 'locationSearch'])->name('zone.location-search');
+    Route::get('/zone/location-reverse', [App\Http\Controllers\ZoneController::class, 'locationReverse'])->name('zone.location-reverse');
 });
 Route::middleware(['permission:zone,zone.create'])->group(function () {
     Route::get('/zone/create', [App\Http\Controllers\ZoneController::class, 'create'])->name('zone.create');
