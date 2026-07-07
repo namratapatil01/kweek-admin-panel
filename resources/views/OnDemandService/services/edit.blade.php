@@ -183,7 +183,7 @@
 @section('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
     <script>
-        var database = kweekFirestore();
+        var database = kweekDb();
         var days = [];
         var Id = "<?php echo $id; ?>";
         var authorName = '';
@@ -435,7 +435,7 @@
                     window.scrollTo(0, 0);
                 } else {
                     await storeImageData().then(async (IMG) => {
-                        geoFirestore.collection('providers_services').doc(Id).update({
+                        geoQuery.collection('providers_services').doc(Id).update({
                             "address": address,
                             'categoryId': category,
                             'days': days,
@@ -451,10 +451,10 @@
                             'endTime': endTime,
                             'subCategoryId': sub_category,
                             'title': name,
-                            'coordinates': new kweekFirestore.GeoPoint(latitude, longitude),
+                            'coordinates': new kweekDb.GeoPoint(latitude, longitude),
                             'g' : {
                                 'geohash' : encodeGeohash(latitude, longitude),
-                                'geopoint' : new kweekFirestore.GeoPoint(latitude, longitude)
+                                'geopoint' : new kweekDb.GeoPoint(latitude, longitude)
                             }
                         }).then(function(result) {
                             if (idOfProviderDetailPage != '') {
@@ -473,7 +473,7 @@
                 }
             })
         });
-        var storageRef = kweekStorage().ref('images');
+        var storageRef = kweekFileStore().ref('images');
         $("#service_image").resizeImg({
             callback: function(base64str) {
                 var val = $('#service_image').val().toLowerCase();
@@ -495,7 +495,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                photosToDelete.push(kweekStorage().refFromURL(photo_remove));
+                photosToDelete.push(kweekFileStore().refFromURL(photo_remove));
             }
             $("#photo_" + id).remove();
             index = photos.indexOf(photo_remove);

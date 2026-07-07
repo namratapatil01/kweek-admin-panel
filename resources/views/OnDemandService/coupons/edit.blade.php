@@ -144,7 +144,7 @@
 
         <script type="text/javascript">
             var id = "<?php echo $id; ?>";
-            var database = kweekFirestore();
+            var database = kweekDb();
             var ref = database.collection('providers_coupons').where("id", "==", id);
             var photo_coupon = "";
             var idOfProviderDetailPage = "{{ @$_GET['id'] }}";
@@ -326,8 +326,8 @@
                     }
                 });
             }
-            var storageRef = kweekStorage().ref('images');
-            var storage = kweekStorage();
+            var storageRef = kweekFileStore().ref('images');
+            var storage = kweekFileStore();
 
             function handleFileSelect(evt) {
                 var f = evt.target.files[0];

@@ -1,1 +1,1 @@
-// Legacy placeholder — Firebase initialization removed; MySQL data bridge is used instead.
+// Legacy placeholder — MySQL client (kweek-mysql-client.js) handles admin data operations.

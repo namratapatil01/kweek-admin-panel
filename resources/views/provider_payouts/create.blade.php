@@ -151,7 +151,7 @@
 <script type="text/javascript">
     var providers = [];
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var email_templates = database.collection('email_templates').where('type', '==', 'payout_request');
 

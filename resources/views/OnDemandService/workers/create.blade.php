@@ -165,12 +165,12 @@
 
 <script>
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var workerImagesCount = 0;
     var ownerphoto = '';
     var ownerFileName = '';
@@ -267,7 +267,7 @@
                 jQuery("#data-table_processing").show();
                 user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('worker_' + Date.now());
                 await storeImageData().then(async (IMG) => {
-                            geoFirestore.collection('providers_workers').doc(user_id).set({
+                            geoQuery.collection('providers_workers').doc(user_id).set({
                                 'firstName': userFirstName,
                                 'lastName': userLastName,
                                 'email': email,
@@ -285,7 +285,7 @@
                                 'longitude': longitude,
                                 'online': false,
                                 'providerId': providerId,
-                                coordinates: new kweekFirestore.GeoPoint(latitude, longitude),
+                                coordinates: new kweekDb.GeoPoint(latitude, longitude),
                             }).then(function (result) {
                                 if(provider_id==''){
                                      window.location.href = '{{ route("ondemand.workers.index")}}';
@@ -368,7 +368,7 @@
         initialize(id);
     });
 
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();

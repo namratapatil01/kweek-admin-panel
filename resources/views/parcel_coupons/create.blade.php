@@ -128,7 +128,7 @@
 <link href="{{ asset('css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
 
 <script type="text/javascript">
-  var database = kweekFirestore();
+  var database = kweekDb();
 
   var photo = "";
   var fileName = "";
@@ -228,7 +228,7 @@
 
   });
 
-  var storageRef = kweekStorage().ref('images');
+  var storageRef = kweekFileStore().ref('images');
   async function storeImageData() {
     var newPhoto = '';
     try {

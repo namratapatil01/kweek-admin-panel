@@ -299,7 +299,7 @@
         var section_id = getCookie('section_id') || '';
         var vendor_id = "{{ $id }}";
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var photo = "";
         var digital_product_file = '';
         var digital_product_file_name = '';
@@ -790,7 +790,7 @@
                                 'photos': IMG,
                                 'isDigitalProduct': is_digital_product,
                                 'digitalProduct': DigitalImg,
-                                'createdAt': kweekFirestore.FieldValue.serverTimestamp()
+                                'createdAt': kweekDb.FieldValue.serverTimestamp()
                             };
                             database.collection('vendor_products').doc(id)
                                 .set(objects).then(function(result) {
@@ -820,7 +820,7 @@
                 
             })
         })
-        var storageRef = kweekStorage().ref('images');
+        var storageRef = kweekFileStore().ref('images');
         function handleFileSelect(evt) {
             var f = evt.target.files[0];
             var reader = new FileReader();

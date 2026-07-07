@@ -496,7 +496,7 @@
 @section('scripts')
     <script type="text/javascript">
         var id = "{{ $id }}";
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref = database.collection('users').where("id", "==", id);
         var sectionId = null;
         var sectionLength = 0;
@@ -944,7 +944,7 @@
                 var snapshot = await database.collection('subscription_plans').doc(planId).get();
                 if (snapshot.exists) {
                     var planData = snapshot.data();
-                    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+                    var createdAt = kweekDb.FieldValue.serverTimestamp();
                     if (planData.type == "paid") {
                         plan_type = "Manual Pay";
                     } else {
@@ -955,7 +955,7 @@
                     } else {
                         var currentDate = new Date();
                         currentDate.setDate(currentDate.getDate() + parseInt(planData.expiryDay));
-                        var expiryDay = kweekFirestore.Timestamp.fromDate(currentDate);
+                        var expiryDay = kweekDb.Timestamp.fromDate(currentDate);
                     }
                     await database.collection('users').doc(userId).update({
                         'subscription_plan': planData,

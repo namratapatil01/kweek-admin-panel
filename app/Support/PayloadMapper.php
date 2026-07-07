@@ -27,6 +27,11 @@ class PayloadMapper
                     continue;
                 }
 
+                if (in_array($key, $jsonColumns, true) && is_string($value)) {
+                    $attributes[$key] = json_decode($value, true);
+                    continue;
+                }
+
                 $attributes[$key] = $value;
             } elseif (in_array($key, $jsonColumns, true)) {
                 $attributes[$key] = is_array($value) ? $value : json_decode((string) $value, true);

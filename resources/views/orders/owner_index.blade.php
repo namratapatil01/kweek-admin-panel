@@ -122,7 +122,7 @@
 
     <script type="text/javascript">
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = JSON.parse(user_permissions);
         
@@ -228,8 +228,8 @@
                         colRef = colRef.where('status', '==', status);
                     }
                     if(daterange && $('#daterange span').html() !== '{{ trans('lang.select_range') }}'){
-                        const from = kweekFirestore.Timestamp.fromDate(daterange.startDate.toDate());
-                        const to   = kweekFirestore.Timestamp.fromDate(daterange.endDate.toDate());
+                        const from = kweekDb.Timestamp.fromDate(daterange.startDate.toDate());
+                        const to   = kweekDb.Timestamp.fromDate(daterange.endDate.toDate());
                         colRef = colRef.where('createdAt', '>=', from).where('createdAt', '<=', to);
                     }
                     colRef = colRef.where('driverId', 'in', chunk).orderBy('createdAt', 'desc');

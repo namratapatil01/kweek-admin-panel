@@ -575,7 +575,7 @@
     var extraChargePaymentStatus = '';
     var bookingDate = '';
     var newScheduleBookingDate = '';
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var ref = database.collection('provider_orders').where("id", "==", id);
 
@@ -667,7 +667,7 @@
     });
 
 
-    var geoFirestore = new GeoFirestore(database);
+    var geoQuery = new KweekGeoQuery(database);
     var place_image = '';
     var ref_place = database.collection('settings').doc("placeHolderImage");
     ref_place.get().then(async function (snapshots) {
@@ -1200,7 +1200,7 @@
     async function callWalletTransaction(status) {
         var orderStatus = status;
 
-        var date = kweekFirestore.FieldValue.serverTimestamp();
+        var date = kweekDb.FieldValue.serverTimestamp();
         var wId = database.collection('temp').doc().id;
 
         database.collection('wallet').doc(wId).set({
@@ -1364,7 +1364,7 @@
     }
 
     async function refundAmount() {
-        var date = kweekFirestore.FieldValue.serverTimestamp();
+        var date = kweekDb.FieldValue.serverTimestamp();
         var wId = database.collection('temp').doc().id;
         if (paymentMethod != 'cod') {
             database.collection('wallet').doc(wId).set({
@@ -1486,7 +1486,7 @@
     $('.stop_timer_btn').on('click', function () {
         stopTimer();
         $('.stop_time_div').addClass('d-none');
-        storedEndTime = kweekFirestore.FieldValue.serverTimestamp();
+        storedEndTime = kweekDb.FieldValue.serverTimestamp();
         currentTime = new Date();
 
         var timeDiff = Math.abs(currentTime - storedStartTime);
@@ -1494,7 +1494,7 @@
         totalTimeInHours = parseFloat(totalTimeInHours).toFixed(2);
 
         database.collection('provider_orders').doc(id).update({
-            'endTime': (priceUnit == 'Hourly') ? kweekFirestore.FieldValue.serverTimestamp() : null,
+            'endTime': (priceUnit == 'Hourly') ? kweekDb.FieldValue.serverTimestamp() : null,
             'quantity': (totalTimeInHours < 1) ? parseInt(1) : parseFloat(totalTimeInHours)
         }).then(async function (result) {
             callAjax('Stop Time');
@@ -1540,7 +1540,7 @@
         } else {
             database.collection('provider_orders').doc(id).update({
                 'status': "Order Ongoing",
-                'startTime': (priceUnit == 'Hourly') ? kweekFirestore.FieldValue.serverTimestamp() : null
+                'startTime': (priceUnit == 'Hourly') ? kweekDb.FieldValue.serverTimestamp() : null
             }).then(async function (result) {
                 if (priceUnit == 'Hourly') {
                     startTimer();

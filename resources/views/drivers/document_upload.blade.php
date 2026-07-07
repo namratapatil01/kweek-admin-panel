@@ -38,8 +38,8 @@
     <script>
         var docId = "{{$id}}";
         var id = "{{$driverId}}";
-        var storageRef = kweekStorage().ref('images');
-        var storage = kweekStorage();
+        var storageRef = kweekFileStore().ref('images');
+        var storage = kweekFileStore();
         var back_photo = '';
         var front_photo = '';
         var backFileName = '';

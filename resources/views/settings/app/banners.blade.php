@@ -46,8 +46,8 @@
 
     <script type="text/javascript">
 
-        var database = kweekFirestore();
-        var storageRef = kweekStorage().ref('images');
+        var database = kweekDb();
+        var storageRef = kweekFileStore().ref('images');
         var appHomeBanners = database.collection('settings').doc("AppHomeBanners");
 
         var app_banners = [];
@@ -125,7 +125,7 @@
                 var photo_remove = $(this).attr('data-img');
                 var status=$(this).attr('data-status');
                 if(status=="old"){
-                    app_banners_to_delete.push(kweekStorage().refFromURL(photo_remove));
+                    app_banners_to_delete.push(kweekFileStore().refFromURL(photo_remove));
                 }
                 $("#photo_" + id).remove();
                 index = app_banners.indexOf(photo_remove);
@@ -198,7 +198,7 @@
 
             if (app_banners_to_delete.length > 0) {
                 await Promise.all(app_banners_to_delete.map(async (imageFile, index) => {
-                    var imageUrlRef = await kweekStorage().refFromURL(imageFile);
+                    var imageUrlRef = await kweekFileStore().refFromURL(imageFile);
                     imageBucket = imageUrlRef.bucket;
                     }));
             }

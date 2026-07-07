@@ -123,13 +123,13 @@
 
         <script type="text/javascript">
             var id = "<?php echo $id; ?>";
-            var database = kweekFirestore();
+            var database = kweekDb();
             var ref = database.collection('rental_coupons').where("id", "==", id);
             var photo = "";
             var fileName = "";
             var oldImageFile = "";
-            var storageRef = kweekStorage().ref('images');
-            var storage = kweekStorage();
+            var storageRef = kweekFileStore().ref('images');
+            var storage = kweekFileStore();
 
             var placeholderImage = '';
             var placeholder = database.collection('settings').doc('placeHolderImage');

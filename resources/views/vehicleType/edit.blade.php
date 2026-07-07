@@ -271,7 +271,7 @@
 
 
 
-	var database = kweekFirestore();
+	var database = kweekDb();
 
 	var photo = "";
 
@@ -279,9 +279,9 @@
 
 	var oldImageFile = "";
 
-	var storageRef = kweekStorage().ref('images');
+	var storageRef = kweekFileStore().ref('images');
 
-	var storage = kweekStorage();
+	var storage = kweekFileStore();
 
 
 

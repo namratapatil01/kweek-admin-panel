@@ -201,7 +201,7 @@
 
 <script type="text/javascript">
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var photo = "";
     var fileName = "";
@@ -209,8 +209,8 @@
     var webFileName="";
     var oldWebFile="";
     var oldImageFile = "";
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
 
     var id = "<?php echo $id; ?>";
 

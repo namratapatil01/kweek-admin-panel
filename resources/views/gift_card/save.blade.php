@@ -112,16 +112,16 @@
             <script>
 
                 var requestId = "<?php echo $id; ?>";
-                var database = kweekFirestore();
-                var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+                var database = kweekDb();
+                var createdAt = kweekDb.FieldValue.serverTimestamp();
                 var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
                 var photo = '';
                 var fileName = '';
                 var oldImagePath = '';
                 var pagesize = 20;
                 var start = '';
-                var storageRef = kweekStorage().ref('images');
-                var storage = kweekStorage();
+                var storageRef = kweekFileStore().ref('images');
+                var storage = kweekFileStore();
                 var placeholderImage = '';
                 var placeholder = database.collection('settings').doc('placeHolderImage');
 

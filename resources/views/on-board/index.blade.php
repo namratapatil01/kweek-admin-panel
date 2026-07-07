@@ -76,7 +76,7 @@
 
 <script type="text/javascript">
 
-    var database = kweekFirestore();
+    var database = kweekDb();
     var placeholder = database.collection('settings').doc('placeHolderImage');
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -177,7 +177,7 @@
                     });
 
                 } catch (error) {
-                    console.error("Error fetching data from Firestore:", error);
+                    console.error("Error fetching data from database:", error);
                     $('#data-table_processing').hide();
                     callback({
                         draw: data.draw,

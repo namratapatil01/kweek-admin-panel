@@ -22,7 +22,7 @@ class CheckUserRoleMiddleware
         if (auth()->check()) {
             $user = auth()->user();
 
-            $role_has_permissions = Permission::where('role_id', $user->role_id)->pluck('routes')->toArray();
+            $role_has_permissions = \App\Support\AdminPermissionResolver::routesForUser($user);
 
             $role_has_permissions = array_unique($role_has_permissions);
 

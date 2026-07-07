@@ -112,7 +112,7 @@
 @endsection
 @section('scripts')
     <script type="text/javascript">
-        var database = kweekFirestore();
+        var database = kweekDb();
         var refDriver = database.collection('settings').doc("DriverNearBy");
         $(document).ready(function() {
             jQuery("#data-table_processing").show();

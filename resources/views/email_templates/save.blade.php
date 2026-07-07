@@ -199,9 +199,9 @@
 
                 var requestId = "<?php echo $id; ?>";
 
-                var database = kweekFirestore();
+                var database = kweekDb();
 
-                var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+                var createdAt = kweekDb.FieldValue.serverTimestamp();
 
                 var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
 

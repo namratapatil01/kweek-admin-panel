@@ -40,9 +40,9 @@
         var id = "{{$driverId}}";
         var allVendor = database.collection('users').where('role', '==', 'driver');
         var driverRef= database.collection('users').where('id','==',id);
-        var database = kweekFirestore();
-        var storageRef = kweekStorage().ref('images');
-        var storage = kweekStorage();
+        var database = kweekDb();
+        var storageRef = kweekFileStore().ref('images');
+        var storage = kweekFileStore();
         var docref = database.collection('documents_verify').doc(id);
         var back_photo = '';
         var front_photo = '';
@@ -206,7 +206,7 @@
                         database.collection('documents_verify').doc(id).set({
                             id: id,
                             type: type,
-                            documents: kweekFirestore.FieldValue.arrayUnion({
+                            documents: kweekDb.FieldValue.arrayUnion({
                                 backImage: IMG.back_img ? IMG.back_img : '',
                                 documentId: docId.trim(),
                                 frontImage: IMG.front_img ? IMG.front_img : '',

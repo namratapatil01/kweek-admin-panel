@@ -204,8 +204,8 @@
 <script type="text/javascript">
 
     
-    var database = kweekFirestore();
-    var geoFirestore = new GeoFirestore(database);
+    var database = kweekDb();
+    var geoQuery = new KweekGeoQuery(database);
     var autoAprroveVendor = database.collection('settings').doc("vendor");
     var photo = "";
     var vendorOwnerId = "";
@@ -214,14 +214,14 @@
     var restaurnt_photos = [];
     var ownerphoto = '';
     var id = "<?php echo $id; ?>";
-    var database = kweekFirestore();
+    var database = kweekDb();
     var ref = database.collection('users').where("id", "==", id);
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
     var photo = "";
     var fileName = "";
     var oldImageFile = '';
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -244,7 +244,7 @@
         }
     });
 
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
 
     jQuery("#data-table_processing").show();
 
@@ -339,7 +339,7 @@
 
 
         if (change_expiry_date != '' && change_expiry_date != null) {
-            var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
+            var subscriptionPlanExpiryDate = kweekDb.Timestamp.fromDate(new Date(
                 change_expiry_date));
         } else {
             var subscriptionPlanExpiryDate=null;
@@ -413,13 +413,13 @@
                    
 
                 }).then(function (result) {
-                    geoFirestore.collection('providers_services')
+                    geoQuery.collection('providers_services')
                     .where('author', '==', id)
                     .get() // Retrieve documents matching the query
                     .then(querySnapshot => {
                         querySnapshot.forEach(doc => {
                             // For each matching document, update it
-                            geoFirestore.collection('providers_services').doc(doc.id).update({
+                            geoQuery.collection('providers_services').doc(doc.id).update({
                                 'subscriptionExpiryDate': subscriptionPlanExpiryDate
                             });
                         });
@@ -460,8 +460,8 @@
     }
 
 
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];
         var reader = new FileReader();

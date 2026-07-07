@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Complete KWEEK schema migrated from Firebase Firestore.
+ * Complete KWEEK schema for MySQL.
  *
  * PK strategy: string document IDs (Firebase-compatible, max 64 chars).
  * Hybrid storage: indexed scalar columns + JSON payload for nested/array fields.
