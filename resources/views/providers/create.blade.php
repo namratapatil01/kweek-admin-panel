@@ -222,6 +222,7 @@ foreach ($countries as $keycountry => $valuecountry) {
 
             var createdAt = kweekFirestore.FieldValue.serverTimestamp();
             var adminCommission = '';
+            var businessModelData = {};
             
             $(document).ready(async function () {
 
@@ -341,51 +342,60 @@ foreach ($countries as $keycountry => $valuecountry) {
                     }
 
                     user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
-storeImageData().then(IMG => {
-                                database.collection('users').doc(user_id).set({
-                                    'section_id': section_id,
-                                    'firstName': userFirstName,
-                                    'lastName': userLastName,
-                                    'email': email,
-                                    'phoneNumber': country_code+userPhone,
-                                    'profilePictureURL': IMG,
-                                    'role': 'provider',
-                                    'id': user_id,
-                                    'location': location,
-                                    'active': active,
-                                    'isActive': active,
-                                    'createdAt': createdAt,
-                                    'userBankDetails': userBankDetails,
-                                    'adminCommission':adminCommission,
-                                    'wallet_amount': 0,
-                                    'reviewsCount': 0,
-                                    'reviewsSum': 0,
-                                    'subscription_plan': subscriptionData!=null? subscriptionData:null,
-                                    'subscriptionPlanId': subscriptionData!=null? subscriptionData.id:null,
-                                    'subscriptionExpiryDate': subscriptionData!=null? subscriptionData.expiryDate:null
+                    storeImageData().then(IMG => {
+                        var payload = {
+                            _token: "{{ csrf_token() }}",
+                            id: user_id,
+                            section_id: section_id,
+                            firstName: userFirstName,
+                            lastName: userLastName,
+                            email: email,
+                            phoneNumber: country_code + userPhone,
+                            password: password,
+                            profilePictureURL: IMG,
+                            location: location,
+                            active: active,
+                            userBankDetails: userBankDetails,
+                            adminCommission: adminCommission,
+                            subscription_plan: subscriptionData != null ? subscriptionData : null,
+                            subscriptionPlanId: subscriptionData != null ? subscriptionData.id : null,
+                            subscriptionExpiryDate: subscriptionData != null ? subscriptionData.expiryDate : null
+                        };
 
-                                }).then(async function (result) {
-
-                                    if(subscriptionData!=null) {
-                                        historyData={'subscriptionData': subscriptionData,'userId': user_id,'expire_date': subscriptionData.expiryDate}
+                        $.ajax({
+                            url: "{{ route('providers.store-provider') }}",
+                            type: "POST",
+                            data: payload,
+                            success: async function(response) {
+                                if (response.success) {
+                                    if(subscriptionData != null) {
+                                        historyData = {
+                                            'subscriptionData': subscriptionData,
+                                            'userId': user_id,
+                                            'expire_date': subscriptionData.expiryDate
+                                        };
                                         await addSubscriptionHistory(historyData);
                                     }
-                                   
-                                    window.location.href = '{{ route("providers")}}';
-
-                                }).catch(function (error) {
+                                    window.location.href = "{{ route('providers') }}";
+                                } else {
                                     jQuery("#data-table_processing").hide();
-                                    showError(getProviderErrorMessage(error));
-                                });
-                            }).catch(function (error) {
+                                    showError(response.error || "Failed to create provider.");
+                                }
+                            },
+                            error: function(xhr, status, error) {
                                 jQuery("#data-table_processing").hide();
-                                showError(getProviderErrorMessage(error));
-                            });
-
-                        }).catch(function (error) {
-                            jQuery("#data-table_processing").hide();
-                            showError(getProviderErrorMessage(error));
+                                var errMsg = error;
+                                if (xhr.responseJSON && xhr.responseJSON.error) {
+                                    errMsg = xhr.responseJSON.error;
+                                }
+                                showError(getProviderErrorMessage({message: errMsg}));
+                            }
                         });
+                    }).catch(function (error) {
+                        jQuery("#data-table_processing").hide();
+                        showError(getProviderErrorMessage(error));
+                    });
+
                 }
             });
 

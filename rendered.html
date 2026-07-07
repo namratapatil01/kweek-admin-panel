@@ -1,0 +1,198 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="utoJxtQSq6zA9kkTfBGcxP2WHC078zmnVeqTBuWz">
+    <title>Laravel</title>
+    <link rel="icon" type="image/png" href="http://127.0.0.1:8000/images/kweek-logo.png">
+    <!-- Fonts -->
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+    <link href="http://127.0.0.1:8000/assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://127.0.0.1:8000/css/style.css" rel="stylesheet">
+    </head>
+
+<body>
+
+    <style type="text/css">
+        .form-group.default-admin {
+            padding: 10px;
+            font-size: 14px;
+            color: #000;
+            font-weight: 600;
+            border-radius: 10px;
+            box-shadow: 0 0px 6px 0px rgba(0, 0, 0, 0.5);
+            margin: 20px 10px 10px 10px;
+        }
+
+        .form-group.default-admin .crediantials-field {
+            position: relative;
+            padding-right: 15px;
+            text-align: left;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .form-group.default-admin .crediantials-field>a {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+            height: 20px;
+        }
+
+        .login-register {
+            background-color: #000000;
+        }
+
+        .btn-primary,
+        .btn-primary.disabled,
+        .btn-primary:hover,
+        .btn-primary.disabled:hover {
+            background: #000000;
+            border: 1px solid #000000;
+        }
+
+        .auth-wrapper-left {
+            background: #ffffff !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-wrapper-left .login-left-logo {
+            width: 100%;
+            padding: 40px;
+        }
+
+        .auth-wrapper-left .login-left-logo img {
+            max-width: 620px;
+            width: 95%;
+            height: auto;
+        }
+    </style>
+
+    
+    
+    <section id="wrapper">
+
+        <div class="auth-wrapper">
+
+            <div class="auth-wrapper-left">
+                <div class="login-left-logo text-center">
+                    <img src="http://127.0.0.1:8000/images/kweek-logo.png" alt="KWEEK"
+                        onerror="this.onerror=null; this.src='http://127.0.0.1:8000/images/logo_web.png';">
+                </div>
+            </div>
+
+            <div class="auth-wrapper-right">
+
+                <div class="auth-wrapper-form">
+                    <div class="admin-logo mb-5">
+                        <img src="http://127.0.0.1:8000/images/kweek-logo.png" alt="KWEEK"
+                            onerror="this.onerror=null; this.src='http://127.0.0.1:8000/images/logo_web.png';">
+                    </div>
+
+                    
+                    <form class="form-horizontal form-material" method="POST" action="http://127.0.0.1:8000/login">
+                        <input type="hidden" name="_token" value="utoJxtQSq6zA9kkTfBGcxP2WHC078zmnVeqTBuWz" autocomplete="off">
+                        <div class="auth-header">
+                            <div class="text-center mb-logo"><img src="http://127.0.0.1:8000/images/kweek-logo.png" alt="KWEEK"
+                                    onerror="this.onerror=null; this.src='http://127.0.0.1:8000/images/logo_web.png';"></div>
+                            <div class="mb-4">
+                                <h2 class="title text-dark mb-3">Admin Login</h2>
+                                <p class="text-muted">Log in to your panel to proceed</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="input-label text-capitalize">Email Address</label>
+                            <input class="form-control" placeholder="Email Address" id="email"
+                                type="email" class="form-control " name="email"
+                                value="" required autocomplete="email" autofocus>
+                                                    </div>
+
+                        <div class="form-group">
+                            <label class="input-label text-capitalize">Password</label>
+                            <div class="input-group">
+                            <input id="password" placeholder="Password" type="password"
+                                class="form-control " name="password" required
+                                autocomplete="current-password">
+                            <span class="password-toggle-icon"
+                                style="position: absolute; right: 15px; top: 10px; cursor: pointer; z-index: 5;">
+                                <i class="mdi mdi-eye" id="togglePasswordIcon"></i>
+                            </span>
+                                                        </div>
+                        </div>
+
+                        <div class="form-group">
+                            <input class="form-check-input" type="checkbox" name="remember" id="remember"
+                                >
+                            <label class="form-check-label" for="remember">
+                                Remember Me
+                            </label>
+                        </div>
+
+                        <div class="form-group text-center mb-0">
+                            <button type="submit"
+                                class="btn btn-dark btn-lg btn-block text-uppercase waves-effect waves-light btn btn-primary">Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <script src="http://127.0.0.1:8000/assets/plugins/jquery/jquery.min.js"></script>
+    <script src="http://127.0.0.1:8000/js/crypto-js.js"></script>
+    <script src="http://127.0.0.1:8000/js/jquery.cookie.js"></script>
+    <script src="http://127.0.0.1:8000/js/jquery.validate.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+                        var admin_panel_color = "#000000";
+            setCookie('admin_panel_color', admin_panel_color, 365);
+            $('.login-register').css({ 'background-color': admin_panel_color });
+
+            var firstSectionId = '11';
+            var firstServiceType = 'ondemand-service';
+            if (firstSectionId && firstServiceType) {
+                setCookie('section_id', firstSectionId, 1);
+                setCookie('service_type', firstServiceType, 1);
+            }
+        });
+
+        function setCookie(cname, cvalue, exdays) {
+            const d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            let expires = "expires=" + d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+        $(document).ready(function() {
+            const icon = $('#togglePasswordIcon');
+            icon.removeClass('mdi-eye').addClass('mdi-eye-off');
+            $('.password-toggle-icon').on('click', function() {
+                const passwordField = $('#password');
+
+
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('mdi-eye-off').addClass('mdi-eye');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('mdi-eye').addClass('mdi-eye-off');
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
