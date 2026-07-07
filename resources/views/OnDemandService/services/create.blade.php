@@ -249,17 +249,35 @@
             }
         });
         $(document).ready(function() {
-            database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    $('#provider_select').append($("<option></option>")
-                        .attr("value", data.id)
-                        .text(data.firstName + ' ' + data.lastName)
-                        .attr("data-authorName", data.firstName + ' ' + data.lastName)
-                        .attr("data-authorpic", data.profilePictureURL)
-                        .attr("data-authorphone", data.phoneNumber));
-                })
-            });
+            if (section_id) {
+                database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function(snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#provider_select').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.firstName + ' ' + data.lastName)
+                            .attr("data-authorName", data.firstName + ' ' + data.lastName)
+                            .attr("data-authorpic", data.profilePictureURL)
+                            .attr("data-authorphone", data.phoneNumber));
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            } else {
+                database.collection('users').where('role', '==', 'provider').get().then(async function(snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#provider_select').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.firstName + ' ' + data.lastName)
+                            .attr("data-authorName", data.firstName + ' ' + data.lastName)
+                            .attr("data-authorpic", data.profilePictureURL)
+                            .attr("data-authorphone", data.phoneNumber));
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            }
             database.collection('sections').where('serviceTypeFlag', '==', 'ondemand-service').get().then(async function(snapshots) {
                 snapshots.docs.forEach((listval) => {
                     var data = listval.data();
@@ -268,6 +286,8 @@
                         .attr("data-type", data.serviceTypeFlag)
                         .text(data.name + ' (' + data.serviceType + ')'));
                 });
+            }).catch(function(error) {
+                console.error('Error loading sections:', error);
             });
             if (provider_id != '') {
                 getProviderInfo(provider_id);
@@ -291,6 +311,8 @@
                         } else {
                             $('#item_category').html('<option value="">{{ trans('lang.select_category') }}</option>');
                         }
+                    }).catch(function(error) {
+                        console.error('Error loading categories:', error);
                     });
                 } else {
                     $('#item_category').html('<option value="">{{ trans('lang.select_category') }}</option>');
@@ -312,6 +334,8 @@
                         } else {
                             $('#sub_category').html('<option value="">{{ trans('lang.select_sub_category') }}</option>');
                         }
+                    }).catch(function(error) {
+                        console.error('Error loading sub-categories:', error);
                     });
                 } else {
                     $('#sub_category').html('<option value="">{{ trans('lang.select_sub_category') }}</option>');

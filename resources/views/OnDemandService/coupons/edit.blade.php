@@ -178,20 +178,41 @@
 
                     var coupon = snapshots.docs[0].data();
 
-                    database.collection('users').where('role', '==', 'provider').where('section_id','==',sectionId).get().then(async function(snapshots) {
-                        snapshots.docs.forEach((listval) => {
-                            var data = listval.data();
-                            if (data.id == coupon.providerId) {
-                                $('#provider_select').append($("<option selected></option>")
-                                    .attr("value", data.id)
-                                    .text(data.firstName + ' ' + data.lastName));
-                            } else {
-                                $('#provider_select').append($("<option></option>")
-                                    .attr("value", data.id)
-                                    .text(data.firstName + ' ' + data.lastName));
-                            }
-                        })
-                    });
+                    if (sectionId) {
+                        database.collection('users').where('role', '==', 'provider').where('section_id','==',sectionId).get().then(async function(snapshots) {
+                            snapshots.docs.forEach((listval) => {
+                                var data = listval.data();
+                                if (data.id == coupon.providerId) {
+                                    $('#provider_select').append($("<option selected></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                } else {
+                                    $('#provider_select').append($("<option></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                }
+                            })
+                        }).catch(function(error) {
+                            console.error('Error loading providers:', error);
+                        });
+                    } else {
+                        database.collection('users').where('role', '==', 'provider').get().then(async function(snapshots) {
+                            snapshots.docs.forEach((listval) => {
+                                var data = listval.data();
+                                if (data.id == coupon.providerId) {
+                                    $('#provider_select').append($("<option selected></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                } else {
+                                    $('#provider_select').append($("<option></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                }
+                            })
+                        }).catch(function(error) {
+                            console.error('Error loading providers:', error);
+                        });
+                    }
                     section_id = coupon.sectionId;
                     if (coupon.image != '' && coupon.image != null) {
                         photo_coupon = coupon.image;

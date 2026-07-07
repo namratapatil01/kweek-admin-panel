@@ -259,6 +259,8 @@
                                 .attr("value", data.id)
                                 .text(data.title));
                         });
+                    }).catch(function(error) {
+                        console.error('Error loading categories:', error);
                     });
                     $('#item_category').val(serviceData.categoryId);
                     await categories.where('parentCategoryId', '==', serviceData.categoryId).get().then(async function(snapshots) {
@@ -271,6 +273,8 @@
                                     .text(data.title));
                             });
                         }
+                    }).catch(function(error) {
+                        console.error('Error loading sub-categories:', error);
                     });
                     $('#sub_category').val(serviceData.subCategoryId)
                 } else {
@@ -293,11 +297,13 @@
                         } else {
                             $('#sub_category').html('<option value="">{{ trans('lang.select_sub_category') }}</option>');
                         }
+                    }).catch(function(error) {
+                        console.error('Error loading sub-categories:', error);
                     });
                 } else {
                     $('#sub_category').html('<option value="">{{ trans('lang.select_sub_category') }}</option>');
                 }
-            })
+            });
             function initialize(id) {
                 if (mapType == "OFFLINE") {
                     var input = document.getElementById('address');
