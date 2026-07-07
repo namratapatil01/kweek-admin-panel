@@ -132,6 +132,8 @@
                     } else {
                         $('#parent_category_id').html('<option value="">{{trans("lang.select_category")}}</option>');
                     }
+                }).catch(function(error) {
+                    console.error('Error loading categories:', error);
                 });
             }
             

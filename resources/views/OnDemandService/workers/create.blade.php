@@ -198,14 +198,29 @@
 
     $(document).ready(function () {
 
-        database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function (snapshots) {
-            snapshots.docs.forEach((listval) => {
-                var data = listval.data();
-                $('#provider_select').append($("<option></option>")
-                    .attr("value", data.id)
-                    .text(data.firstName + ' ' + data.lastName));
-            })
-        });
+        if (section_id) {
+            database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function (snapshots) {
+                snapshots.docs.forEach((listval) => {
+                    var data = listval.data();
+                    $('#provider_select').append($("<option></option>")
+                        .attr("value", data.id)
+                        .text(data.firstName + ' ' + data.lastName));
+                })
+            }).catch(function(error) {
+                console.error('Error loading providers:', error);
+            });
+        } else {
+            database.collection('users').where('role', '==', 'provider').get().then(async function (snapshots) {
+                snapshots.docs.forEach((listval) => {
+                    var data = listval.data();
+                    $('#provider_select').append($("<option></option>")
+                        .attr("value", data.id)
+                        .text(data.firstName + ' ' + data.lastName));
+                })
+            }).catch(function(error) {
+                console.error('Error loading providers:', error);
+            });
+        }
 
         $(".save-form-btn").click(async function () {
 
@@ -267,7 +282,7 @@
                 jQuery("#data-table_processing").show();
                 user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('worker_' + Date.now());
                 await storeImageData().then(async (IMG) => {
-                            geoFirestore.collection('providers_workers').doc(user_id).set({
+                            database.collection('providers_workers').doc(user_id).set({
                                 'firstName': userFirstName,
                                 'lastName': userLastName,
                                 'email': email,

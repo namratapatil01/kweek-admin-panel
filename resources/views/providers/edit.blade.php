@@ -255,8 +255,10 @@
             $(".user_first_name").val(user.firstName);
             $(".user_last_name").val(user.lastName);
             $(".user_email").val(shortEmail(user.email));
-            $(".vendor_latitude").val(user.location.latitude);
-            $(".vendor_longitude").val(user.location.longitude);
+            if (user.hasOwnProperty('location') && user.location != null) {
+                $(".vendor_latitude").val(user.location.latitude);
+                $(".vendor_longitude").val(user.location.longitude);
+            }
            
             $(".user_phone").val(user.phoneNumber);
             $(".user_phone").attr('disabled',true);
@@ -268,10 +270,14 @@
                 $('#subscriptionPlanId').val(user.subscriptionPlanId);
             }
             if (user.subscriptionExpiryDate) {
-                const expiresAt = new Date(user.subscriptionExpiryDate.toDate());
-                const [year, month, day] = expiresAt.toISOString().slice(0, 10).split("-");
-                const formattedDate = `${year}-${month}-${day}`;
-                $('#change_expiry_date').val(formattedDate);
+                try {
+                    const expiresAt = typeof user.subscriptionExpiryDate.toDate === 'function' ? new Date(user.subscriptionExpiryDate.toDate()) : new Date(user.subscriptionExpiryDate);
+                    const [year, month, day] = expiresAt.toISOString().slice(0, 10).split("-");
+                    const formattedDate = `${year}-${month}-${day}`;
+                    $('#change_expiry_date').val(formattedDate);
+                } catch (e) {
+                    console.log("Error parsing date", e);
+                }
             }
 
             photo = user.profilePictureURL;
@@ -323,43 +329,35 @@
     })
     $(".edit-form-btn").click(function () {
         $(".error_top").hide();
-        var latitude = parseFloat($(".vendor_latitude").val());
-        var longitude = parseFloat($(".vendor_longitude").val());
 
         var userFirstName = $(".user_first_name").val();
         var userLastName = $(".user_last_name").val();
         var email = $(".user_email").val();
-        var password = $(".user_password").val();
         var userPhone = $(".user_phone").val();
         var active = $(".user_active").is(":checked");
-        var location = { 'latitude': latitude, 'longitude': longitude };
-        var user_name = userFirstName + " " + userLastName;
         var subscriptionPlanId=$('#subscriptionPlanId').val();
         var change_expiry_date = $('#change_expiry_date').val();
-
 
         if (change_expiry_date != '' && change_expiry_date != null) {
             var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
                 change_expiry_date));
         } else {
             var subscriptionPlanExpiryDate=null;
-
         }
-
 
         var commissionType = $("#commission_type").val();
         var fixCommission = $(".commission_fix").val();
+        var parsedCommission = parseInt(fixCommission);
+        if (isNaN(parsedCommission)) {
+            parsedCommission = 0;
+        }
         const adminCommission = {
-                "type": commissionType,
-                "commission": parseInt(fixCommission),
+                "type": commissionType || 'percentage',
+                "commission": parsedCommission || 0,
                 "enable": true
         };
 
-
-
-
         if (userFirstName == '') {
-
             $(".error_top").show();
             $(".error_top").html("");
             $(".error_top").append("<p>{{trans('lang.enter_owners_name_error')}}</p>");
@@ -369,75 +367,78 @@
             $(".error_top").html("");
             $(".error_top").append("<p>{{trans('lang.enter_owners_email')}}</p>");
             window.scrollTo(0, 0);
-        } else if (password == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{trans('lang.enter_owners_password_error')}}</p>");
-            window.scrollTo(0, 0);
-        } else if (userPhone == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{trans('lang.enter_owners_phone')}}</p>");
-            window.scrollTo(0, 0);
-
         } else {
+            jQuery("#data-table_processing").show();
             var bankName = $("#bankName").val();
             var branchName = $("#branchName").val();
             var holderName = $("#holderName").val();
             var accountNumber = $("#accountNumber").val();
             var otherDetails = $("#otherDetails").val();
             var userBankDetails = {
-                'bankName': bankName,
-                'branchName': branchName,
-                'holderName': holderName,
-                'accountNumber': accountNumber,
-                'accountNumber': accountNumber,
-                'otherDetails': otherDetails,
+                'bankName': bankName || '',
+                'branchName': branchName || '',
+                'holderName': holderName || '',
+                'accountNumber': accountNumber || '',
+                'otherDetails': otherDetails || '',
             };
             storeImageData().then(IMG => {
                 updateSubscriptionHistory(id, subscriptionPlanId,
                 subscriptionPlanExpiryDate).then(
                     async function() {
-                await database.collection('users').doc(id).update({
-
-                    'firstName': userFirstName, 
-                    'lastName': userLastName,
-                    'email': email,
-                    'phoneNumber': userPhone,
-                    'profilePictureURL': IMG,
-                    'active': active,
-                    'isActive': active,
-                    'userBankDetails': userBankDetails,
-                    'adminCommission':adminCommission,
-                    'subscriptionExpiryDate': subscriptionPlanExpiryDate,
-                   
-
-                }).then(function (result) {
-                    geoFirestore.collection('providers_services')
-                    .where('author', '==', id)
-                    .get() // Retrieve documents matching the query
-                    .then(querySnapshot => {
-                        querySnapshot.forEach(doc => {
-                            // For each matching document, update it
-                            geoFirestore.collection('providers_services').doc(doc.id).update({
-                                'subscriptionExpiryDate': subscriptionPlanExpiryDate
+                        try {
+                            await database.collection('users').doc(id).update({
+                                'firstName': userFirstName || '', 
+                                'lastName': userLastName || '',
+                                'email': email || '',
+                                'phoneNumber': userPhone || '',
+                                'profilePictureURL': IMG || '',
+                                'active': active,
+                                'isActive': active,
+                                'userBankDetails': userBankDetails,
+                                'adminCommission': adminCommission,
+                                'subscriptionExpiryDate': subscriptionPlanExpiryDate,
                             });
-                        });
-                    }).catch(error => {
-                        console.error('Error updating provider services:', error);
-                    });
+                            
+                            database.collection('providers_services')
+                            .where('author', '==', id)
+                            .get()
+                            .then(querySnapshot => {
+                                querySnapshot.forEach(doc => {
+                                    database.collection('providers_services').doc(doc.id).update({
+                                        'subscriptionExpiryDate': subscriptionPlanExpiryDate
+                                    });
+                                });
+                            }).catch(error => {
+                                console.error('Error updating provider services:', error);
+                            });
+                            
+                            setTimeout(function () {
+                                window.location.href = '{{ route("providers")}}';
+                            }, 5000);
+                        } catch (updateError) {
+                            jQuery("#data-table_processing").hide();
+                            $(".error_top").show();
+                            $(".error_top").html("");
+                            $(".error_top").append("<p>" + updateError + "</p>");
+                            window.scrollTo(0, 0);
+                            alert("Save Error: " + (updateError.message || updateError));
+                        }
+                    }
+                ).catch(err => {
+                    jQuery("#data-table_processing").hide();
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>" + err + "</p>");
+                    window.scrollTo(0, 0);
+                    alert("Subscription Error: " + err);
                 });
-                    
-                    setTimeout(function () {
-                        window.location.href = '{{ route("providers")}}';
-                    }, 5000);
-                })
             }).catch(err => {
                 jQuery("#data-table_processing").hide();
                 $(".error_top").show();
                 $(".error_top").html("");
                 $(".error_top").append("<p>" + err + "</p>");
                 window.scrollTo(0, 0);
+                alert("Image Error: " + err);
             });
         }
     });
