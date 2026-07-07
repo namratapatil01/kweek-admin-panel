@@ -411,6 +411,13 @@ class DocumentStoreService
             $payload = json_decode($payload, true);
         }
 
+        if (empty($row['createdAt']) && !empty($row['created_at'])) {
+            $row['createdAt'] = $row['created_at'];
+        }
+        if (empty($row['updatedAt']) && !empty($row['updated_at'])) {
+            $row['updatedAt'] = $row['updated_at'];
+        }
+
         unset($row['payload'], $row['created_at'], $row['updated_at']);
 
         if (isset($row['value']) && is_string($row['value'])) {

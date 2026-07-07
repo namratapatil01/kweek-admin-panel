@@ -33,26 +33,61 @@
             };
         }
 
+        function deepConvertTimestamps(obj) {
+            if (obj === null || obj === undefined) return obj;
+            if (Array.isArray(obj)) {
+                return obj.map(deepConvertTimestamps);
+            }
+            if (typeof obj === 'object') {
+                if ((obj.seconds !== undefined || obj._seconds !== undefined) && 
+                    (obj.nanoseconds !== undefined || obj._nanoseconds !== undefined)) {
+                    const secs = obj.seconds !== undefined ? obj.seconds : obj._seconds;
+                    return makeTimestamp(new Date(secs * 1000));
+                }
+                
+                for (let key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        const val = obj[key];
+                        if (typeof val === 'string' && val.trim() !== '') {
+                            const isDateKey = /date|createdat|updatedat|expiresat|expiry/i.test(key);
+                            const isDateString = /^\d{4}-\d{2}-\d{2}/.test(val) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val);
+                            if (isDateKey || isDateString) {
+                                const parsed = Date.parse(val);
+                                if (!isNaN(parsed)) {
+                                    obj[key] = makeTimestamp(new Date(parsed));
+                                }
+                            }
+                        } else if (typeof val === 'object') {
+                            obj[key] = deepConvertTimestamps(val);
+                        }
+                    }
+                }
+            }
+            return obj;
+        }
+
         function makeSnapshot(id, data, collectionName) {
             const exists = data != null;
+            const convertedData = exists ? deepConvertTimestamps(data) : {};
             return {
                 id: id,
                 exists: exists,
                 ref: makeDocRef(collectionName, id),
-                data: function () { return exists ? data : {}; },
-                get: function (field) { return exists ? data[field] : undefined; },
+                data: function () { return convertedData; },
+                get: function (field) { return convertedData[field]; },
             };
         }
 
         function makeQuerySnapshot(docs, collectionName) {
             const mapped = docs.map(function (row) {
                 const id = row.id || row._id || '';
+                const convertedRow = deepConvertTimestamps(row);
                 return {
                     id: id,
                     exists: true,
                     ref: makeDocRef(collectionName, id),
-                    data: function () { return row; },
-                    get: function (field) { return row[field]; },
+                    data: function () { return convertedRow; },
+                    get: function (field) { return convertedRow[field]; },
                 };
             });
             return {
