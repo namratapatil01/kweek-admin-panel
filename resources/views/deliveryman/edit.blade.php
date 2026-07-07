@@ -144,10 +144,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.1.1/compressor.min.js" integrity="sha512-VaRptAfSxXFAv+vx33XixtIVT9A/9unb1Q8fp63y1ljF+Sbka+eMJWoDAArdm7jOYuLQHVx5v60TQ+t3EA8weA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script>
     <script>
-        var database = kweekFirestore();
-        var geoFirestore = new GeoFirestore(database);
-        var storageRef = kweekStorage().ref('images');
-        var storage = kweekStorage();
+        var database = kweekDb();
+        var geoQuery = new KweekGeoQuery(database);
+        var storageRef = kweekFileStore().ref('images');
+        var storage = kweekFileStore();
         var photo = "";
         var profilephoto = '';
         var oldProfile = '';

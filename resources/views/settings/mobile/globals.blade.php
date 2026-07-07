@@ -49,7 +49,7 @@
 
 <script type="text/javascript">
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref = database.collection('settings');
         
 
@@ -71,7 +71,7 @@
           });
         })
 
-var storageRef = kweekStorage().ref('images');
+var storageRef = kweekFileStore().ref('images');
 function handleFileSelect(evt) {
   var f = evt.target.files[0];
   var reader = new FileReader();

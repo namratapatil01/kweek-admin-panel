@@ -190,7 +190,7 @@
     @endsection
     @section('scripts')
         <script type="text/javascript">
-            var database = kweekFirestore();
+            var database = kweekDb();
             var newRequestRef = database.collection('advertisements').where('status', '==', 'pending');
             var canceledRequestRef = database.collection('advertisements').where('status', '==', 'canceled');
             var updatedRequestRef = database.collection('advertisements').where('status', '==', 'updated');
@@ -477,7 +477,7 @@
 
                             } catch (error) {
 
-                                console.error("Error fetching data from Firestore:", error);
+                                console.error("Error fetching data from database:", error);
 
                                 $('#data-table_processing').hide();
 

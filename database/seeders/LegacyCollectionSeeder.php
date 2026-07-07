@@ -6,23 +6,21 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class FirestoreSeeder extends Seeder
+class LegacyCollectionSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Migrate staged fs_* import tables into production MySQL tables.
      */
     public function run(): void
     {
         $registry = config('kweek_entities', []);
 
-        // Try to increase max_allowed_packet for this session to prevent packet size errors
         try {
-            DB::statement("SET SESSION max_allowed_packet = 16777216");
+            DB::statement('SET SESSION max_allowed_packet = 16777216');
         } catch (\Throwable $e) {
             // Ignore if session level setting is not supported
         }
 
-        // Disable foreign keys during import
         Schema::disableForeignKeyConstraints();
 
         $settingsMap = [
@@ -77,24 +75,24 @@ class FirestoreSeeder extends Seeder
             $sourceTable = 'fs_' . $key;
             $targetTable = $meta['table'] ?? null;
 
-            if (!$targetTable) {
+            if (! $targetTable) {
                 continue;
             }
 
-            // Check if both tables exist
-            if (!Schema::hasTable($sourceTable)) {
+            if (! Schema::hasTable($sourceTable)) {
                 $this->command->warn("Skipping '{$key}': Source table '{$sourceTable}' does not exist.");
+
                 continue;
             }
 
-            if (!Schema::hasTable($targetTable)) {
+            if (! Schema::hasTable($targetTable)) {
                 $this->command->warn("Skipping '{$key}': Target table '{$targetTable}' does not exist.");
+
                 continue;
             }
 
             $this->command->info("Migrating data from '{$sourceTable}' to '{$targetTable}'...");
 
-            // Fetch column schema details of the target table to get lengths and nullability
             $columnDetails = DB::select("SHOW COLUMNS FROM `{$targetTable}`");
             $columnLengths = [];
             $columnNullability = [];
@@ -109,17 +107,13 @@ class FirestoreSeeder extends Seeder
                 $columnTypes[$col->Field] = $col->Type;
             }
 
-            // Fetch columns of the target table
             $targetColumns = Schema::getColumnListing($targetTable);
             $targetColumnsMap = array_combine(
                 array_map('strtolower', $targetColumns),
                 $targetColumns
             );
 
-            // Fetch all records from source table
             $records = DB::table($sourceTable)->get();
-
-            // Clear target table
             DB::table($targetTable)->truncate();
 
             $chunk = [];
@@ -128,7 +122,6 @@ class FirestoreSeeder extends Seeder
                 $attributes = [];
                 $payload = [];
 
-                // Determine target ID (use document_id if available, otherwise fallback to id)
                 $targetId = $recordArray['document_id'] ?? $recordArray['id'] ?? null;
                 if ($targetId !== null) {
                     $targetIdStr = (string) $targetId;
@@ -141,7 +134,6 @@ class FirestoreSeeder extends Seeder
                     $attributes['id'] = $targetIdStr;
                 }
 
-                // Remove source id, document_id, created_at, updated_at from being mapped directly
                 $createdAtVal = $recordArray['created_at'] ?? null;
                 $updatedAtVal = $recordArray['updated_at'] ?? null;
 
@@ -152,9 +144,7 @@ class FirestoreSeeder extends Seeder
                     $recordArray['updated_at']
                 );
 
-                // Map other attributes
                 foreach ($recordArray as $colName => $value) {
-                    // Try to match column name (case-insensitive and removing underscores)
                     $cleanColName = strtolower(str_replace('_', '', $colName));
 
                     $actualTargetCol = null;
@@ -167,19 +157,16 @@ class FirestoreSeeder extends Seeder
                     }
 
                     if ($actualTargetCol !== null) {
-                        // Truncate string values to prevent varchar truncation errors
                         if (is_string($value) && isset($columnLengths[$actualTargetCol])) {
                             if (strlen($value) > $columnLengths[$actualTargetCol]) {
                                 $value = substr($value, 0, $columnLengths[$actualTargetCol]);
                             }
                         }
 
-                        // Handle null values for NOT NULL columns
-                        if ($value === null && isset($columnNullability[$actualTargetCol]) && !$columnNullability[$actualTargetCol]) {
+                        if ($value === null && isset($columnNullability[$actualTargetCol]) && ! $columnNullability[$actualTargetCol]) {
                             if ($columnDefaults[$actualTargetCol] !== null) {
                                 $value = $columnDefaults[$actualTargetCol];
                             } else {
-                                // Coerce to safe default based on type
                                 $type = strtolower($columnTypes[$actualTargetCol] ?? '');
                                 if (str_contains($type, 'int') || str_contains($type, 'decimal') || str_contains($type, 'float') || str_contains($type, 'double')) {
                                     $value = 0;
@@ -191,12 +178,10 @@ class FirestoreSeeder extends Seeder
 
                         $attributes[$actualTargetCol] = $value;
                     } else {
-                        // Overflow goes to payload
                         $payload[$colName] = $value;
                     }
                 }
 
-                // Special override for settings table where all columns go into 'value'
                 if ($targetTable === 'settings') {
                     foreach ($payload as $pKey => $pVal) {
                         if (is_string($pVal) && isset($pVal[0]) && ($pVal[0] === '[' || $pVal[0] === '{')) {
@@ -210,14 +195,10 @@ class FirestoreSeeder extends Seeder
                         'id' => $targetIdStr,
                         'value' => json_encode($payload),
                     ];
-                } else {
-                    // If target has payload column, merge the overflow
-                    if (in_array('payload', $targetColumns, true)) {
-                        $attributes['payload'] = json_encode($payload);
-                    }
+                } elseif (in_array('payload', $targetColumns, true)) {
+                    $attributes['payload'] = json_encode($payload);
                 }
 
-                // Handle standard timestamps
                 if (in_array('created_at', $targetColumns, true)) {
                     $attributes['created_at'] = $createdAtVal ?? now();
                 }

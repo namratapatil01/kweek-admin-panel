@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 /**
- * MySQL admin resource routes — replaces Firebase client-side CRUD.
+ * MySQL admin resource routes for scaffolded admin modules.
  */
 $moduleControllers = [
     'sections' => \App\Http\Controllers\SectionController::class,

@@ -145,18 +145,18 @@ foreach ($countries as $keycountry => $valuecountry) {
 <script>
     
     var section_id = getCookie('section_id') || '';
-    var database = kweekFirestore();
-    var geoFirestore = new GeoFirestore(database);
+    var database = kweekDb();
+    var geoQuery = new KweekGeoQuery(database);
     var refVendor = database.collection('vendors');
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
     var photo = "";
     var profilephoto = '';
     var profileFileName = '';
     var placeholderImage = '';
     
     var storeSection = '';
-    var createdAtman = kweekFirestore.Timestamp.fromDate(new Date());
+    var createdAtman = kweekDb.Timestamp.fromDate(new Date());
     var placeholder = database.collection('settings').doc('placeHolderImage');
     placeholder.get().then(async function(snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();

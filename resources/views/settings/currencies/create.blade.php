@@ -235,7 +235,7 @@
 
 
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 var services = database.collection('sections');
  var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
     var newcountriesjs = JSON.parse(newcountriesjs);

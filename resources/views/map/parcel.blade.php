@@ -66,7 +66,7 @@
     <script type="text/javascript">
 
         var section_id = getCookie('section_id') || '';
-        var database = kweekFirestore();
+        var database = kweekDb();
         var map;
         var marker;
         var markers = [];

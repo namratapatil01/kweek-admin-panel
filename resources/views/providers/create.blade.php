@@ -207,8 +207,8 @@ foreach ($countries as $keycountry => $valuecountry) {
 
             var section_id = getCookie('section_id') || '';
 
-            var database = kweekFirestore();
-            var geoFirestore = new GeoFirestore(database);
+            var database = kweekDb();
+            var geoQuery = new KweekGeoQuery(database);
             var autoAprroveVendor = database.collection('settings').doc("vendor");
             var photo = "";
             var vendorOwnerId = "";
@@ -218,9 +218,9 @@ foreach ($countries as $keycountry => $valuecountry) {
             var ownerphoto = '';
             var photo = "";
             var fileName = "";
-            var storageRef = kweekStorage().ref('images');
+            var storageRef = kweekFileStore().ref('images');
 
-            var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+            var createdAt = kweekDb.FieldValue.serverTimestamp();
             var adminCommission = '';
             var businessModelData = {};
             
@@ -526,7 +526,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                     var currentDate=new Date();
                     if(data.expiryDay!='-1') {
                         currentDate.setDate(currentDate.getDate()+parseInt(data.expiryDay));
-                        data.expiryDate=kweekFirestore.Timestamp.fromDate(currentDate);
+                        data.expiryDate=kweekDb.Timestamp.fromDate(currentDate);
                     } else {
                         data.expiryDate=null;
                     }
@@ -536,7 +536,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             }
             async function addSubscriptionHistory(historyData) {
                 var id_order=database.collection('tmp').doc().id;
-                var createdAt=kweekFirestore.FieldValue.serverTimestamp();
+                var createdAt=kweekDb.FieldValue.serverTimestamp();
 
                 var userId=historyData.userId;
                 await database.collection('subscription_history').doc(id_order).set({

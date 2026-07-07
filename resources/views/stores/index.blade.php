@@ -196,13 +196,13 @@
 @section('scripts')
 
     <script type="text/javascript">
-        var database = kweekFirestore();
+        var database = kweekDb();
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = JSON.parse(user_permissions);
         var checkDeletePermission = false;
         var checkCopyPermission = false;
         var active_id = getCookie('section_id');
-        var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+        var createdAt = kweekDb.FieldValue.serverTimestamp();
 
         if ($.inArray('stores.delete', user_permissions) >= 0) {
             checkDeletePermission = true;
@@ -319,7 +319,7 @@
                     await ref.get().then(async function(querySnapshot) {
                         if (querySnapshot.empty) {
                             $('.total_count').text(0);
-                            console.error("No data found in Firestore.");
+                            console.error("No data found in database.");
                             $('#data-table_processing').hide(); // Hide loader
                             callback({
                                 draw: data.draw,
@@ -435,13 +435,13 @@
                         $('#data-table_processing').hide(); // Hide loader
                         callback({
                             draw: data.draw,
-                            recordsTotal: totalRecords, // Total number of records in Firestore
+                            recordsTotal: totalRecords, // Total number of records in database
                             recordsFiltered: totalRecords, // Number of records after filtering (if any)
                             filteredData: filteredRecords,
                             data: records // The actual data to display in the table
                         });
                     }).catch(function(error) {
-                        console.error("Error fetching data from Firestore:", error);
+                        console.error("Error fetching data from database:", error);
                         $('#data-table_processing').hide(); // Hide loader
                         callback({
                             draw: data.draw,
@@ -849,11 +849,11 @@
                         vendorData.authorName = userFirstName + ' ' + userLastName;
                         vendorData.title = vendor_title;
                         vendorData.id = vendor_id;
-                        coordinates = new kweekFirestore.GeoPoint(vendorData.latitude, vendorData.longitude);
+                        coordinates = new kweekDb.GeoPoint(vendorData.latitude, vendorData.longitude);
                         vendorData.coordinates = coordinates;
                         vendorData.createdAt = createdAt;
                         await database.collection('users').doc(user_id).set(userData).then(async function(result) {
-                            await geoFirestore.collection('vendors').doc(vendor_id).set(vendorData).then(async function(result) {
+                            await geoQuery.collection('vendors').doc(vendor_id).set(vendorData).then(async function(result) {
                                 if(vendorProducts.length > 0){
                                     var count = 0;
                                     await vendorProducts.forEach(async (product) => {

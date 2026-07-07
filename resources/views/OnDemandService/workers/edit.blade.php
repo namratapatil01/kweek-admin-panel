@@ -162,12 +162,12 @@
 
 <script>
 
-    var database = kweekFirestore();
+    var database = kweekDb();
 
     var currentCurrency = '';
     var currencyAtRight = false;
     var decimal_degits = 0;
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var id = "<?php echo $id; ?>";
     var workersRef = database.collection('providers_workers').doc(id);
     var workerImagesCount = 0;
@@ -180,8 +180,8 @@
     var placeholder = database.collection('settings').doc('placeHolderImage');
     var allowed_file_size = '';
     var ownerId = '';
-    var storage = kweekStorage();
-    var storageRef = kweekStorage().ref('images');
+    var storage = kweekFileStore();
+    var storageRef = kweekFileStore().ref('images');
     var idOfProviderDetailPage="{{@$_GET['id']}}";
     var mapType = 'ONLINE';
     var section_id = getCookie('section_id');
@@ -237,20 +237,41 @@
 
             $(".uploaded_image_owner").show();
 
-            database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function (snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    if (workerData.providerId == data.id) {
-                        $('#provider_select').append($("<option selected></option>")
-                            .attr("value", data.id)
-                            .text(data.firstName + ' ' + data.lastName));
-                    } else {
-                        $('#provider_select').append($("<option></option>")
-                            .attr("value", data.id)
-                            .text(data.firstName + ' ' + data.lastName));
-                    }
-                })
-            });
+            if (section_id) {
+                database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function (snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        if (workerData.providerId == data.id) {
+                            $('#provider_select').append($("<option selected></option>")
+                                .attr("value", data.id)
+                                .text(data.firstName + ' ' + data.lastName));
+                        } else {
+                            $('#provider_select').append($("<option></option>")
+                                .attr("value", data.id)
+                                .text(data.firstName + ' ' + data.lastName));
+                        }
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            } else {
+                database.collection('users').where('role', '==', 'provider').get().then(async function (snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        if (workerData.providerId == data.id) {
+                            $('#provider_select').append($("<option selected></option>")
+                                .attr("value", data.id)
+                                .text(data.firstName + ' ' + data.lastName));
+                        } else {
+                            $('#provider_select').append($("<option></option>")
+                                .attr("value", data.id)
+                                .text(data.firstName + ' ' + data.lastName));
+                        }
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            }
         });
 
         $(".edit-form-btn").click(async function () {
@@ -303,7 +324,7 @@
 
                 await storeImageData().then(async (IMG) => {
 
-                    geoFirestore.collection('providers_workers').doc(id).update({
+                    geoQuery.collection('providers_workers').doc(id).update({
                         'firstName': userFirstName,
                         'lastName': userLastName,
                         'email': email,
@@ -316,7 +337,7 @@
                         'latitude': latitude,
                         'longitude': longitude,
                         'providerId': providerId,
-                        coordinates: new kweekFirestore.GeoPoint(latitude, longitude),
+                        coordinates: new kweekDb.GeoPoint(latitude, longitude),
 
                     }).then(function (result) {
                         if(idOfProviderDetailPage!=''){

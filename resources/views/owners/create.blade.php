@@ -193,18 +193,18 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     var section_id = getCookie('section_id') || '';
     var service_type = getCookie('service_type') || '';
-    var database = kweekFirestore();  
+    var database = kweekDb();  
     
     var photo = "";
     var ownerPhoto = '';
     var ownerFileName = '';
     var ownerOldImageFile = '';
 
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();

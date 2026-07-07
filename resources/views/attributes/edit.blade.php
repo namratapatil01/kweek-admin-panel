@@ -49,7 +49,7 @@
 <script type="text/javascript">
 
 var id = "<?php echo $id;?>";
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('vendor_attributes').where("id","==",id);
   
 $(document).ready(function(){

@@ -13,9 +13,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
+            SuperAdminPermissionsSeeder::class,
+            DefaultSettingsSeeder::class,
             DriverFormDropdownSeeder::class,
             DummyDriversSeeder::class,
-            FirestoreSeeder::class,
+            LegacyCollectionSeeder::class,
+            KweekBrandingSeeder::class,
             SectionSeeder::class,
             ServiceTypeSeeder::class,
         ]);

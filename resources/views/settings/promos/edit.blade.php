@@ -127,15 +127,15 @@
         <script type="text/javascript">
             var section_id = getCookie('section_id') || '';
             var id = "<?php echo $id; ?>";
-            var database = kweekFirestore();
+            var database = kweekDb();
             var ref = database.collection('promos').where("id", "==", id);
             var photo = "";
             var fileName = "";
             var oldImageFile = "";
             var placeholderImage = '';
             var placeholder = database.collection('settings').doc('placeHolderImage');
-            var storage = kweekStorage();
-            var storageRef = kweekStorage().ref('images');
+            var storage = kweekFileStore();
+            var storageRef = kweekFileStore().ref('images');
 
             placeholder.get().then(async function(snapshotsimage) {
                 var placeholderImageData = snapshotsimage.data();

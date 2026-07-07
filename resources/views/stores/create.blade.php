@@ -809,7 +809,7 @@
         var section_id = getCookie('section_id') || null;
         var service_type = getCookie('service_type') || null;
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var photo = "";
         var menuPhotoCount = 0;
         var vendorMenuPhotos = "";
@@ -817,7 +817,7 @@
         var vendorOwnerId = "";
         var vendorOwnerOnline = false;
         var photocount = 0;
-        var storageRef = kweekStorage().ref('images');
+        var storageRef = kweekFileStore().ref('images');
         var restaurnt_photos = [];
         var restaurant_photos_filename = [];
         var ownerphoto = '';
@@ -828,7 +828,7 @@
         var story_thumbnail_filename = '';
 
         var ref_sections = database.collection('sections');
-        var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+        var createdAt = kweekDb.FieldValue.serverTimestamp();
         var sections_list = [];
         var categories_list = [];
         var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
@@ -859,8 +859,8 @@
         var dine_in_active = false;
         var story_isEnabled = false;
         var storyCount = 0;
-        var storyRef = kweekStorage().ref('Story');
-        var storyImagesRef = kweekStorage().ref('Story/images');
+        var storyRef = kweekFileStore().ref('Story');
+        var storyImagesRef = kweekFileStore().ref('Story/images');
         var vendor_id = database.collection("tmp").doc().id;
         var driverNearBy = database.collection('settings').doc("DriverNearBy");
 
@@ -1361,9 +1361,9 @@
 
                             }).then(function(result) {
 
-                                coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
+                                coordinates = new kweekDb.GeoPoint(latitude, longitude);
 
-                                geoFirestore.collection('vendors').doc(vendor_id).set({
+                                geoQuery.collection('vendors').doc(vendor_id).set({
                                     'section_id': section_id,
                                     'title': vendorname,
                                     'description': description,
@@ -1405,7 +1405,7 @@
                                     })
 
                                     if (deliveryChargeFlag) {
-                                        geoFirestore.collection('vendors').doc(vendor_id).update({
+                                        geoQuery.collection('vendors').doc(vendor_id).update({
                                             'DeliveryCharge': deliveryCharge
                                         }).then(async function(result) {
                                             window.location.href = '{{ route('stores') }}';
@@ -1870,7 +1870,7 @@
         $(document).on("click", ".remove-story-video", function() {
             var id = $(this).attr('data-id');
             var photo_remove = $(this).attr('data-img');
-            kweekStorage().refFromURL(photo_remove).delete();
+            kweekFileStore().refFromURL(photo_remove).delete();
             $("#story_div_" + id).remove();
             index = story_vedios.indexOf(photo_remove);
             $("#video_file").val('');

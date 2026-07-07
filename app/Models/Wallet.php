@@ -9,6 +9,7 @@ class Wallet extends KweekModel
     protected $table = 'wallet';
 
     protected $casts = [
+        'payload' => 'array',
         'isTopUp' => 'boolean',
         'amount' => 'float',
         'date' => 'datetime',

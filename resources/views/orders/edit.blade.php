@@ -594,7 +594,7 @@
         var commissionModel = false;
         var paymentMethod = '';
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var subscriptionBusinessModel = database.collection('settings').doc("vendor");
         subscriptionBusinessModel.get().then(async function(snapshots) {
             var subscriptionSetting = snapshots.data();
@@ -646,7 +646,7 @@
         if ($.inArray('orders.print', user_permissions) >= 0) {
             checkPrintPermission = true;
         }
-        var geoFirestore = new GeoFirestore(database);
+        var geoQuery = new KweekGeoQuery(database);
         var place_image = '';
         var ref_place = database.collection('settings').doc("placeHolderImage");
         ref_place.get().then(async function(snapshots) {
@@ -1368,7 +1368,7 @@
             async function callWalletTransaction(status) {
                 var orderStatus = status;
 
-                var date = kweekFirestore.FieldValue.serverTimestamp();
+                var date = kweekDb.FieldValue.serverTimestamp();
 
                 var courierCompanyName = $("#courierCompanyName").val();
 
@@ -2468,7 +2468,7 @@ database.collection('users').doc(user_id).set({
                             'phoneNumber': userPhone,
                             'role': 'driver',
                             'id': user_id,
-                            'createdAt': kweekFirestore.FieldValue.serverTimestamp(),
+                            'createdAt': kweekDb.FieldValue.serverTimestamp(),
                             'provider': "email",
                             'appIdentifier': "web",
                             'vendorID': vendorId,
@@ -2537,7 +2537,7 @@ database.collection('users').doc(user_id).set({
                         const walletId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletId).set({
                             amount: vendorBaseAmount,
-                            date: kweekFirestore.FieldValue.serverTimestamp(),
+                            date: kweekDb.FieldValue.serverTimestamp(),
                             id: walletId,
                             isTopUp: false,
                             order_id: orderData.id,
@@ -2550,7 +2550,7 @@ database.collection('users').doc(user_id).set({
                         const walletTaxId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletTaxId).set({
                             amount: vendorTaxAmount,
-                            date: kweekFirestore.FieldValue.serverTimestamp(),
+                            date: kweekDb.FieldValue.serverTimestamp(),
                             id: walletTaxId,
                             isTopUp: false,
                             order_id: orderData.id,
@@ -2581,7 +2581,7 @@ database.collection('users').doc(user_id).set({
                         const walletId = database.collection("tmp").doc().id;
                         await database.collection('wallet').doc(walletId).set({
                             amount: customerAmount,
-                            date: kweekFirestore.FieldValue.serverTimestamp(),
+                            date: kweekDb.FieldValue.serverTimestamp(),
                             id: walletId,
                             isTopUp: true,
                             order_id: orderData.id,

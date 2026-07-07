@@ -63,7 +63,7 @@
         var senderId = "admin";        
         var receiverId = '';
         var fcmToken = '';
-        var database = kweekFirestore();
+        var database = kweekDb();
         var defaultUser = "{{ asset('images/default_user.png') }}"
         var advRef = database.collection('advertisements').doc(id).get().then(async function(snapshot) {
             if (snapshot.exists) {
@@ -159,7 +159,7 @@
                 url: null,
                 videoThumbnail: "",
                 orderId: id,
-                createdAt: kweekFirestore.FieldValue.serverTimestamp(),
+                createdAt: kweekDb.FieldValue.serverTimestamp(),
             });
 
             // Update last message in main chat_admin doc
@@ -170,7 +170,7 @@
                 const dataToSet = {
                     lastMessage: message,
                     lastSenderId: senderId,
-                    createdAt: kweekFirestore.FieldValue.serverTimestamp(),
+                    createdAt: kweekDb.FieldValue.serverTimestamp(),
                 };
 
                 if (!doc.exists) {
@@ -224,7 +224,7 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            const storageRef = kweekStorage().ref();
+            const storageRef = kweekFileStore().ref();
             const filePath = `chat_uploads/${Date.now()}_${file.name}`;
             const uploadTask = storageRef.child(filePath).put(file);
 
@@ -246,7 +246,7 @@
                         senderId: senderId,
                         receiverId: receiverId,
                         orderId: id,
-                        createdAt: kweekFirestore.FieldValue.serverTimestamp(),
+                        createdAt: kweekDb.FieldValue.serverTimestamp(),
                         id: messageId,
                         url: {
                             mime: mimeType,
@@ -268,7 +268,7 @@
                     const dataToSet = {
                         lastMessage: "sent a message",
                         lastSenderId: senderId,
-                        createdAt: kweekFirestore.FieldValue.serverTimestamp(),
+                        createdAt: kweekDb.FieldValue.serverTimestamp(),
                     };
 
                     if (!doc.exists) {

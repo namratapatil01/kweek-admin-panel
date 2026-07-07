@@ -85,7 +85,7 @@
         if ($.inArray('ondemand.categories.delete', user_permissions) >= 0) {
             checkDeletePermission = true;
         }
-        var database = kweekFirestore();
+        var database = kweekDb();
         var pagesize = 10;
         var user_number = [];
         var ref = database.collection('provider_categories');

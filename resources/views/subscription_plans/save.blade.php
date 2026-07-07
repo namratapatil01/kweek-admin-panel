@@ -182,8 +182,8 @@
 
     var section_id = getCookie('section_id') || null;
     var requestId = "<?php echo $id; ?>";
-    var database = kweekFirestore();
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var database = kweekDb();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
     var pagesize = 20;
     var start = '';
@@ -194,8 +194,8 @@
     var planImageFile = '';
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
 
     var enabledSubscriptions = 0; 
     var serviceTypeFlag = '';

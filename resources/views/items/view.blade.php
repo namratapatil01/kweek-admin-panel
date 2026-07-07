@@ -144,7 +144,7 @@
 <script type="text/javascript">
 
 var id = "<?php echo $id;?>";
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('vendor_products').where("id","==",id);
 var ref_sections = database.collection('sections');
 
@@ -183,7 +183,7 @@ $(document).ready(function(){
   		var variant = jQuery(this).data('variant');
   		var fileurl = jQuery("#variant_"+variant+"_url").val();
   		if(fileurl){
-  			kweekStorage().refFromURL(fileurl).delete();
+  			kweekFileStore().refFromURL(fileurl).delete();
   			jQuery("#variant_"+variant+"_image").empty();
   			jQuery("#variant_"+variant+"_url").val('');
   		}
