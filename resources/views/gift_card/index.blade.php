@@ -114,6 +114,19 @@
         return url;
     }
 
+    function formatExpiryDay(value) {
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
+        if (typeof value === 'number') {
+            return String(value);
+        }
+        if (typeof value === 'string') {
+            return value;
+        }
+        return '';
+    }
+
 
     $(document).ready(function () {
         $(document.body).on('click', '.redirecttopage', function () {
@@ -189,7 +202,7 @@
         var id = val.id;
         var route1 = '{{ url('gift-card/edit') }}/' + id;
         var imageUrl = normalizeImageUrl(val.image || '');
-        var expiryDay = val.expiryDay || val.expiry_day || '';
+        var expiryDay = formatExpiryDay(val.expiryDay || val.expiry_day || '');
         if(checkDeletePermission){
         html = html + '<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
             'for="is_open_' + id + '" ></label></td>';

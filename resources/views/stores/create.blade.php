@@ -60,6 +60,9 @@
                                     <label class="col-3 control-label">{{ trans('lang.vendor_cuisine') }}</label>
                                     <div class="col-7">
                                         <select id='vendor_cuisines' class="form-control chosen-select" multiple="multiple" required>
+                                            @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->title }}</option>
+                                            @endforeach
                                         </select>
                                         <div class="form-text text-muted">
                                             {{ trans('lang.vendor_cuisines_help') }}

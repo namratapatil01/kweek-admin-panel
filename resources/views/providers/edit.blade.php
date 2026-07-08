@@ -474,6 +474,9 @@
         })(f);
         reader.readAsDataURL(f);
     }
+
+    window.handleFileSelectowner = handleFileSelectowner;
+
     async function storeImageData() {
         var newPhoto = '';
         try {

@@ -70,8 +70,16 @@ class AdminCrudService
             $sId = $filters['sectionId'] ?? $filters['section_id'];
             if ($sId !== null && $sId !== '' && $sId !== 'all') {
                 $query->where(function ($q) use ($sId) {
-                    if ($this->hasColumn('section_id')) $q->orWhere('section_id', $sId);
-                    if ($this->hasColumn('sectionId')) $q->orWhere('sectionId', $sId);
+                    if ($this->hasColumn('section_id')) {
+                        $q->orWhere('section_id', $sId);
+                    }
+                    if ($this->hasColumn('sectionId')) {
+                        $q->orWhere('sectionId', $sId);
+                    }
+                    // Fallback: section_id stored in JSON payload column
+                    if ($this->hasColumn('payload')) {
+                        $q->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.section_id')) = ?", [$sId]);
+                    }
                 });
             }
             unset($filters['sectionId'], $filters['section_id']);

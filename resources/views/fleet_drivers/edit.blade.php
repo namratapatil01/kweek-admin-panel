@@ -233,6 +233,46 @@
         var fileName = '';
         var oldProfileFile = '';
 
+        function handleFileSelect(evt) {
+            var f = evt.target.files[0];
+            if (!f) {
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = (function (theFile) {
+                return function (e) {
+                    var filePayload = e.target.result;
+                    var parts = theFile.name.split('.');
+                    var ext = parts.length > 1 ? parts.pop() : 'jpg';
+                    var filename = theFile.name.replace(/C:\\fakepath\\/i, '');
+                    var timestamp = Number(new Date());
+                    filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
+                    photo = filePayload;
+                    fileName = filename;
+                    $(".user_image").empty();
+                    $(".user_image").append('<img class="rounded" style="width:50px" src="' + photo + '" alt="image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">');
+                };
+            })(f);
+            reader.readAsDataURL(f);
+        }
+
+        window.handleFileSelect = handleFileSelect;
+
+        async function storeImageData() {
+            var newPhoto = [];
+            newPhoto['profile'] = '';
+            if (photo != '' && photo != oldProfileFile) {
+                try {
+                    newPhoto['profile'] = photo;
+                } catch (error) {
+                    console.log("Error handling image: ", error);
+                }
+            } else {
+                newPhoto['profile'] = photo;
+            }
+            return newPhoto;
+        }
+
         // Settings, currencies, services, sections — from MySQL
         var placeholderImage = '';
         var currentCurrency = '';
@@ -580,53 +620,6 @@
             });
             $('.driver_order_text').html(order_text);
             $('.driver_orders_url').attr('href', url);
-        }
-
-        function handleFileSelect(evt) {
-            var f = evt.target.files[0];
-            var reader = new FileReader();
-            reader.onload = (function (theFile) {
-                return function (e) {
-                    var filePayload = e.target.result;
-                    var hash = CryptoJS.SHA256(Math.random() + CryptoJS.SHA256(filePayload));
-                    var val = f.name;
-                    var ext = val.split('.')[1];
-                    var docName = val.split('fakepath')[1];
-                    var filename = (f.name).replace(/C:\\fakepath\\/i, '')
-                    var timestamp = Number(new Date());
-                    var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
-                    photo = filePayload;
-                    fileName = filename;
-                    $(".user_image").empty();
-                    $(".user_image").append('<img class="rounded" style="width:50px" src="' + photo + '" alt="image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">');
-                };
-            })(f);
-            reader.readAsDataURL(f);
-        }
-
-        async function storeImageData() {
-            var newPhoto = [];
-            newPhoto['profile'] = '';
-            if (photo != '' && photo != oldProfileFile) {
-                try {
-                    newPhoto['profile'] = photo;
-                } catch (error) {
-                    console.log("Error handling image: ", error);
-                }
-            } else {
-                newPhoto['profile'] = photo;
-            }
-            return newPhoto;
-        }
-
-        function chkAlphabets3(event, msg) {
-            if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
-                document.getElementById(msg).innerHTML = "Accept only Number and Dot(.)";
-                return false;
-            } else {
-                document.getElementById(msg).innerHTML = "";
-                return true;
-            }
         }
 
     </script>

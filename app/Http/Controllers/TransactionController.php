@@ -14,7 +14,36 @@ class TransactionController extends Controller
 
     public function index($id='')
     {
-        return view("transactions.index")->with('id',$id);
+        $user = null;
+        $vendor = null;
+        $parsedId = $id;
+
+        if (str_starts_with($id, 'storeID=')) {
+            $parsedId = str_replace('storeID=', '', $id);
+            $vendor = \App\Models\Vendor::find($parsedId);
+            if ($vendor) {
+                // Still need the user object for UI details if it exists
+                $user = \App\Models\AppUser::where('vendorID', $vendor->id)->where('role', 'vendor')->first();
+                if (!$user && isset($vendor->payload['author'])) {
+                    $user = \App\Models\AppUser::find($vendor->payload['author']);
+                }
+                
+                // The wallet table stores the AppUser's ID (vendor author) in the user_id column
+                $parsedId = $user ? $user->id : $vendor->id; 
+            }
+        } elseif (str_starts_with($id, 'driverID=')) {
+            $parsedId = str_replace('driverID=', '', $id);
+            $user = \App\Models\AppUser::find($parsedId);
+        } elseif (!empty($id)) {
+            $user = \App\Models\AppUser::find($id);
+        }
+
+        return view("transactions.index")->with([
+            'id' => $id,
+            'parsedId' => $parsedId,
+            'user' => $user,
+            'vendor' => $vendor
+        ]);
     }
 
     public function datatable(Request $request)
@@ -35,8 +64,9 @@ class TransactionController extends Controller
                 $query->where('user_id', $userId);
             }
 
-            // Total count before filtering
-            $totalFiltered = $query->count();
+            // Total count for this specific query (e.g. for this user)
+            $totalRecords = (clone $query)->count();
+            $totalFiltered = $totalRecords;
 
             // Search
             if ($search && strlen($search) >= 1) {
@@ -76,28 +106,113 @@ class TransactionController extends Controller
 
             $transactions = $query->with('user')->skip($start)->take($length)->get();
 
+            // Fetch Currency
+            $currencyRow = \DB::table('currencies')->where('isActive', 1)->first();
+            $currencySymbol = $currencyRow ? $currencyRow->symbol : '$';
+            $currencyAtRight = $currencyRow ? (bool)$currencyRow->symbolAtRight : false;
+            $decimalDigits = $currencyRow ? $currencyRow->decimal_degits : 2;
+
             $data = [];
             foreach ($transactions as $tx) {
-                $row = $tx->toArray();
-                // Add user info
-                if ($tx->user) {
-                    $row['Name'] = trim($tx->user->firstName . ' ' . $tx->user->lastName);
-                    $row['role'] = $tx->user->role;
-                    $row['vendorID'] = $tx->user->vendorID;
-                } else {
-                    $row['Name'] = 'Unknown User';
-                    $row['role'] = '';
-                    $row['vendorID'] = '';
+                $row = [];
+                $id = $tx->id;
+
+                // 1. Checkbox
+                $row[] = '<input type="checkbox" id="is_open_' . $id . '" class="is_open" dataId="' . $id . '"><label class="col-3 control-label" for="is_open_' . $id . '" ></label>';
+
+                // User and Role
+                if (empty($userId)) {
+                    if ($tx->user) {
+                        $role = $tx->user->role;
+                        $routeuser = "Javascript:void(0)";
+                        if ($role == "customer") {
+                            $routeuser = route('users.view', $tx->user_id);
+                        } else if ($role == "driver") {
+                            $routeuser = route('drivers.view', $tx->user_id);
+                        } else if ($role == "vendor") {
+                            if ($tx->user->vendorID != '') {
+                                $routeuser = route('stores.view', $tx->user->vendorID);
+                            }
+                        }
+                        $name = trim($tx->user->firstName . ' ' . $tx->user->lastName);
+                        $row[] = '<a href="' . $routeuser . '">' . $name . '</a>';
+                        $row[] = $role;
+                    } else {
+                        $row[] = 'Unknown User';
+                        $row[] = '';
+                    }
                 }
+
+                // Amount
+                $amountVal = number_format((float)$tx->amount, $decimalDigits);
+                $amountStr = $currencyAtRight ? $amountVal . $currencySymbol : $currencySymbol . $amountVal;
                 
-                // Format amount with currency symbol logic to be handled on frontend
-                $row['date'] = $tx->date ? $tx->date->toIso8601String() : '';
+                if ($tx->isTopUp || $tx->payment_method == "Cancelled Order Payment") {
+                    $row[] = '<span class="text-green"><i class="mdi mdi-arrow-up-bold status-icon"></i> +' . $amountStr . '</span>';
+                } else {
+                    $row[] = '<span class="text-red"><i class="mdi mdi-arrow-down-bold status-icon"></i> (-' . $amountStr . ')</span>';
+                }
+
+                // Date
+                $dateHtml = '';
+                if ($tx->date) {
+                    $dt = \Carbon\Carbon::parse($tx->date);
+                    $dateHtml = $dt->format('D M d Y') . '<br>' . $dt->format('h:i:s A');
+                }
+                $row[] = $dateHtml;
+
+                // Note
+                $row[] = $tx->note ?? '';
+
+                // Payment Method
+                $payment_method_html = '-';
+                if ($tx->payment_method && $tx->payment_method != 'tax') {
+                    $img = '';
+                    $pm = strtolower($tx->payment_method);
+                    if (str_contains($pm, 'stripe')) $img = 'stripe.png';
+                    elseif (str_contains($pm, 'razorpay')) $img = 'razorepay.png';
+                    elseif (str_contains($pm, 'paypal')) $img = 'paypal.png';
+                    elseif (str_contains($pm, 'payfast')) $img = 'payfast.png';
+                    elseif (str_contains($pm, 'paystack')) $img = 'paystack.png';
+                    elseif (str_contains($pm, 'flutterwave')) $img = 'flutter_wave.png';
+                    elseif (str_contains($pm, 'mercado pago')) $img = 'marcado_pago.png';
+                    elseif (str_contains($pm, 'wallet')) $img = 'emart_wallet.png';
+                    elseif (str_contains($pm, 'paytm')) $img = 'paytm.png';
+                    elseif (str_contains($pm, 'xendit')) $img = 'xendit.png';
+                    elseif (str_contains($pm, 'orangepay') || str_contains($pm, 'maya') || str_contains($pm, 'instapay')) $img = 'orangeMoney.png';
+                    elseif (str_contains($pm, 'midtrans')) $img = 'midtrans.png';
+                    elseif ($tx->payment_method == 'Cancelled Order Payment') $img = 'cancel_order.png';
+                    elseif ($tx->payment_method == 'Refund Amount') $img = 'refund_amount.png';
+                    elseif ($tx->payment_method == 'Referral Amount') $img = 'reffral_amount.png';
+                    
+                    if ($img) {
+                        $payment_method_html = '<img alt="image" style="max-width:100px;" src="' . asset('images/payment/' . $img) . '">';
+                    } else {
+                        $payment_method_html = $tx->payment_method;
+                    }
+                }
+                $row[] = $payment_method_html;
+
+                // Payment Status
+                if ($tx->payment_status == 'success') {
+                    $row[] = '<span class="badge badge-success">' . ucfirst($tx->payment_status) . '</span>';
+                } elseif (strtolower($tx->payment_status) == 'refund success') {
+                    $row[] = '<span class="badge badge-danger">' . ucfirst($tx->payment_status) . '</span>';
+                } elseif ($tx->payment_status == 'undefined') {
+                    $row[] = '<span class="badge badge-warning">' . ucfirst($tx->payment_status) . '</span>';
+                } else {
+                    $row[] = '<span class="badge badge-secondary">' . ucfirst($tx->payment_status) . '</span>';
+                }
+
+                // Actions
+                $row[] = '<span class="action-btn"><a id="' . $id . '" class="delete-btn" name="transaction-delete" href="javascript:void(0)"><i class="mdi mdi-delete"></i></a></span>';
+
                 $data[] = $row;
             }
 
             return response()->json([
                 'draw' => intval($request->input('draw')),
-                'recordsTotal' => \App\Models\Wallet::count(),
+                'recordsTotal' => $totalRecords,
                 'recordsFiltered' => $totalFiltered,
                 'data' => $data,
                 'filteredData' => $data, // for frontend compatibility
