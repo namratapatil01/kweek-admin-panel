@@ -22,6 +22,13 @@ use App\Http\Controllers\Api\Provider\ProviderServiceController;
 use App\Http\Controllers\Api\Provider\ProviderSubscriptionController;
 use App\Http\Controllers\Api\Provider\ProviderWalletController;
 use App\Http\Controllers\Api\Provider\ProviderWorkerController;
+use App\Http\Controllers\Api\Worker\WorkerAuthController;
+use App\Http\Controllers\Api\Worker\WorkerChatController;
+use App\Http\Controllers\Api\Worker\WorkerDashboardController;
+use App\Http\Controllers\Api\Worker\WorkerJobController;
+use App\Http\Controllers\Api\Worker\WorkerMiscController;
+use App\Http\Controllers\Api\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Worker\WorkerReviewController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
@@ -181,6 +188,55 @@ Route::prefix('provider')->group(function () {
         Route::get('documents/status', [ProviderMiscController::class, 'documentStatus']);
         Route::post('documents', [ProviderMiscController::class, 'submitDocuments']);
         Route::post('documents/upload', [ProviderMiscController::class, 'uploadDocument']);
+    });
+});
+
+Route::prefix('worker')->group(function () {
+    Route::post('register', [WorkerAuthController::class, 'register']);
+    Route::post('login', [WorkerAuthController::class, 'login']);
+    Route::post('password/forgot', [WorkerAuthController::class, 'forgotPassword']);
+    Route::post('password/reset', [WorkerAuthController::class, 'resetPassword']);
+    Route::get('home', [WorkerDashboardController::class, 'home']);
+    Route::get('terms', [WorkerMiscController::class, 'terms']);
+    Route::get('privacy', [WorkerMiscController::class, 'privacy']);
+
+    Route::middleware(['auth:sanctum', 'app.role:worker'])->group(function () {
+        Route::post('logout', [WorkerAuthController::class, 'logout']);
+        Route::delete('account', [WorkerAuthController::class, 'deleteAccount']);
+
+        Route::get('profile', [WorkerProfileController::class, 'show']);
+        Route::put('profile', [WorkerProfileController::class, 'update']);
+        Route::post('profile/image', [WorkerProfileController::class, 'uploadImage']);
+        Route::put('availability', [WorkerProfileController::class, 'setOnline']);
+        Route::get('provider', [WorkerProfileController::class, 'provider']);
+
+        Route::get('dashboard', [WorkerDashboardController::class, 'dashboard']);
+
+        Route::get('jobs', [WorkerJobController::class, 'index']);
+        Route::get('jobs/{id}', [WorkerJobController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/accept', [WorkerJobController::class, 'accept'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/reject', [WorkerJobController::class, 'reject'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/start', [WorkerJobController::class, 'start'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/stop-timer', [WorkerJobController::class, 'stopTimer'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/extra-charges', [WorkerJobController::class, 'extraCharges'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('jobs/{id}/complete', [WorkerJobController::class, 'complete'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::patch('jobs/{id}/status', [WorkerJobController::class, 'updateStatus'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('chat/inbox', [WorkerChatController::class, 'inbox']);
+        Route::get('chat/{orderId}/messages', [WorkerChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/send', [WorkerChatController::class, 'send']);
+        Route::post('chat/upload', [WorkerChatController::class, 'upload']);
+
+        Route::get('reviews', [WorkerReviewController::class, 'index']);
+        Route::get('reviews/order/{orderId}', [WorkerReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('ratings', [WorkerReviewController::class, 'ratings']);
+
+        Route::get('earnings', [WorkerMiscController::class, 'earnings']);
+        Route::get('notifications', [WorkerMiscController::class, 'notifications']);
+        Route::get('documents', [WorkerMiscController::class, 'documents']);
+        Route::get('documents/status', [WorkerMiscController::class, 'documentStatus']);
+        Route::post('documents', [WorkerMiscController::class, 'submitDocuments']);
+        Route::post('documents/upload', [WorkerMiscController::class, 'uploadDocument']);
     });
 });
 

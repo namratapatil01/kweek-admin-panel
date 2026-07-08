@@ -71,11 +71,12 @@ Flutter project: `emart_customer` (`/Users/sujiyan/Downloads/emart_customer`)
 |---|---|---|---|---|
 | `provider_categories` | `provider_categories` | `ProviderCategory` | `GET /api/customer/categories?type=provider` | `GET /api/provider/categories` |
 | `providers_services` | `providers_services` | `ProviderService` | `GET /api/customer/services` | `CRUD /api/provider/services` |
-| `providers_workers` | `providers_workers` | `ProviderWorker` | Via generic API | `CRUD /api/provider/workers` |
-| `provider_orders` | `provider_orders` | `ProviderOrder` | `GET /api/customer/orders?type=provider` | `CRUD lifecycle /api/provider/bookings` |
+| `providers_workers` | `providers_workers` | `ProviderWorker` | Via generic API | `CRUD /api/provider/workers` + Worker auth `/api/worker/*` |
+| `provider_orders` | `provider_orders` | `ProviderOrder` | `GET /api/customer/orders?type=provider` | `CRUD lifecycle /api/provider/bookings` + `/api/worker/jobs` |
 | `providers_coupons` | `providers_coupons` | `ProviderCoupon` | `GET /api/customer/coupons?type=provider` | `CRUD /api/provider/coupons` |
 | `favorite_service` | `favorite_services` | `FavoriteService` | `GET/POST/DELETE /api/customer/favorites/service` | — |
 | `users` (role=provider) | `app_users` | `AppUser` | — | Auth + Profile `/api/provider/*` |
+| `users` / worker profile | `providers_workers` + `app_users` (role=worker) | `ProviderWorker` / `AppUser` | — | Auth + Jobs `/api/worker/*` |
 | `subscription_plans` | `subscription_plans` | `SubscriptionPlan` | — | `GET /api/provider/subscriptions/plans` |
 | `subscription_history` | `subscription_histories` | `SubscriptionHistory` | — | `GET/POST /api/provider/subscriptions*` |
 | `withdraw_method` | `withdraw_methods` | `WithdrawMethod` | — | `GET/PUT /api/provider/withdraw-method` |
@@ -87,9 +88,9 @@ Flutter project: `emart_customer` (`/Users/sujiyan/Downloads/emart_customer`)
 |---|---|---|---|---|
 | `chat_driver` | `chat_driver` | `ChatDriver` | Planned (Vendor/Rider phase) | — |
 | `chat_store` | `chat_store` | `ChatStore` | Planned | — |
-| `chat_worker` | `chat_worker` | `ChatWorker` | Planned | `GET/POST /api/provider/chat/*?type=worker` |
+| `chat_worker` | `chat_worker` | `ChatWorker` | Planned | `GET/POST /api/provider/chat/*?type=worker` + `/api/worker/chat/*` |
 | `chat_provider` | `chat_provider` | `ChatProvider` | Planned | `GET/POST /api/provider/chat/*` |
-| `thread` (subcollection) | `chat_threads` | `ChatThread` | Planned | Via `/api/provider/chat/{orderId}/messages` |
+| `thread` (subcollection) | `chat_threads` | `ChatThread` | Planned | Via provider/worker chat message endpoints |
 
 ## Other
 

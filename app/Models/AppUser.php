@@ -97,6 +97,11 @@ class AppUser extends Authenticatable
         return $query->where('role', 'provider');
     }
 
+    public function scopeWorkers($query)
+    {
+        return $query->where('role', 'worker');
+    }
+
     public function providerServices()
     {
         return $this->hasMany(ProviderService::class, 'payload->author', 'id');

@@ -4,15 +4,19 @@ namespace App\Services\Provider;
 
 use App\Models\AppUser;
 use App\Models\ProviderWorker;
+use App\Services\Worker\WorkerAuthService;
 use App\Support\CatalogEntityWriter;
 use App\Services\Storage\FileStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ProviderWorkerService
 {
-    public function __construct(protected FileStorageService $storageService)
-    {
+    public function __construct(
+        protected FileStorageService $storageService,
+        protected WorkerAuthService $workerAuthService
+    ) {
     }
 
     public function list(string $providerId, ?bool $onlineOnly = null, int $perPage = 20): LengthAwarePaginator
@@ -42,19 +46,19 @@ class ProviderWorkerService
 
     public function create(AppUser $provider, array $data): array
     {
+        $plainPassword = $data['password'] ?? Str::random(10);
+        $data['id'] = $data['id'] ?? (string) Str::uuid();
         $data['providerId'] = $provider->id;
         $data['createdAt'] = $data['createdAt'] ?? now();
         $data['active'] = $data['active'] ?? true;
         $data['online'] = $data['online'] ?? false;
         $data['reviewsCount'] = $data['reviewsCount'] ?? 0;
         $data['reviewsSum'] = $data['reviewsSum'] ?? 0;
-
-        if (! empty($data['password'])) {
-            $data['password_hash'] = Hash::make($data['password']);
-            unset($data['password']);
-        }
+        $data['password_hash'] = Hash::make($plainPassword);
+        unset($data['password']);
 
         $worker = CatalogEntityWriter::write(new ProviderWorker(), $data);
+        $this->workerAuthService->syncAppUser($worker, $plainPassword);
 
         return $worker->toDocumentArray();
     }
@@ -71,6 +75,7 @@ class ProviderWorkerService
         }
 
         unset($data['providerId'], $data['id']);
+        $plainPassword = $data['password'] ?? null;
 
         if (! empty($data['password'])) {
             $data['password_hash'] = Hash::make($data['password']);
@@ -78,6 +83,7 @@ class ProviderWorkerService
         }
 
         $worker = CatalogEntityWriter::write(new ProviderWorker(), $data, $worker);
+        $this->workerAuthService->syncAppUser($worker, $plainPassword);
 
         return $worker->toDocumentArray();
     }
