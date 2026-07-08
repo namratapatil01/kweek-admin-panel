@@ -10,6 +10,18 @@ use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerProfileController;
 use App\Http\Controllers\Api\Customer\CustomerReviewController;
 use App\Http\Controllers\Api\Customer\CustomerWalletController;
+use App\Http\Controllers\Api\Provider\ProviderAuthController;
+use App\Http\Controllers\Api\Provider\ProviderBookingController;
+use App\Http\Controllers\Api\Provider\ProviderChatController;
+use App\Http\Controllers\Api\Provider\ProviderCouponController;
+use App\Http\Controllers\Api\Provider\ProviderDashboardController;
+use App\Http\Controllers\Api\Provider\ProviderMiscController;
+use App\Http\Controllers\Api\Provider\ProviderProfileController;
+use App\Http\Controllers\Api\Provider\ProviderReviewController;
+use App\Http\Controllers\Api\Provider\ProviderServiceController;
+use App\Http\Controllers\Api\Provider\ProviderSubscriptionController;
+use App\Http\Controllers\Api\Provider\ProviderWalletController;
+use App\Http\Controllers\Api\Provider\ProviderWorkerController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
@@ -83,6 +95,92 @@ Route::prefix('customer')->group(function () {
         Route::post('gift-cards/purchase', [CustomerMiscController::class, 'purchaseGiftCard']);
         Route::post('complaints', [CustomerMiscController::class, 'complaints']);
         Route::post('sos', [CustomerMiscController::class, 'sos']);
+    });
+});
+
+Route::prefix('provider')->group(function () {
+    Route::post('register', [ProviderAuthController::class, 'register']);
+    Route::post('login', [ProviderAuthController::class, 'login']);
+    Route::post('auth/apple', [ProviderAuthController::class, 'loginWithApple']);
+    Route::post('auth/phone', [ProviderAuthController::class, 'loginWithPhone']);
+    Route::post('password/forgot', [ProviderAuthController::class, 'forgotPassword']);
+    Route::post('password/reset', [ProviderAuthController::class, 'resetPassword']);
+    Route::get('home', [ProviderDashboardController::class, 'home']);
+    Route::get('terms', [ProviderMiscController::class, 'terms']);
+    Route::get('privacy', [ProviderMiscController::class, 'privacy']);
+
+    Route::middleware(['auth:sanctum', 'app.role:provider'])->group(function () {
+        Route::post('logout', [ProviderAuthController::class, 'logout']);
+        Route::delete('account', [ProviderAuthController::class, 'deleteAccount']);
+
+        Route::get('profile', [ProviderProfileController::class, 'show']);
+        Route::put('profile', [ProviderProfileController::class, 'update']);
+        Route::post('profile/image', [ProviderProfileController::class, 'uploadImage']);
+        Route::put('bank-details', [ProviderProfileController::class, 'updateBankDetails']);
+
+        Route::get('dashboard', [ProviderDashboardController::class, 'dashboard']);
+
+        Route::get('sections', [ProviderServiceController::class, 'sections']);
+        Route::get('categories', [ProviderServiceController::class, 'categories']);
+
+        Route::get('services', [ProviderServiceController::class, 'index']);
+        Route::post('services', [ProviderServiceController::class, 'store']);
+        Route::get('services/{id}', [ProviderServiceController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('services/{id}', [ProviderServiceController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('services/{id}', [ProviderServiceController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('services/{id}/images', [ProviderServiceController::class, 'uploadImages'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('bookings', [ProviderBookingController::class, 'index']);
+        Route::get('bookings/{id}', [ProviderBookingController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/accept', [ProviderBookingController::class, 'accept'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/reject', [ProviderBookingController::class, 'reject'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/assign-worker', [ProviderBookingController::class, 'assignWorker'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/start', [ProviderBookingController::class, 'start'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/stop-timer', [ProviderBookingController::class, 'stopTimer'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/extra-charges', [ProviderBookingController::class, 'extraCharges'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('bookings/{id}/complete', [ProviderBookingController::class, 'complete'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::patch('bookings/{id}/status', [ProviderBookingController::class, 'updateStatus'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('workers', [ProviderWorkerController::class, 'index']);
+        Route::post('workers', [ProviderWorkerController::class, 'store']);
+        Route::get('workers/{id}', [ProviderWorkerController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('workers/{id}', [ProviderWorkerController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('workers/{id}', [ProviderWorkerController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('workers/{id}/image', [ProviderWorkerController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('coupons', [ProviderCouponController::class, 'index']);
+        Route::post('coupons', [ProviderCouponController::class, 'store']);
+        Route::get('coupons/{id}', [ProviderCouponController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('coupons/{id}', [ProviderCouponController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('coupons/{id}', [ProviderCouponController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('coupons/{id}/image', [ProviderCouponController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('wallet', [ProviderWalletController::class, 'balance']);
+        Route::get('wallet/transactions', [ProviderWalletController::class, 'transactions']);
+        Route::get('earnings', [ProviderWalletController::class, 'earnings']);
+        Route::post('wallet/withdraw', [ProviderWalletController::class, 'withdraw']);
+        Route::get('wallet/payouts', [ProviderWalletController::class, 'payoutHistory']);
+        Route::get('withdraw-method', [ProviderWalletController::class, 'getWithdrawMethod']);
+        Route::put('withdraw-method', [ProviderWalletController::class, 'saveWithdrawMethod']);
+
+        Route::get('subscriptions/plans', [ProviderSubscriptionController::class, 'plans']);
+        Route::get('subscriptions/history', [ProviderSubscriptionController::class, 'history']);
+        Route::post('subscriptions', [ProviderSubscriptionController::class, 'subscribe']);
+
+        Route::get('chat/inbox', [ProviderChatController::class, 'inbox']);
+        Route::get('chat/{orderId}/messages', [ProviderChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/send', [ProviderChatController::class, 'send']);
+        Route::post('chat/upload', [ProviderChatController::class, 'upload']);
+
+        Route::get('reviews', [ProviderReviewController::class, 'index']);
+        Route::get('reviews/order/{orderId}', [ProviderReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('ratings', [ProviderReviewController::class, 'ratings']);
+
+        Route::get('notifications', [ProviderMiscController::class, 'notifications']);
+        Route::get('documents', [ProviderMiscController::class, 'documents']);
+        Route::get('documents/status', [ProviderMiscController::class, 'documentStatus']);
+        Route::post('documents', [ProviderMiscController::class, 'submitDocuments']);
+        Route::post('documents/upload', [ProviderMiscController::class, 'uploadDocument']);
     });
 });
 

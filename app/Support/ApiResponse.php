@@ -39,13 +39,13 @@ class ApiResponse
         ]);
     }
 
-    public static function authSuccess(string $token, mixed $customer, string $message = 'Login successful'): JsonResponse
+    public static function authSuccess(string $token, mixed $user, string $message = 'Login successful', string $userKey = 'customer'): JsonResponse
     {
         return response()->json([
             'status' => true,
             'message' => $message,
             'token' => $token,
-            'customer' => $customer,
+            $userKey => $user,
         ]);
     }
 }

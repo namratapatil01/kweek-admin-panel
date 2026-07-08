@@ -92,6 +92,26 @@ class AppUser extends Authenticatable
         return $query->where('role', 'vendor');
     }
 
+    public function scopeProviders($query)
+    {
+        return $query->where('role', 'provider');
+    }
+
+    public function providerServices()
+    {
+        return $this->hasMany(ProviderService::class, 'payload->author', 'id');
+    }
+
+    public function providerWorkers()
+    {
+        return $this->hasMany(ProviderWorker::class, 'providerId', 'id');
+    }
+
+    public function providerCoupons()
+    {
+        return $this->hasMany(ProviderCoupon::class, 'providerId', 'id');
+    }
+
     public function scopeApproved($query)
     {
         return $query->where('isDocumentVerify', true);
