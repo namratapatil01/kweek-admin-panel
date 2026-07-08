@@ -758,6 +758,8 @@
             reader.readAsDataURL(f);
         }
 
+        window.handleFileSelect = handleFileSelect;
+
         async function storeImageData() {
             var newPhoto = [];
             newPhoto['profile'] = '';
