@@ -480,7 +480,7 @@ if (empty($service_type)) {
         </li>
         @endif
 
-        @if($user->role_id == 1 || $service_type == "ondemand-service")
+        @if($service_type == "ondemand-service")
         @if ($user->role_id == 1 || 
             in_array('providers', $role_has_permission) || 
             in_array('ondemand-categories', $role_has_permission) || 
@@ -509,7 +509,7 @@ if (empty($service_type)) {
         @if ($user->role_id == 1 || in_array('ondemand-coupons', $role_has_permission))
         <li><a class="waves-effect waves-dark" href="{!! url('ondemand-coupons') !!}" aria-expanded="false">
                 <i class="ri-coupon-4-fill"></i>
-                <span class="hide-menu">{{ trans('lang.coupon_plural') }}</span>
+                <span class="hide-menu">{{ trans('lang.ondemandcoupon_plural') }}</span>
             </a>
         </li>
         @endif

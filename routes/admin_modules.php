@@ -15,7 +15,7 @@ $moduleControllers = [
     'vendor-attributes' => \App\Http\Controllers\AttributeController::class,
     'documents' => \App\Http\Controllers\DocumentController::class,
     'review-attributes' => \App\Http\Controllers\ReviewAttributeController::class,
-    'coupons' => \App\Http\Controllers\CouponController::class,
+    // 'coupons' is handled by explicit routes in web.php (CouponController)
     'subscription-plans' => \App\Http\Controllers\SubscriptionPlanController::class,
     'vehicle-types' => \App\Http\Controllers\VehicleTypeController::class,
     'rental-vehicle-types' => \App\Http\Controllers\RentalVehicleTypeController::class,
@@ -27,7 +27,7 @@ $moduleControllers = [
     'on-boarding' => \App\Http\Controllers\OnBoardingController::class,
     'popular-destinations' => \App\Http\Controllers\PopularDestinationController::class,
     'banner-items' => \App\Http\Controllers\BannerController::class,
-    'advertisements' => \App\Http\Controllers\AdvertisementsController::class,
+    // 'advertisements' is handled by explicit routes in web.php (AdvertisementsController)
     'vendor-orders' => \App\Http\Controllers\OrderController::class,
     'rides' => \App\Http\Controllers\RideController::class,
     'users' => \App\Http\Controllers\CustomerController::class,
