@@ -188,26 +188,7 @@ return [
             ['name' => 'image', 'type' => 'image', 'label' => 'Image'],
         ],
     ],
-    'subscription-plans' => [
-        'model' => \App\Models\SubscriptionPlan::class,
-        'view' => 'subscription_plans',
-        'route' => 'subscription-plans',
-        'index_route' => 'subscription-plans.index',
-        'label' => 'Subscription Plans',
-        'permission' => 'subscription-plans',
-        'searchable' => ['name'],
-        'columns' => [
-            ['field' => 'name', 'label' => 'Name'],
-            ['field' => 'price', 'label' => 'Price'],
-            ['field' => 'isEnable', 'label' => 'Enabled', 'type' => 'boolean'],
-        ],
-        'form' => [
-            ['name' => 'name', 'type' => 'text', 'label' => 'Name', 'required' => true],
-            ['name' => 'price', 'type' => 'number', 'label' => 'Price'],
-            ['name' => 'sectionId', 'type' => 'text', 'label' => 'Section ID'],
-            ['name' => 'isEnable', 'type' => 'checkbox', 'label' => 'Enabled'],
-        ],
-    ],
+
     'vehicle-types' => [
         'model' => \App\Models\VehicleType::class,
         'view' => 'vehicle_types',

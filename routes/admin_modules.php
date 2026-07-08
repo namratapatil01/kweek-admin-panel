@@ -15,6 +15,8 @@ $moduleControllers = [
     'vendor-attributes' => \App\Http\Controllers\AttributeController::class,
     'documents' => \App\Http\Controllers\DocumentController::class,
     'review-attributes' => \App\Http\Controllers\ReviewAttributeController::class,
+    'coupons' => \App\Http\Controllers\CouponController::class,
+
     // 'coupons' is handled by explicit routes in web.php (CouponController)
     'subscription-plans' => \App\Http\Controllers\SubscriptionPlanController::class,
     'vehicle-types' => \App\Http\Controllers\VehicleTypeController::class,
