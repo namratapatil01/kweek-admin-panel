@@ -91,6 +91,12 @@ Route::middleware(['permission:stores,stores.edit'])->group(function () {
 Route::middleware(['permission:stores,stores.view'])->group(function () {
     Route::get('/stores/view/{id}', [App\Http\Controllers\StoreController::class, 'view'])->name('stores.view');
 });
+Route::middleware(['permission:stores,stores.copy'])->group(function () {
+    Route::post('/stores/clone', [App\Http\Controllers\StoreController::class, 'clone'])->name('stores.clone');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/stores/datatable', [App\Http\Controllers\StoreController::class, 'datatable'])->name('stores.datatable');
+});
 
 //drivers
 Route::middleware(['permission:drivers,drivers'])->group(function () {

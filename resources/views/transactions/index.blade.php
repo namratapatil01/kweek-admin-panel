@@ -44,6 +44,7 @@
                                 </li>
                                 <li>
                                     <a class="vendor_promo"><i class="ri-discount-percent-fill"></i>{{ trans('lang.tab_promos') }}</a>
+                                </li>
                                 <li>
                                     <a class="vendor_payout"><i class="ri-bank-card-line"></i>{{ trans('lang.tab_payouts') }}</a>
                                 </li>
@@ -165,8 +166,7 @@
 @endsection
 @section('scripts')
     <script>
-        var database = kweekDb();
-        var id = '<?php echo $id; ?>';
+        var id = '{{ $id }}';
         var offest = 1;
         var pagesize = 10;
         var end = null;
@@ -174,48 +174,22 @@
         var start = null;
         var user_number = [];
         var vendorId = '';
-        var refData = database.collection('wallet');
         var search = jQuery("#search").val();
-        var placeholderImage = '';
-        var placeholder = database.collection('settings').doc('placeHolderImage');
-        placeholder.get().then(async function(snapshotsimage) {
-            var placeholderImageData = snapshotsimage.data();
-            placeholderImage = placeholderImageData.image;
-        })
         $(document.body).on('keyup', '#search', function() {
             search = jQuery(this).val();
         });
         var serviceType = getCookie('service_type');   
 
-        var id = '{{ $id }}';
         var storeID = (window.location.href.indexOf("storeID=") > -1) ? window.location.href.split("storeID=")[1] : "";
         var driverID = (window.location.href.indexOf("driverID=") > -1) ? window.location.href.split("driverID=")[1] : "";
         var providerID = (window.location.href.indexOf("providerID=") > -1) ? window.location.href.split("providerID=")[1] : "";
         var wallet_route = "{{ route('users.walletstransaction', 'id') }}";
         var subscription_route = "{{ route('subscription.subscriptionPlanHistory', 'id') }}";
         var append_list = '';
-        var currentCurrency = '';
-        var currencyAtRight = false;
-        var decimal_degits = 0;
-        var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
-            var currencyData = snapshots.docs[0].data();
-            currentCurrency = currencyData.symbol;
-            currencyAtRight = currencyData.symbolAtRight;
-            if (currencyData.decimal_degits) {
-                decimal_degits = currencyData.decimal_degits;
-            }
-        });
         $(document).ready(async function() {
             if (storeID != '') {
                 id = storeID;
-                ref = database.collection('users').doc(id);
-                await ref.get().then(async function(querysnapshots) {
-                    var userData = querysnapshots.data();
-                    if (userData) {
-                        vendorId = userData.vendorID;
-                    }
-                });
+                vendorId = '{{ isset($user) ? $user->vendorID : '' }}';
                 $('#user_view').addClass('d-none');
                 $('#store_view').removeClass('d-none');
                 var basic = "{{ route('stores.view', $id) }}";
@@ -279,18 +253,18 @@
                 $(".subscription").attr("href", subscription_route.replace('id', "{{ $id }}"));
             }
             if (id) {
-                ref = refData.where('user_id', '==', id).orderBy('date', 'asc');
                 $(".wallet_transaction").attr("href", wallet_route.replace('id', "{{ $id }}"));
-            } else {
-                ref = refData.orderBy('date', 'desc');
             }
             if (id) {
-                var username = database.collection('users').where('id', '==', id);
-                username.get().then(async function(snapshots) {
-                    if (snapshots.empty) {
-                        return;
-                    }
-                    var driver = snapshots.docs[0].data();
+                var driver = {
+                    firstName: "{!! isset($user) ? addslashes($user->firstName) : '' !!}",
+                    lastName: "{!! isset($user) ? addslashes($user->lastName) : '' !!}",
+                    role: "{!! isset($user) ? addslashes($user->role) : '' !!}",
+                    vendorID: "{!! isset($user) ? addslashes($user->vendorID) : '' !!}",
+                    id: "{!! isset($user) ? addslashes($user->id) : '' !!}",
+                    serviceType: "{!! isset($user) ? addslashes($user->serviceType) : '' !!}"
+                };
+                if (driver.firstName) {
                     $(".userTitle").text(' - ' + driver.firstName + " " + driver.lastName);
                     if (driver.role == "vendor") {
                         var vendor_basic = "{{ route('stores.view', 'id') }}";
@@ -331,7 +305,7 @@
                         url = url.replace("id", driver.id);
                         $('.service_type_orders').html('<a href="' + url + '"><i class="ri-shopping-bag-line"></i>{{ trans('lang.order_plural') }}</a>');
                     }
-                });
+                }
             }
             $(document.body).on('click', '.redirecttopage', function() {
                 var url = $(this).attr('data-url');
@@ -377,37 +351,20 @@
                 ],
                 fileName: "{{ trans('lang.wallet_transaction_plural') }}",
             };
-            jQuery("#data-table_processing").show();
             const table = $('#walletTransactionTable').DataTable({
-                pageLength: 10, // Number of rows per page
-                processing: false, // Show processing indicator
-                serverSide: true, // Enable server-side processing
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
                 responsive: true,
                 ajax: {
                     url: "{{ route('wallet.transactions.datatable') }}",
                     data: function(d) {
-                        d.user_id = id;
+                        d.user_id = '{{ $parsedId }}';
                         d.search.value = $('.dataTables_filter input').val() || '';
-                    },
-                    dataSrc: async function(json) {
-                        $('#data-table_processing').hide();
-                        var records = [];
-                        $('.total_count').text(json.recordsTotal);
-                        if (json.data) {
-                            for (let i = 0; i < json.data.length; i++) {
-                                var val = json.data[i];
-                                // ensure format matches what buildHTML expects
-                                if (val.date) {
-                                    val.date = {
-                                        toDate: function() { return new Date(val.date); }
-                                    };
-                                }
-                                var htmlData = await buildHTML(val);
-                                records.push(htmlData);
-                            }
-                        }
-                        return records;
                     }
+                },
+                drawCallback: function(settings) {
+                    $('#data-table_processing').hide();
                 },
                 <?php if($id == '') { ?>
                 order: [4, 'desc'],
@@ -488,125 +445,6 @@
                 };
             }
         });
-        async function buildHTML(val) {
-            var html = [];
-            html.push('<input type="checkbox" id="is_open_' + val.id + '" class="is_open" dataId="' + val.id + '"><label class="col-3 control-label"\n' +
-                'for="is_open_' + val.id + '" ></label>');
-            if (id == "") {
-                if (val.user_id) {
-                    var role = val.role;
-                    var routeuser = "Javascript:void(0)";
-                    if (role == "customer") {
-                        routeuser = '{{ route('users.view', ':id') }}';
-                        routeuser = routeuser.replace(':id', val.user_id);
-                    } else if (role == "driver") {
-                        routeuser = '{{ route('drivers.view', ':id') }}';
-                        routeuser = routeuser.replace(':id', val.user_id);
-                    } else if (role == "vendor") {
-                        if (val.vendorID != '') {
-                            routeuser = '{{ route('stores.view', ':id') }}';
-                            routeuser = routeuser.replace(':id', val.vendorID);
-                        }
-                    }else{
-                        role == "-"
-                    }
-                    html.push('<td class="user_' + val.user_id + '"><a href="' + routeuser + '">' + val.Name + '</a></td>');
-                    html.push('<td class="user_role_' + val.user_id + '" >' + val.role + '</td>');
-                } else {
-                    html.push('<td></td>');
-                    html.push('<td></td>');
-                }
-            }
-            if ((val.hasOwnProperty('isTopUp') && val.isTopUp) || (val.payment_method == "Cancelled Order Payment")) {
-                html.push('<td><i class="mdi mdi-arrow-up-bold status-icon text-green"></i><span class="text-green">' + val.amount + '</span></td>');
-            } else if (val.hasOwnProperty('isTopUp') && !val.isTopUp) {
-                html.push('<td ><i class="mdi mdi-arrow-down-bold status-icon text-red"></i><span class="text-red">' + val.amount + '</span></td>');
-            } else {
-                html.push('<td class="">' + val.amount + '</td>');
-            }
-            var date = "";
-            var time = "";
-            try {
-                if (val.hasOwnProperty("date")) {
-                    date = val.date.toDate().toDateString();
-                    time = val.date.toDate().toLocaleTimeString('en-US');
-                }
-            } catch (err) {
-            }
-            html.push('<td>' + date + '<br> ' + time + '</td>');
-            if (val.note != undefined && val.note != '') {
-                html.push('<td>' + val.note + '</td>');
-            } else {
-                html.push('<td></td>');
-            }
-            var payment_method = '';
-            if (val.payment_method) {
-                if (val.payment_method == "Stripe" || val.payment_method == "stripe") {
-                    image = '{{ asset('images/payment/stripe.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" >';
-                } else if (val.payment_method == "RazorPay" || val.payment_method == "razorPay") {
-                    image = '{{ asset('images/payment/razorepay.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" >';
-                } else if (val.payment_method == "Paypal" || val.payment_method == "paypal") {
-                    image = '{{ asset('images/payment/paypal.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "payFast" || val.payment_method == "payFast") {
-                    image = '{{ asset('images/payment/payfast.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "PayStack" || val.payment_method == "payStack") {
-                    image = '{{ asset('images/payment/paystack.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" >';
-                } else if (val.payment_method == "FlutterWave" || val.payment_method == "flutterWave") {
-                    image = '{{ asset('images/payment/flutter_wave.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" >';
-                } else if (val.payment_method == "Mercado Pago" || val.payment_method == "mercado Pago") {
-                    image = '{{ asset('images/payment/marcado_pago.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Wallet" || val.payment_method == "wallet") {
-                    image = '{{ asset('images/payment/emart_wallet.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Paytm" || val.payment_method == "paytm") {
-                    image = '{{ asset('images/payment/paytm.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Xendit" || val.payment_method == "xendit") {
-                    image = '{{ asset('images/xendit.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "OrangePay" || val.payment_method == "orangepay" || val.payment_method == "ArroPay Maya" || val.payment_method == "arropay_maya" || val.payment_method == "ArroPay Maya QR" || val.payment_method == "arropay_maya_qr" || val.payment_method == "ArroPay Instapay" || val.payment_method == "arropay_instapay") {
-                    image = '{{ asset('images/orangeMoney.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;"  src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "MidTrans" || val.payment_method == "midtrans") {
-                    image = '{{ asset('images/midtrans.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;"  src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Cancelled Order Payment") {
-                    image = '{{ asset('images/payment/cancel_order.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Refund Amount") {
-                    image = '{{ asset('images/payment/refund_amount.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else if (val.payment_method == "Referral Amount") {
-                    image = '{{ asset('images/payment/reffral_amount.png') }}';
-                    payment_method = '<img alt="image" style="max-width:100px;" src="' + image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else {
-                    if (val.payment_method == "tax") {
-                        payment_method = "-";
-                    } else {
-                        payment_method = val.payment_method;
-                    }
-                }
-            }
-            html.push('<td class="payment_images">' + payment_method + '</td>');
-            if (val.payment_status == 'success') {
-                html.push('<td class="success"><span class="badge badge-success">' + val.payment_status + '</span></td>');
-            } else if (val.payment_status == 'undefined') {
-                html.push('<td class="undefined"><span class="badge badge-warning">' + val.payment_status + '</span></td>');
-            } else if (val.payment_status == 'Refund success') {
-                html.push('<td class="refund_success"><span class="badge badge-danger">' + val.payment_status + '</span></td>');
-            } else {
-                html.push('<td class="refund_success"><span class="badge badge-secondary">' + val.payment_status + '</span></td>');
-            }
-            html.push('<span class="action-btn"><a id="' + val.id + '" class="delete-btn" name="transaction-delete" href="javascript:void(0)" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a></span>');
-            return html;
-        }
         $("#is_active").click(function() {
             $("#walletTransactionTable .is_open").prop('checked', $(this).prop('checked'));
         });
@@ -662,44 +500,22 @@
                 });
             }
         });
-        async function payoutuserfunction(user) {
-            var payoutuser = '';
-            await database.collection('users').where("id", "==", user).get().then(async function(snapshotss) {
-                if (snapshotss.docs[0]) {
-                    payoutuser = snapshotss.docs[0].data();
-                }
-            });
-            return payoutuser;
-        }
+
         async function getStoreNameFunction(vendorId) {
-            var vendorName = '';
-            await database.collection('vendors').where('id', '==', vendorId).get().then(async function (snapshots) {
-
-                if (snapshots.docs.length > 0) {
-
-                    var vendorData = snapshots.docs[0].data();
-                    vendorName = vendorData.title;
-                    $('.page-title').html("{{trans('lang.item_plural')}} - " + vendorName);
-                    if (vendorData.dine_in_active == true) {
-                        $(".dine_in_future").show();
-
-                    }
-                    var wallet_route = "{{route('users.walletstransaction','id')}}";
-                    $(".wallet_transaction").attr("href", wallet_route.replace('id', 'storeID=' + vendorData.author));
-
-                    if (vendorData.section_id) {
-                        let sectionSnap = await database.collection('sections').doc(vendorData.section_id).get();
-                        if (sectionSnap.exists) {
-                            let sectionData = sectionSnap.data();
-                            if (sectionData.dine_in_active === true) {
-                                $(".dine_in_future").show();
-                            }
-                        }
-                    }
-
-                }
-
-            });
+            var vendorName = '{!! isset($vendor) ? addslashes($vendor->title) : '' !!}';
+            if (vendorName) {
+                $('.userTitle').text(" - " + vendorName);
+                @if(isset($vendor) && $vendor->dine_in_active)
+                    $(".dine_in_future").show();
+                @endif
+                
+                var wallet_route = "{{route('users.walletstransaction','id')}}";
+                $(".wallet_transaction").attr("href", wallet_route.replace('id', 'storeID={{ isset($user) ? $user->id : "" }}'));
+                
+                @if(isset($vendor) && $vendor->section && $vendor->section->dine_in_active)
+                    $(".dine_in_future").show();
+                @endif
+            }
             return vendorName;
         }
     </script>
