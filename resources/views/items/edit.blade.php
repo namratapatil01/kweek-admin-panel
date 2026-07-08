@@ -279,10 +279,10 @@
         var section_id = getCookie('section_id') || '';
         var vendor_id = "{{ $id }}";
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref = database.collection('vendor_products').where("id", "==", vendor_id);
         var ref_sections = database.collection('sections');
-        var storage = kweekStorage();
+        var storage = kweekFileStore();
         var categories_list = [];
         var brand_list = [];
         var attributes_list = [];
@@ -852,7 +852,7 @@
             })
         })
 
-        var storageRef = kweekStorage().ref('images');
+        var storageRef = kweekFileStore().ref('images');
         function handleFileSelect(evt) {
             var f = evt.target.files[0];
             var reader = new FileReader();
@@ -1074,7 +1074,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                photosToDelete.push(kweekStorage().refFromURL(photo_remove));
+                photosToDelete.push(kweekFileStore().refFromURL(photo_remove));
             }
             $("#photo_" + id).remove();
             index = photos.indexOf(photo_remove);
@@ -1093,7 +1093,7 @@
                 var itemid = jQuery(this).data('itemid');
                 itemid = itemid.toString();
                 if (fileurl) {
-                    kweekStorage().refFromURL(fileurl).delete();
+                    kweekFileStore().refFromURL(fileurl).delete();
                     database.collection('vendor_products').doc(itemid).update({
                         'digitalProduct': ''
                     });

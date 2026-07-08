@@ -88,7 +88,7 @@
 
 @section('scripts')
 <script type="text/javascript">
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('settings').doc('arropay_auth_settings');
 var loginUrl = '{{ url("settings/payment/arropay-auth/login") }}';
 

@@ -144,7 +144,7 @@
 
         <script type="text/javascript">
             var id = "<?php echo $id; ?>";
-            var database = kweekFirestore();
+            var database = kweekDb();
             var ref = database.collection('providers_coupons').where("id", "==", id);
             var photo_coupon = "";
             var idOfProviderDetailPage = "{{ @$_GET['id'] }}";
@@ -168,7 +168,7 @@
                 }
                 $(function() {
                     $('#datetimepicker1').datepicker({
-                        dateFormat: 'mm/dd/yyyy'
+                        format: 'mm/dd/yyyy'
                     });
                 });
 
@@ -178,20 +178,41 @@
 
                     var coupon = snapshots.docs[0].data();
 
-                    database.collection('users').where('role', '==', 'provider').where('section_id','==',sectionId).get().then(async function(snapshots) {
-                        snapshots.docs.forEach((listval) => {
-                            var data = listval.data();
-                            if (data.id == coupon.providerId) {
-                                $('#provider_select').append($("<option selected></option>")
-                                    .attr("value", data.id)
-                                    .text(data.firstName + ' ' + data.lastName));
-                            } else {
-                                $('#provider_select').append($("<option></option>")
-                                    .attr("value", data.id)
-                                    .text(data.firstName + ' ' + data.lastName));
-                            }
-                        })
-                    });
+                    if (sectionId) {
+                        database.collection('users').where('role', '==', 'provider').where('section_id','==',sectionId).get().then(async function(snapshots) {
+                            snapshots.docs.forEach((listval) => {
+                                var data = listval.data();
+                                if (data.id == coupon.providerId) {
+                                    $('#provider_select').append($("<option selected></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                } else {
+                                    $('#provider_select').append($("<option></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                }
+                            })
+                        }).catch(function(error) {
+                            console.error('Error loading providers:', error);
+                        });
+                    } else {
+                        database.collection('users').where('role', '==', 'provider').get().then(async function(snapshots) {
+                            snapshots.docs.forEach((listval) => {
+                                var data = listval.data();
+                                if (data.id == coupon.providerId) {
+                                    $('#provider_select').append($("<option selected></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                } else {
+                                    $('#provider_select').append($("<option></option>")
+                                        .attr("value", data.id)
+                                        .text(data.firstName + ' ' + data.lastName));
+                                }
+                            })
+                        }).catch(function(error) {
+                            console.error('Error loading providers:', error);
+                        });
+                    }
                     section_id = coupon.sectionId;
                     if (coupon.image != '' && coupon.image != null) {
                         photo_coupon = coupon.image;
@@ -217,21 +238,25 @@
                     if (coupon.hasOwnProperty("expiresAt")) {
 
                         try {
-                            var date1 = coupon.expiresAt.toDate().toDateString();
+                            var date1;
+                            if (typeof coupon.expiresAt.toDate === 'function') {
+                                date1 = coupon.expiresAt.toDate();
+                            } else {
+                                date1 = new Date(coupon.expiresAt);
+                            }
                             var date = new Date(date1);
                             var dd = String(date.getDate()).padStart(2, '0');
                             var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
                             var yyyy = date.getFullYear();
                             var expiresDate = mm + '/' + dd + '/' + yyyy;
                         } catch (err) {
-
+                            console.error("Error parsing expiresAt:", err);
                             var date1 = '';
                             var date = '';
                             var dd = '';
                             var mm = '';
                             var yyyy = '';
                             var expiresDate = '';
-
                         }
                         var $datepicker = $('.date_picker');
                         $datepicker.datepicker();
@@ -326,8 +351,8 @@
                     }
                 });
             }
-            var storageRef = kweekStorage().ref('images');
-            var storage = kweekStorage();
+            var storageRef = kweekFileStore().ref('images');
+            var storage = kweekFileStore();
 
             function handleFileSelect(evt) {
                 var f = evt.target.files[0];

@@ -146,7 +146,7 @@
     <link href="{{ asset('css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
 
     <script type="text/javascript">
-        var database = kweekFirestore();
+        var database = kweekDb();
         var photo_coupon = "";
         var provider_id = "{{ @$_GET['id'] }}";
         var photo = "";
@@ -161,20 +161,35 @@
             if (provider_id != '' && provider_id != null) {
                 getProviderInfo(provider_id);
             }
-          
-            database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    $('#provider_select').append($("<option></option>")
-                        .attr("value", data.id)
-                        .text(data.firstName + ' ' + data.lastName));
-                })
-            });
+
+            if (section_id) {
+                database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function(snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#provider_select').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.firstName + ' ' + data.lastName));
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            } else {
+                database.collection('users').where('role', '==', 'provider').get().then(async function(snapshots) {
+                    snapshots.docs.forEach((listval) => {
+                        var data = listval.data();
+                        $('#provider_select').append($("<option></option>")
+                            .attr("value", data.id)
+                            .text(data.firstName + ' ' + data.lastName));
+                    })
+                }).catch(function(error) {
+                    console.error('Error loading providers:', error);
+                });
+            }
 
 
             $(function() {
                 $('#datetimepicker1').datepicker({
-                    dateFormat: 'mm/dd/yyyy'
+                    format: 'mm/dd/yyyy'
                 });
             });
             async function getProviderInfo(provider_id) {      
@@ -260,8 +275,8 @@
 
         });
 
-        var storageRef = kweekStorage().ref('images');
-        var storage = kweekStorage();
+        var storageRef = kweekFileStore().ref('images');
+        var storage = kweekFileStore();
 
         function handleFileSelect(evt) {
 

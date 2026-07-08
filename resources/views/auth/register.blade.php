@@ -1,5 +1,5 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<meta name="kweek-data-bridge" content="{{ url('admin-data') }}">
+<meta name="kweek-mysql-api" content="{{ url('admin-data') }}">
 
 <div class="container">
     <div class="row page-titles ">
@@ -909,14 +909,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-<script src="{{ asset('js/kweek-data-bridge.js') }}"></script>
+<script src="{{ asset('js/kweek-mysql-client.js') }}"></script>
 <script src="{{ asset('js/crypto-js.js') }}"></script>
 <script src="{{ asset('js/jquery.cookie.js') }}"></script>
 <script src="{{ asset('js/jquery.validate.js') }}"></script>
 
 <script>
-    var database = kweekFirestore();
-    var geoFirestore = window.kweekGeoFirestore;
+    var database = kweekDb();
+    var geoQuery = window.kweekGeoQuery;
     var photo = "";
     var menuPhotoCount = 0;
     var vendorMenuPhotos = "";
@@ -928,7 +928,7 @@
     var restaurnt_photos = [];
     var ownerphoto = '';
     var ref_sections = database.collection('sections');
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var sections_list = [];
     var categories_list = [];
     var ref_deliverycharge = database.collection('settings').doc("DeliveryCharge");
@@ -1287,9 +1287,9 @@ database.collection('users').doc(user_id).set({
 
                     }).then(function (result) {
 
-                        coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
+                        coordinates = new kweekDb.GeoPoint(latitude, longitude);
 
-                        geoFirestore.collection('vendors').doc(vendor_id).set({
+                        geoQuery.collection('vendors').doc(vendor_id).set({
                             'section_id': section_id,
                             'title': vendorname,
                             'description': description,
@@ -1548,7 +1548,7 @@ database.collection('users').doc(user_id).set({
         //restaurnt_photos
     }
 
-    var storageRef = kweekStorage().ref('images');
+    var storageRef = kweekFileStore().ref('images');
 
     function handleFileSelectowner(evt) {
         var f = evt.target.files[0];

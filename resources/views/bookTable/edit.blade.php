@@ -156,7 +156,7 @@
 <script type="text/javascript">
 
 var id = "<?php echo $id;?>";
-var database = kweekFirestore();
+var database = kweekDb();
 var ref = database.collection('booked_table').where("id", "==", id);
 var auth = '';
 var type = '';

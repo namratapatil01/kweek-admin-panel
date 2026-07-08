@@ -112,18 +112,46 @@
             <script>
 
                 var requestId = "<?php echo $id; ?>";
-                var database = kweekFirestore();
-                var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+                var database = kweekDb();
+                var createdAt = kweekDb.FieldValue.serverTimestamp();
                 var id = (requestId == '') ? database.collection("tmp").doc().id : requestId;
                 var photo = '';
                 var fileName = '';
                 var oldImagePath = '';
                 var pagesize = 20;
                 var start = '';
-                var storageRef = kweekStorage().ref('images');
-                var storage = kweekStorage();
+                var storageRef = kweekFileStore().ref('images');
+                var storage = kweekFileStore();
                 var placeholderImage = '';
                 var placeholder = database.collection('settings').doc('placeHolderImage');
+
+                function normalizeImageUrl(url) {
+                    if (!url) {
+                        return '';
+                    }
+                    if (url.indexOf('/storage/') !== -1) {
+                        return window.location.origin + url.substring(url.indexOf('/storage/'));
+                    }
+                    return url;
+                }
+
+                function renderGiftCardImage(url) {
+                    var imageUrl = normalizeImageUrl(url || placeholderImage);
+                    $(".gift_card_image").html('<span class="image-item"><img class="rounded" style="width:50px" src="' + imageUrl + '" alt="image" id="img" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"></span>');
+                }
+
+                function formatExpiryDay(value) {
+                    if (value === null || value === undefined || value === '') {
+                        return '';
+                    }
+                    if (typeof value === 'number') {
+                        return String(value);
+                    }
+                    if (typeof value === 'string') {
+                        return value;
+                    }
+                    return '';
+                }
 
                 placeholder.get().then(async function (snapshotsimage) {
                     var placeholderImageData = snapshotsimage.data();
@@ -138,19 +166,18 @@
                         ref.get().then(async function (snapshots) {
                             if (snapshots.docs.length) {
                                 var data = snapshots.docs[0].data();
-                                $("#title").val(data.title);
-                                $('#message').val(data.message);
+                                $("#title").val(data.title || '');
+                                $('#message').val(data.message || '');
                                 if (data.isEnable) {
                                     $("#status").prop('checked', true);
                                 }
-                                $('#expiry').val(data.expiryDay);
+                                $('#expiry').val(formatExpiryDay(data.expiryDay || data.expiry_day || ''));
                                 if (data.image && data.image != '') {
                                     photo = data.image;
                                     oldImagePath = data.image;
-                                    $(".gift_card_image").html('<span class="image-item"><img class="rounded" style="width:50px" src="' + data.image + '" alt="image" id="img" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"></span>');
+                                    renderGiftCardImage(data.image);
                                 } else {
-
-                                    $(".gift_card_image").html('<span class="image-item" ><img class="rounded" style="width:50px" src="' + placeholderImage + '" alt="image"></span>');
+                                    renderGiftCardImage('');
                                 }
 
 
@@ -169,7 +196,7 @@
                     var message = $('#message').val();
                     var expiryDay = $('#expiry').val();
                     var status = $("#status").is(":checked");
-                    var giftCardimg = $('#img').attr('src');
+                    var giftCardimg = photo || $('#img').attr('src');
 
                     if (title == "") {
                         $(".error_top").show();
@@ -206,6 +233,9 @@
                     } else {
                         jQuery("#data-table_processing").show();
                         storeImageData().then(IMG => {
+                            if (!IMG && oldImagePath) {
+                                IMG = oldImagePath;
+                            }
                             requestId == '' ? (database.collection('gift_cards').doc(id).set({
                                     'id': id,
                                     'title': title,
@@ -259,11 +289,12 @@
                     callback: function (base64str) {
 
                         var val = $('#gift_card_image').val().toLowerCase();
-                        var ext = val.split('.')[1];
-                        var docName = val.split('fakepath')[1];
-                        var filename = $('#gift_card_image').val().replace(/C:\\fakepath\\/i, '')
+                        var parts = val.split('.');
+                        var ext = parts.length > 1 ? parts.pop() : 'jpg';
+                        var filename = $('#gift_card_image').val().replace(/C:\\fakepath\\/i, '');
                         var timestamp = Number(new Date());
-                        var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
+                        var baseName = filename.split('.')[0];
+                        filename = baseName + "_" + timestamp + '.' + ext;
                         photo = base64str;
                         fileName = filename;
                         $(".gift_card_image").html('<span class="image-item"><img class="rounded" style="width:50px" src="' + base64str + '" alt="image" id="img"></span>');
@@ -280,7 +311,7 @@
                             }
                         if (photo != oldImagePath) {
                             photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
-                            var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {contentType: 'image/jpg'});
+                            var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', {contentType: 'image/jpeg'});
                             var downloadURL = await uploadTask.ref.getDownloadURL();
                             newPhoto = downloadURL;
                             photo = downloadURL;
@@ -289,6 +320,9 @@
                         }
                     } catch (error) {
                         console.log("ERR ===", error);
+                    }
+                    if (!newPhoto && oldImagePath) {
+                        newPhoto = oldImagePath;
                     }
                     return newPhoto;
                 }

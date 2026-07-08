@@ -1,10 +1,7 @@
 @php
 $user = Auth::user();
-$role_has_permission = App\Models\Permission::where('role_id', $user->role_id)->pluck('permission')->toArray();
+$role_has_permission = \App\Support\AdminPermissionResolver::modulesForUser($user);
 $isSuperAdmin = (int) $user->role_id === 1;
-if ($isSuperAdmin && empty($role_has_permission)) {
-    $role_has_permission = DB::table('permissions')->where('role_id', 1)->pluck('permission')->toArray();
-}
 $service_type = @$_COOKIE['service_type'];
 if (empty($service_type) || $service_type == 'undefined') {
     $service_type = request()->route('type');
@@ -18,6 +15,8 @@ if (empty($service_type)) {
         $service_type = 'cab-service';
     } elseif (request()->is('parcel*')) {
         $service_type = 'parcel_delivery';
+    } elseif (request()->is('vendors*') || request()->is('stores*') || request()->is('brands*') || request()->is('gift-card*') || request()->is('categories*') || request()->is('items*') || request()->is('coupon*') || request()->is('tax*')) {
+        $service_type = 'ecommerce-service';
     }
 }
 @endphp

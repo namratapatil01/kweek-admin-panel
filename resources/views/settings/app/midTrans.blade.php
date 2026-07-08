@@ -274,7 +274,7 @@
 
 <script type="text/javascript">
 
-var database = kweekFirestore();
+var database = kweekDb();
 
 var ref = database.collection('settings').doc('midtrans_settings');
 

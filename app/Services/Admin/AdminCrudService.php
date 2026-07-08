@@ -66,8 +66,27 @@ class AdminCrudService
             });
         }
 
+        if (isset($filters['sectionId']) || isset($filters['section_id'])) {
+            $sId = $filters['sectionId'] ?? $filters['section_id'];
+            if ($sId !== null && $sId !== '' && $sId !== 'all') {
+                $query->where(function ($q) use ($sId) {
+                    if ($this->hasColumn('section_id')) {
+                        $q->orWhere('section_id', $sId);
+                    }
+                    if ($this->hasColumn('sectionId')) {
+                        $q->orWhere('sectionId', $sId);
+                    }
+                    // Fallback: section_id stored in JSON payload column
+                    if ($this->hasColumn('payload')) {
+                        $q->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.section_id')) = ?", [$sId]);
+                    }
+                });
+            }
+            unset($filters['sectionId'], $filters['section_id']);
+        }
+
         foreach ($filters as $field => $value) {
-            if ($value === null || $value === '' || in_array($field, ['search'], true)) {
+            if ($value === null || $value === '' || $value === 'all' || in_array($field, ['search'], true)) {
                 continue;
             }
             if ($this->hasColumn($field)) {
@@ -79,7 +98,13 @@ class AdminCrudService
         $sortColumn = $this->hasColumn($sortBy) ? $sortBy : 'created_at';
         $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
-        $items = $query->orderBy($sortColumn, $direction)
+        if ($sortColumn === 'created_at' && $this->hasColumn('createdAt')) {
+            $query->orderByRaw('COALESCE(created_at, createdAt) ' . $direction);
+        } else {
+            $query->orderBy($sortColumn, $direction);
+        }
+
+        $items = $query
             ->skip($start)
             ->take($length > 0 ? $length : 15)
             ->get();

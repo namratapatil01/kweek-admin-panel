@@ -33,15 +33,21 @@ Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/dashboard/{id?}/{type?}', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
-//customers (MySQL — CustomerController replaces Firebase UserController CRUD)
+//customers (MySQL — CustomerController)
 Route::middleware(['permission:users,users'])->group(function () {
     Route::get('/users', [App\Http\Controllers\CustomerController::class, 'index'])->name('users');
+    Route::get('/users-list', [App\Http\Controllers\CustomerController::class, 'index'])->name('users.index');
+    Route::post('/users', [App\Http\Controllers\CustomerController::class, 'store'])->name('users.store');
 });
 Route::middleware(['permission:users,users.create'])->group(function () {
     Route::get('/users/create', [App\Http\Controllers\CustomerController::class, 'create'])->name('users.create');
 });
 Route::middleware(['permission:users,users.edit'])->group(function () {
     Route::get('/users/edit/{id}', [App\Http\Controllers\CustomerController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{id}', [App\Http\Controllers\CustomerController::class, 'update'])->name('users.update');
+});
+Route::middleware(['permission:users,users.delete'])->group(function () {
+    Route::delete('/users/{id}', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('users.destroy');
 });
 Route::middleware(['permission:users,users.view'])->group(function () {
     Route::get('/users/view/{id}', [App\Http\Controllers\CustomerController::class, 'show'])->name('users.view');
@@ -72,6 +78,20 @@ Route::middleware(['permission:vendors-document,vendor.document.edit'])->group(f
     Route::get('/vendors/document/upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'DocumentUpload'])->name('vendors.document.upload');
 });
 
+// Vendors MySQL AJAX endpoints
+Route::middleware(['auth'])->group(function () {
+    Route::get('/vendors/datatable', [App\Http\Controllers\VendorController::class, 'datatable'])->name('vendors.datatable');
+    Route::post('/vendors/toggle-status', [App\Http\Controllers\VendorController::class, 'toggleStatus'])->name('vendors.toggle-status');
+    Route::post('/vendors/destroy', [App\Http\Controllers\VendorController::class, 'destroy'])->name('vendors.destroy');
+    Route::post('/vendors/bulk-destroy', [App\Http\Controllers\VendorController::class, 'bulkDestroy'])->name('vendors.bulk-destroy');
+    Route::get('/vendors/api/get-vendor/{id}', [App\Http\Controllers\VendorController::class, 'getVendor'])->name('vendors.get-vendor');
+    Route::post('/vendors/api/store-vendor', [App\Http\Controllers\VendorController::class, 'storeVendor'])->name('vendors.store-vendor');
+    Route::post('/vendors/api/update-vendor/{id}', [App\Http\Controllers\VendorController::class, 'updateVendor'])->name('vendors.update-vendor');
+    Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
+    Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
+    Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+});
+
 
 Route::middleware(['permission:stores,stores'])->group(function () {
     Route::get('/stores', [App\Http\Controllers\StoreController::class, 'index'])->name('stores');
@@ -84,6 +104,12 @@ Route::middleware(['permission:stores,stores.edit'])->group(function () {
 });
 Route::middleware(['permission:stores,stores.view'])->group(function () {
     Route::get('/stores/view/{id}', [App\Http\Controllers\StoreController::class, 'view'])->name('stores.view');
+});
+Route::middleware(['permission:stores,stores.copy'])->group(function () {
+    Route::post('/stores/clone', [App\Http\Controllers\StoreController::class, 'clone'])->name('stores.clone');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/stores/datatable', [App\Http\Controllers\StoreController::class, 'datatable'])->name('stores.datatable');
 });
 
 //drivers
@@ -737,6 +763,7 @@ Route::middleware(['permission:providers,providers'])->group(function () {
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
+    Route::post('/providers/api/store-provider', [App\Http\Controllers\ProvidersController::class, 'storeProvider'])->name('providers.store-provider');
 });
 Route::middleware(['permission:providers,providers.edit'])->group(function () {
     Route::get('/providers/edit/{id}', [App\Http\Controllers\ProvidersController::class, 'edit'])->name('providers.edit');
@@ -879,6 +906,8 @@ Route::post('/send-ad-notification', [App\Http\Controllers\AdvertisementsControl
 
 Route::middleware(['permission:zone,zone.list'])->group(function () {
     Route::get('zone', [App\Http\Controllers\ZoneController::class, 'index'])->name('zone');
+    Route::get('/zone/location-search', [App\Http\Controllers\ZoneController::class, 'locationSearch'])->name('zone.location-search');
+    Route::get('/zone/location-reverse', [App\Http\Controllers\ZoneController::class, 'locationReverse'])->name('zone.location-reverse');
 });
 Route::middleware(['permission:zone,zone.create'])->group(function () {
     Route::get('/zone/create', [App\Http\Controllers\ZoneController::class, 'create'])->name('zone.create');

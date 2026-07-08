@@ -11,19 +11,34 @@ class ServiceTypeSeeder extends Seeder
     {
         $services = [
             [
-                'id' => 'service-ondemand',
+                'id' => 'nwjicjbMYwb5hPoEitAS',
                 'name' => 'On Demand Service',
                 'flag' => 'ondemand-service',
             ],
             [
-                'id' => 'service-multivendor',
+                'id' => 'TGTP44PgU5G6BU2uP7iY',
                 'name' => 'Multivendor Delivery Service',
                 'flag' => 'delivery-service',
             ],
             [
-                'id' => 'service-cab',
+                'id' => 'ny3sssVJ7FCrPgxvsZNO',
+                'name' => 'Ecommerce Service',
+                'flag' => 'ecommerce-service',
+            ],
+            [
+                'id' => 'zxzjypGIugTmlb0ZeOT0',
                 'name' => 'Cab Service',
                 'flag' => 'cab-service',
+            ],
+            [
+                'id' => 'sDsB9pMGXLBMnbQiTMKF',
+                'name' => 'Parcel Delivery Service',
+                'flag' => 'parcel_delivery',
+            ],
+            [
+                'id' => 'FDOAplq4EHOQ3U5SLsRr',
+                'name' => 'Rental Service',
+                'flag' => 'rental-service',
             ],
         ];
 

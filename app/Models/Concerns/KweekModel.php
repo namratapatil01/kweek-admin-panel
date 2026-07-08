@@ -20,9 +20,28 @@ abstract class KweekModel extends Model
 
     public function toDocumentArray(): array
     {
-        $data = array_merge($this->attributesToArray(), $this->payload ?? []);
+        $attributes = $this->attributesToArray();
+        if (empty($attributes['createdAt']) && !empty($attributes['created_at'])) {
+            $attributes['createdAt'] = $attributes['created_at'];
+        }
+        if (empty($attributes['updatedAt']) && !empty($attributes['updated_at'])) {
+            $attributes['updatedAt'] = $attributes['updated_at'];
+        }
+
+        $data = array_merge($attributes, $this->payload ?? []);
         unset($data['payload'], $data['created_at'], $data['updated_at']);
 
         return array_filter($data, static fn ($value) => $value !== null);
+    }
+
+    public function getAttribute($key)
+    {
+        $value = parent::getAttribute($key);
+
+        if ($value === null && is_array($this->payload) && isset($this->payload[$key])) {
+            return $this->payload[$key];
+        }
+
+        return $value;
     }
 }

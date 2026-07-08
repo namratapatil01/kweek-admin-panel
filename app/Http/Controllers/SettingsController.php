@@ -297,8 +297,7 @@ class SettingsController extends Controller
 
     public function emailTemplatesSave($id = '')
     {
-
-        return view('email_templates.save')->with('id', $id);
+        return view('email_templates.save', ['id' => $id]);
     }
 
     public function banners()

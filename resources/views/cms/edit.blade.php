@@ -170,7 +170,7 @@
 
         var id = "<?php echo $id;?>";
 
-        var database = kweekFirestore();
+        var database = kweekDb();
 
         var ref = database.collection('cms_pages').where("id", "==", id);
 

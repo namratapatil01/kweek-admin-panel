@@ -193,23 +193,110 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     var section_id = getCookie('section_id') || '';
     var service_type = getCookie('service_type') || '';
-    var database = kweekFirestore();  
+    var database = kweekDb();  
     
     var photo = "";
     var ownerPhoto = '';
     var ownerFileName = '';
     var ownerOldImageFile = '';
 
-    var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+    var createdAt = kweekDb.FieldValue.serverTimestamp();
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
         placeholderImage = placeholderImageData.image;
     })
+
+    var newcountriesjs = <?php echo json_encode($newcountriesjs); ?>;
+
+    function formatState(state) {
+        if (!state.id) {
+            return state.text;
+        }
+        var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
+        var $state = $(
+            '<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>'
+        );
+        return $state;
+    }
+
+    function formatState2(state) {
+        if (!state.id) {
+            return state.text;
+        }
+        var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
+        var $state = $(
+            '<span><img class="img-flag" /> <span></span></span>'
+        );
+        $state.find("span").text(state.text);
+        $state.find("img").attr("src", baseUrl + "/" + newcountriesjs[state.element.value].toLowerCase() + ".svg");
+        return $state;
+    }
+
+    function handleFileSelectowner(evt) {
+        var f = evt.target.files[0];
+        if (!f) {
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = (function (theFile) {
+            return function (e) {
+                var filePayload = e.target.result;
+                var val = theFile.name;
+                var parts = val.split('.');
+                var ext = parts.length > 1 ? parts.pop() : 'jpg';
+                var filename = theFile.name.replace(/C:\\fakepath\\/i, '');
+                var timestamp = Number(new Date());
+                filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
+                ownerPhoto = filePayload;
+                ownerFileName = filename;
+                photo = ownerPhoto || placeholderImage;
+                $(".uploaded_image_owner").html('<img id="uploaded_image_owner" src="' + photo + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" width="150px" height="150px;">');
+                $(".uploaded_image_owner").show();
+            };
+        })(f);
+        reader.readAsDataURL(f);
+    }
+
+    function chkAlphabets2(event, msg) {
+        if (!(event.which >= 48 && event.which <= 57)) {
+            document.getElementById(msg).innerHTML = "Accept only Number";
+            return false;
+        }
+        document.getElementById(msg).innerHTML = "";
+        return true;
+    }
+
+    async function storeImageData() {
+        var newPhoto = [];
+        newPhoto['ownerImage'] = ownerPhoto;
+        try {
+            if (ownerPhoto != '') {
+                if (ownerOldImageFile != "" && ownerPhoto != ownerOldImageFile) {
+                    await storage.refFromURL(ownerOldImageFile);
+                }
+
+                if (ownerPhoto != ownerOldImageFile) {
+                    ownerPhoto = ownerPhoto.replace(/^data:image\/[a-z]+;base64,/, "");
+                    var uploadTask = await storageRef.child(ownerFileName).putString(ownerPhoto, 'base64', { contentType: 'image/jpeg' });
+                    var downloadURL = await uploadTask.ref.getDownloadURL();
+                    newPhoto['ownerImage'] = downloadURL;
+                    ownerPhoto = downloadURL;
+                }
+            }
+        } catch (error) {
+            console.log("ERR ===", error);
+        }
+
+        return newPhoto;
+    }
+
+    window.handleFileSelectowner = handleFileSelectowner;
+    window.chkAlphabets2 = chkAlphabets2;
 
     $(document).ready(function () {
 
@@ -251,7 +338,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             var country_code = '+' + jQuery("#country_selector").val();
             var ccode = jQuery("#country_selector").val();
             var is_active = $("#is_active").is(':checked');
-            var owner_id = database.collection('temp').doc().id;
+            var user_id = '';
 
             if (userFirstName == '') {
                 $(".error_top").show();
@@ -303,137 +390,41 @@ foreach ($countries as $keycountry => $valuecountry) {
                 };
 
                 user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
-await storeImageData().then(async (IMG) => {
-                        database.collection('users').doc(user_id).set({ 
-                            'firstName': userFirstName,
-                            'lastName': userLastName,
-                            'email': email,
-                            'provider': 'email',
-                            'phoneNumber': country_code+userPhone,
-                            'profilePictureURL': IMG.ownerImage,
-                            'role': 'vendor',
-                            'id': user_id,
-                            'active': is_active,
-                            'isActive': false,
-                            'isOwner': true,
-                            'vendorID': null,
-                            'ownerId': null,
-                            'role': 'driver',
-                            'createdAt': createdAt,
-                            'userBankDetails': userBankDetails,
-                            'isDocumentVerify': false,
-                            'sectionId' : section_id,
-                            'serviceType': service_type,
-                            'wallet_amount' : 0,
-                        }).then(async function (result) { 
-                            
-                            window.location.href = '{{ route("owners")}}';
-                        });
-
-                    }).catch(err => {
-                        jQuery("#data-table_processing").hide();
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + err + "</p>");
-                        window.scrollTo(0, 0);
+                await storeImageData().then(async (IMG) => {
+                    database.collection('users').doc(user_id).set({
+                        'firstName': userFirstName,
+                        'lastName': userLastName,
+                        'email': email,
+                        'provider': 'email',
+                        'phoneNumber': country_code + userPhone,
+                        'profilePictureURL': IMG.ownerImage,
+                        'role': 'vendor',
+                        'id': user_id,
+                        'active': is_active,
+                        'isActive': false,
+                        'isOwner': true,
+                        'vendorID': null,
+                        'ownerId': null,
+                        'role': 'driver',
+                        'createdAt': createdAt,
+                        'userBankDetails': userBankDetails,
+                        'isDocumentVerify': false,
+                        'sectionId': section_id,
+                        'serviceType': service_type,
+                        'wallet_amount': 0,
+                    }).then(async function (result) {
+                        window.location.href = '{{ route("owners")}}';
                     });
+                }).catch(err => {
+                    jQuery("#data-table_processing").hide();
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>" + err + "</p>");
+                    window.scrollTo(0, 0);
                 });
-             }
-        })
-    });
-
-    function formatState(state) {
-        if (!state.id) {
-            return state.text;
-        }
-        var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
-        var $state = $(
-            '<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>'
-        );
-        return $state;
-    }
-
-    function formatState2(state) {
-        if (!state.id) {
-            return state.text;
-        }
-        var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
-        var $state = $(
-            '<span><img class="img-flag" /> <span></span></span>'
-        );
-        $state.find("span").text(state.text);
-        $state.find("img").attr("src", baseUrl + "/" + newcountriesjs[state.element.value].toLowerCase() + ".svg");
-        return $state;
-    }
-    var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
-    var newcountriesjs = JSON.parse(newcountriesjs);
-
-    function handleFileSelectowner(evt) {
-        var f = evt.target.files[0];
-        var reader = new FileReader();
-        reader.onload = (function (theFile) {
-            return function (e) {
-
-                var filePayload = e.target.result;
-                var hash = CryptoJS.SHA256(Math.random() + CryptoJS.SHA256(filePayload));
-                var val = f.name;
-                var ext = val.split('.')[1];
-                var docName = val.split('fakepath')[1];
-                var filename = (f.name).replace(/C:\\fakepath\\/i, '')
-
-                var timestamp = Number(new Date());
-                var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
-                ownerPhoto = filePayload;
-                ownerFileName = filename;
-                if(ownerPhoto){
-                    photo=ownerPhoto;
-                }else{
-                    photo=placeholderImage;
-                }
-                $(".uploaded_image_owner").html('<img id="uploaded_image_owner" src="' + photo + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" width="150px" height="150px;">');
-                $(".uploaded_image_owner").show();
-            };
-        })(f);
-        reader.readAsDataURL(f);
-    }
-
-    function chkAlphabets2(event, msg) {
-        if (!(event.which >= 48 && event.which <= 57)
-        ) {
-            document.getElementById(msg).innerHTML = "Accept only Number";
-            return false;
-        } else {
-            document.getElementById(msg).innerHTML = "";
-            return true;
-        }
-    }
-
-    async function storeImageData() {
-        var newPhoto = [];
-        newPhoto['ownerImage'] = ownerPhoto;
-        try {
-            if (ownerPhoto != '') {
-                if (ownerOldImageFile != "" && ownerPhoto != ownerOldImageFile) {
-                    var ownerOldImageUrlRef = await storage.refFromURL(ownerOldImageFile);
-                    imageBucket = ownerOldImageUrlRef.bucket;
-                    }
-
-                if (ownerPhoto != ownerOldImageFile) {
-
-                    ownerPhoto = ownerPhoto.replace(/^data:image\/[a-z]+;base64,/, "")
-                    var uploadTask = await storageRef.child(ownerFileName).putString(ownerPhoto, 'base64', { contentType: 'image/jpg' });
-                    var downloadURL = await uploadTask.ref.getDownloadURL();
-                    newPhoto['ownerImage'] = downloadURL;
-                    ownerPhoto = downloadURL;
-                }
             }
-           
-        } catch (error) {
-            console.log("ERR ===", error);
-        }
-
-        return newPhoto;
-    }
+        });
+    });
 
 </script>
 @endsection

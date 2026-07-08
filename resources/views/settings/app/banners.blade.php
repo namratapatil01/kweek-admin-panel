@@ -46,8 +46,8 @@
 
     <script type="text/javascript">
 
-        var database = kweekFirestore();
-        var storageRef = kweekStorage().ref('images');
+        var database = kweekDb();
+        var storageRef = kweekFileStore().ref('images');
         var appHomeBanners = database.collection('settings').doc("AppHomeBanners");
 
         var app_banners = [];
@@ -71,10 +71,17 @@
             appHomeBanners.get().then(async function (snapshots) {
                 
                 var data = snapshots.data();
-                app_banners = data.banners;
-                if (Array.isArray(data.banners) && data.banners.length > 0) {
+                app_banners = data.banners || [];
+                if (typeof app_banners === 'string') {
+                    try {
+                        app_banners = JSON.parse(app_banners);
+                    } catch (e) {
+                        app_banners = [];
+                    }
+                }
+                if (Array.isArray(app_banners) && app_banners.length > 0) {
                     let banners_html = '';
-                    data.banners.forEach((photo) => {
+                    app_banners.forEach((photo) => {
                         photocount++;
                         banners_html = banners_html + '<span class="image-item" id="photo_' + photocount + '"><span class="remove-btn" data-id="' + photocount + '" data-img="' + photo + '" data-status="old"><i class="fa fa-remove"></i></span><img width="100px" id="" height="auto" src="' + photo + '" onerror="this.onerror=null;this.src=\'' + place_image + '\'"></span>';
                     })
@@ -118,7 +125,7 @@
                 var photo_remove = $(this).attr('data-img');
                 var status=$(this).attr('data-status');
                 if(status=="old"){
-                    app_banners_to_delete.push(kweekStorage().refFromURL(photo_remove));
+                    app_banners_to_delete.push(kweekFileStore().refFromURL(photo_remove));
                 }
                 $("#photo_" + id).remove();
                 index = app_banners.indexOf(photo_remove);
@@ -191,7 +198,7 @@
 
             if (app_banners_to_delete.length > 0) {
                 await Promise.all(app_banners_to_delete.map(async (imageFile, index) => {
-                    var imageUrlRef = await kweekStorage().refFromURL(imageFile);
+                    var imageUrlRef = await kweekFileStore().refFromURL(imageFile);
                     imageBucket = imageUrlRef.bucket;
                     }));
             }

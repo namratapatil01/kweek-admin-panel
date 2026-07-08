@@ -163,7 +163,7 @@
         var total_item_price = 0;
         var total_addon_price = 0;
         var vendorname = '';
-        var database = kweekFirestore();
+        var database = kweekDb();
 
         var ref = database.collection('provider_orders').where("id", "==", id);
         var currentCurrency = '';

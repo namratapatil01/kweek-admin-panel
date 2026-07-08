@@ -12,8 +12,8 @@ class FileStorageService
     {
         $this->validateFile($file);
 
-        $disk = config('filesystems.default', 'local');
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $disk = $visibility === 'public' ? 'public' : config('filesystems.default', 'local');
+        $filename = Str::uuid() . '.' . $this->extensionFor($file);
         $path = trim($directory, '/') . '/' . $filename;
 
         Storage::disk($disk)->put($path, file_get_contents($file->getRealPath()), [
@@ -23,7 +23,7 @@ class FileStorageService
         return [
             'path' => $path,
             'url' => $visibility === 'public'
-                ? Storage::disk($disk)->url($path)
+                ? '/storage/' . ltrim($path, '/')
                 : null,
             'disk' => $disk,
             'mime_type' => $file->getMimeType(),
@@ -34,7 +34,12 @@ class FileStorageService
 
     public function delete(string $path, ?string $disk = null): bool
     {
-        $disk = $disk ?? config('filesystems.default', 'local');
+        if ($disk === null) {
+            if (Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->delete($path);
+            }
+            $disk = config('filesystems.default', 'local');
+        }
 
         return Storage::disk($disk)->delete($path);
     }
@@ -50,7 +55,7 @@ class FileStorageService
     {
         $maxKb = (int) config('kweek.upload.max_size_kb', 10240);
         $allowed = config('kweek.upload.allowed_mimes', [
-            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+            'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/svg+xml',
             'application/pdf', 'video/mp4',
         ]);
 
@@ -61,5 +66,27 @@ class FileStorageService
         if (! in_array($file->getMimeType(), $allowed, true)) {
             throw new \InvalidArgumentException('File type is not allowed.');
         }
+    }
+
+    protected function extensionFor(UploadedFile $file): string
+    {
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        $known = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'pdf', 'mp4'];
+
+        if (in_array($extension, $known, true)) {
+            return $extension === 'jpeg' ? 'jpg' : $extension;
+        }
+
+        return match ($file->getMimeType()) {
+            'image/jpeg', 'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/avif' => 'avif',
+            'image/svg+xml' => 'svg',
+            'application/pdf' => 'pdf',
+            'video/mp4' => 'mp4',
+            default => 'jpg',
+        };
     }
 }

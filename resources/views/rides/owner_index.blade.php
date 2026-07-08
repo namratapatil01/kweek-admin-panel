@@ -145,7 +145,7 @@
 
     <script type="text/javascript">
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var id = '<?php echo $id; ?>';
         var sosId = '<?php echo @$sosId; ?>';
         var offest = 1;
@@ -284,9 +284,9 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).toDate();
                 if (from && to) { 
-                    var fromDate = kweekFirestore.Timestamp.fromDate(new Date(from));
+                    var fromDate = kweekDb.Timestamp.fromDate(new Date(from));
                     refData = refData.where('createdAt', '>=', fromDate);
-                    var toDate = kweekFirestore.Timestamp.fromDate(new Date(to));
+                    var toDate = kweekDb.Timestamp.fromDate(new Date(to));
                     refData = refData.where('createdAt', '<=', toDate);
                 }
             }
@@ -649,7 +649,7 @@ $(function () {
                         });
 
                     } catch (error) {
-                        console.error("Error fetching data from Firestore:", error);
+                        console.error("Error fetching data from database:", error);
                         $('#data-table_processing').hide();
                         callback({
                             draw: data.draw,

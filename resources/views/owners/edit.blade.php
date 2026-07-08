@@ -246,7 +246,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             });
         }
     });
-    var database = kweekFirestore();  
+    var database = kweekDb();  
     var ref = database.collection('users').where("id", "==", id);  
     var photo = "";
 
@@ -263,8 +263,8 @@ foreach ($countries as $keycountry => $valuecountry) {
     
     var placeholderImage = '';
     var placeholder = database.collection('settings').doc('placeHolderImage');
-    var storageRef = kweekStorage().ref('images');
-    var storage = kweekStorage();
+    var storageRef = kweekFileStore().ref('images');
+    var storage = kweekFileStore();
 
     placeholder.get().then(async function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
@@ -375,7 +375,7 @@ foreach ($countries as $keycountry => $valuecountry) {
 
          
             if (change_expiry_date != '' && change_expiry_date != null) {
-                var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
+                var subscriptionPlanExpiryDate = kweekDb.Timestamp.fromDate(new Date(
                     change_expiry_date));
             } else {
                 var subscriptionPlanExpiryDate=null;
@@ -429,7 +429,7 @@ foreach ($countries as $keycountry => $valuecountry) {
                             'userBankDetails': userBankDetails
                         }).then(async function (result) {
                             if (store_id != null) {
-                                await geoFirestore.collection('vendors').doc(store_id).update({
+                                await geoQuery.collection('vendors').doc(store_id).update({
                                     'authorName': userFirstName +' ' +userLastName,
                                     'authorProfilePic': IMG.ownerImage,
                                     'subscriptionExpiryDate': subscriptionPlanExpiryDate,
@@ -504,7 +504,7 @@ foreach ($countries as $keycountry => $valuecountry) {
         $("#photo_" + id).remove();
         var status = $(this).attr('data-status');
         if (status == "old") {
-            galleryImageToDelete.push(kweekStorage().refFromURL(photo_remove));
+            galleryImageToDelete.push(kweekFileStore().refFromURL(photo_remove));
         }
         index = vendor_photos.indexOf(photo_remove);
         if (index > -1) {
@@ -547,6 +547,8 @@ foreach ($countries as $keycountry => $valuecountry) {
         })(f);
         reader.readAsDataURL(f);
     }
+
+    window.handleFileSelectowner = handleFileSelectowner;
 
     function chkAlphabets2(event, msg) {
         if (!(event.which >= 48 && event.which <= 57)

@@ -52,6 +52,9 @@
                                         <label class="col-3 control-label">{{ trans('lang.vendor_cuisine') }}</label>
                                         <div class="col-7">
                                             <select id='vendor_cuisines' class="form-control chosen-select" multiple="multiple" required>
+                                                @foreach($categories as $cat)
+                                                    <option value="{{ $cat->id }}">{{ $cat->title }}</option>
+                                                @endforeach
                                             </select>
                                             <div class="form-text text-muted">
                                                 {{ trans('lang.vendor_cuisines_help') }}
@@ -811,7 +814,7 @@
 
         var section_id = getCookie('section_id') || null;
         var id = "<?php echo $id; ?>";
-        var database = kweekFirestore();
+        var database = kweekDb();
         var ref = database.collection('vendors').where("id", "==", id);
         var ref_sections = database.collection('sections');
         var photo = "";
@@ -860,10 +863,10 @@
         var storevideoDuration = 0;
         var story_isEnabled = false;
         var storyCount = 0;
-        var storyRef = kweekStorage().ref('Story');
-        var storyImagesRef = kweekStorage().ref('Story/images');
-        var storageRef = kweekStorage().ref('images');
-        var storage = kweekStorage();
+        var storyRef = kweekFileStore().ref('Story');
+        var storyImagesRef = kweekFileStore().ref('Story/images');
+        var storageRef = kweekFileStore().ref('images');
+        var storage = kweekFileStore();
 
         var specialDiscount = [];
         var timeslotSunday = [];
@@ -1402,7 +1405,7 @@
                 }
 
                 if (change_expiry_date != '' && change_expiry_date != null) {
-                    var subscriptionPlanExpiryDate = kweekFirestore.Timestamp.fromDate(new Date(
+                    var subscriptionPlanExpiryDate = kweekDb.Timestamp.fromDate(new Date(
                         change_expiry_date));
                 } else {
                     var subscriptionPlanExpiryDate = null;
@@ -1654,11 +1657,11 @@
                 } else {
                     jQuery("#data-table_processing").show();
 
-                    coordinates = new kweekFirestore.GeoPoint(latitude, longitude);
+                    coordinates = new kweekDb.GeoPoint(latitude, longitude);
                     await storeImageData().then(async (IMG) => {
                         await storeGalleryImageData().then(async (GalleryIMG) => {
                             await storeMenuImageData().then(async (MenuIMG) => {
-                                geoFirestore.collection('vendors').doc(id).update({
+                                geoQuery.collection('vendors').doc(id).update({
 
                                     'title': vendorname,
                                     'description': description,
@@ -1714,7 +1717,7 @@
                                                     jQuery("#data-table_processing").hide();
                                                     if (deliveryChargeFlag) {
 
-                                                        geoFirestore.collection('vendors').doc(id).update({
+                                                        geoQuery.collection('vendors').doc(id).update({
                                                             'DeliveryCharge': deliveryCharge
                                                         }).then(function(result) {
 
@@ -1732,7 +1735,7 @@
                                         jQuery("#data-table_processing").hide();
                                         if (deliveryChargeFlag) {
 
-                                            geoFirestore.collection('vendors').doc(id).update({
+                                            geoQuery.collection('vendors').doc(id).update({
                                                 'DeliveryCharge': deliveryCharge
                                             }).then(function(result) {
 
@@ -1790,7 +1793,7 @@
             $("#photo_" + id).remove();
             var status = $(this).attr('data-status');
             if (status == "old") {
-                galleryImageToDelete.push(kweekStorage().refFromURL(photo_remove));
+                galleryImageToDelete.push(kweekFileStore().refFromURL(photo_remove));
             }
             index = vendor_photos.indexOf(photo_remove);
             if (index > -1) {
@@ -1809,7 +1812,7 @@
             var photo_remove = $(this).attr('data-img');
             var status = $(this).attr('data-status');
             if (status == "old") {
-                menuImageToDelete.push(kweekStorage().refFromURL(photo_remove));
+                menuImageToDelete.push(kweekFileStore().refFromURL(photo_remove));
             }
             $("#photo_menu_" + id).remove();
             index = vendor_menu_photos.indexOf(photo_remove);
@@ -1928,7 +1931,7 @@
 
             var id = $(this).attr('data-id');
             var photo_remove = $(this).attr('data-img');
-            kweekStorage().refFromURL(photo_remove).delete();
+            kweekFileStore().refFromURL(photo_remove).delete();
             $("#story_div_" + id).remove();
             index = story_vedios.indexOf(photo_remove);
             $("#video_file").val('');

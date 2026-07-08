@@ -272,7 +272,7 @@
             checkDeletePermission = true;
         }
 
-        var database = kweekFirestore();
+        var database = kweekDb();
         var refData = database.collection('vendor_orders');
         if (section_id) {
             refData = refData.where('section_id', '==', section_id);
@@ -347,7 +347,7 @@
             ref = refData.orderBy('createdAt', 'desc');
         }
 
-        const sectionsRef = kweekFirestore().collection('sections');
+        const sectionsRef = kweekDb().collection('sections');
         $('.status_selector').select2({
             placeholder: '{{ trans('lang.status') }}',
             minimumResultsForSearch: Infinity,
@@ -417,8 +417,8 @@
                 var from = moment(daterangepicker.startDate).toDate();
                 var to = moment(daterangepicker.endDate).add(1, 'day').toDate(); // FIX
 
-                var fromDate = kweekFirestore.Timestamp.fromDate(from);
-                var toDate = kweekFirestore.Timestamp.fromDate(to);
+                var fromDate = kweekDb.Timestamp.fromDate(from);
+                var toDate = kweekDb.Timestamp.fromDate(to);
 
                 refData = refData.where('createdAt', '>=', fromDate);
                 refData = refData.where('createdAt', '<', toDate); // FIX
@@ -714,7 +714,7 @@
 
                             if (querySnapshot.empty) {
                                 $('.total_count').text(0);
-                                console.error("No data found in Firestore.");
+                                console.error("No data found in database.");
                                 $('#data-table_processing').hide(); // Hide loader
                                 callback({
                                     draw: data.draw,
@@ -820,13 +820,13 @@
 
                             callback({
                                 draw: data.draw,
-                                recordsTotal: totalRecords, // Total number of records in Firestore
+                                recordsTotal: totalRecords, // Total number of records in database
                                 recordsFiltered: totalRecords, // Number of records after filtering (if any)
                                 filteredData: filteredRecords,
                                 data: records // The actual data to display in the table
                             });
                         }).catch(function(error) {
-                            console.error("Error fetching data from Firestore:", error);
+                            console.error("Error fetching data from database:", error);
                             $('#data-table_processing').hide(); // Hide loader
                             callback({
                                 draw: data.draw,
@@ -919,8 +919,7 @@
             var id = val.id;
             
             var user_id = val.authorID;
-            var route1 = '{{ route('orders.edit', ':id') }}';
-            route1 = route1.replace(':id', id);
+            var route1 = '{{ url('orders/edit') }}/' + id;
             var printRoute = '{{ route('vendors.orderprint', ':id') }}';
             printRoute = printRoute.replace(':id', id);
             

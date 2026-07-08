@@ -207,8 +207,8 @@ foreach ($countries as $keycountry => $valuecountry) {
 
             var section_id = getCookie('section_id') || '';
 
-            var database = kweekFirestore();
-            var geoFirestore = new GeoFirestore(database);
+            var database = kweekDb();
+            var geoQuery = new KweekGeoQuery(database);
             var autoAprroveVendor = database.collection('settings').doc("vendor");
             var photo = "";
             var vendorOwnerId = "";
@@ -218,10 +218,11 @@ foreach ($countries as $keycountry => $valuecountry) {
             var ownerphoto = '';
             var photo = "";
             var fileName = "";
-            var storageRef = kweekStorage().ref('images');
+            var storageRef = kweekFileStore().ref('images');
 
-            var createdAt = kweekFirestore.FieldValue.serverTimestamp();
+            var createdAt = kweekDb.FieldValue.serverTimestamp();
             var adminCommission = '';
+            var businessModelData = {};
             
             $(document).ready(async function () {
 
@@ -341,51 +342,60 @@ foreach ($countries as $keycountry => $valuecountry) {
                     }
 
                     user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
-storeImageData().then(IMG => {
-                                database.collection('users').doc(user_id).set({
-                                    'section_id': section_id,
-                                    'firstName': userFirstName,
-                                    'lastName': userLastName,
-                                    'email': email,
-                                    'phoneNumber': country_code+userPhone,
-                                    'profilePictureURL': IMG,
-                                    'role': 'provider',
-                                    'id': user_id,
-                                    'location': location,
-                                    'active': active,
-                                    'isActive': active,
-                                    'createdAt': createdAt,
-                                    'userBankDetails': userBankDetails,
-                                    'adminCommission':adminCommission,
-                                    'wallet_amount': 0,
-                                    'reviewsCount': 0,
-                                    'reviewsSum': 0,
-                                    'subscription_plan': subscriptionData!=null? subscriptionData:null,
-                                    'subscriptionPlanId': subscriptionData!=null? subscriptionData.id:null,
-                                    'subscriptionExpiryDate': subscriptionData!=null? subscriptionData.expiryDate:null
+                    storeImageData().then(IMG => {
+                        var payload = {
+                            _token: "{{ csrf_token() }}",
+                            id: user_id,
+                            section_id: section_id,
+                            firstName: userFirstName,
+                            lastName: userLastName,
+                            email: email,
+                            phoneNumber: country_code + userPhone,
+                            password: password,
+                            profilePictureURL: IMG,
+                            location: location,
+                            active: active,
+                            userBankDetails: userBankDetails,
+                            adminCommission: adminCommission,
+                            subscription_plan: subscriptionData != null ? subscriptionData : null,
+                            subscriptionPlanId: subscriptionData != null ? subscriptionData.id : null,
+                            subscriptionExpiryDate: subscriptionData != null ? subscriptionData.expiryDate : null
+                        };
 
-                                }).then(async function (result) {
-
-                                    if(subscriptionData!=null) {
-                                        historyData={'subscriptionData': subscriptionData,'userId': user_id,'expire_date': subscriptionData.expiryDate}
+                        $.ajax({
+                            url: "{{ route('providers.store-provider') }}",
+                            type: "POST",
+                            data: payload,
+                            success: async function(response) {
+                                if (response.success) {
+                                    if(subscriptionData != null) {
+                                        historyData = {
+                                            'subscriptionData': subscriptionData,
+                                            'userId': user_id,
+                                            'expire_date': subscriptionData.expiryDate
+                                        };
                                         await addSubscriptionHistory(historyData);
                                     }
-                                   
-                                    window.location.href = '{{ route("providers")}}';
-
-                                }).catch(function (error) {
+                                    window.location.href = "{{ route('providers') }}";
+                                } else {
                                     jQuery("#data-table_processing").hide();
-                                    showError(getProviderErrorMessage(error));
-                                });
-                            }).catch(function (error) {
+                                    showError(response.error || "Failed to create provider.");
+                                }
+                            },
+                            error: function(xhr, status, error) {
                                 jQuery("#data-table_processing").hide();
-                                showError(getProviderErrorMessage(error));
-                            });
-
-                        }).catch(function (error) {
-                            jQuery("#data-table_processing").hide();
-                            showError(getProviderErrorMessage(error));
+                                var errMsg = error;
+                                if (xhr.responseJSON && xhr.responseJSON.error) {
+                                    errMsg = xhr.responseJSON.error;
+                                }
+                                showError(getProviderErrorMessage({message: errMsg}));
+                            }
                         });
+                    }).catch(function (error) {
+                        jQuery("#data-table_processing").hide();
+                        showError(getProviderErrorMessage(error));
+                    });
+
                 }
             });
 
@@ -413,6 +423,9 @@ storeImageData().then(IMG => {
                 })(f);
                 reader.readAsDataURL(f);
             }
+
+            window.handleFileSelectowner = handleFileSelectowner;
+
             async function storeImageData() {
                 var newPhoto = '';
                 try {
@@ -516,7 +529,7 @@ storeImageData().then(IMG => {
                     var currentDate=new Date();
                     if(data.expiryDay!='-1') {
                         currentDate.setDate(currentDate.getDate()+parseInt(data.expiryDay));
-                        data.expiryDate=kweekFirestore.Timestamp.fromDate(currentDate);
+                        data.expiryDate=kweekDb.Timestamp.fromDate(currentDate);
                     } else {
                         data.expiryDate=null;
                     }
@@ -526,7 +539,7 @@ storeImageData().then(IMG => {
             }
             async function addSubscriptionHistory(historyData) {
                 var id_order=database.collection('tmp').doc().id;
-                var createdAt=kweekFirestore.FieldValue.serverTimestamp();
+                var createdAt=kweekDb.FieldValue.serverTimestamp();
 
                 var userId=historyData.userId;
                 await database.collection('subscription_history').doc(id_order).set({

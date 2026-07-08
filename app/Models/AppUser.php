@@ -62,6 +62,11 @@ class AppUser extends Authenticatable
         return $query->where('role', 'driver')->where('isOwner', false);
     }
 
+    public function scopeVendors($query)
+    {
+        return $query->where('role', 'vendor');
+    }
+
     public function scopeApproved($query)
     {
         return $query->where('isDocumentVerify', true);

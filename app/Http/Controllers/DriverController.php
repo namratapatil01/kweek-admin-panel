@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class DriverController extends Controller
@@ -105,9 +106,15 @@ class DriverController extends Controller
             // Build base query
             $query = AppUser::drivers();
             if ($isFleet) {
-                $query->whereNotNull('ownerId');
+                // Fleet drivers have a valid ownerId (not null, not empty)
+                $query->where(function($q) {
+                    $q->whereNotNull('ownerId')->where('ownerId', '!=', '');
+                });
             } else {
-                $query->whereNull('ownerId');
+                // Regular drivers: ownerId is null OR empty string
+                $query->where(function($q) {
+                    $q->whereNull('ownerId')->orWhere('ownerId', '');
+                });
             }
 
             // Type filter
@@ -545,15 +552,22 @@ class DriverController extends Controller
                 'id', 'firstName', 'lastName', 'email', 'phoneNumber',
                 'active', 'profilePictureURL', 'carNumber', 'carMakes',
                 'carName', 'vehicleId', 'sectionId', 'rideType',
-                'serviceType', 'vehicleType', 'userBankDetails', 'zoneId', 'ownerId'
+                'serviceType', 'vehicleType', 'userBankDetails', 'zoneId', 'ownerId',
+                'password'
             ]);
 
             $data['role'] = 'driver';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             $data['isOwner'] = false;
+            $data['ownerId'] = null;    // Ensure non-fleet drivers have null ownerId
             $data['isDocumentVerify'] = false;
             $data['wallet_amount'] = 0;
             $data['orderCompleted'] = 0;
+
+            // Hash the password if provided
+            if ($request->filled('password')) {
+                $data['password'] = Hash::make($request->input('password'));
+            }
             
             // Handle json conversion for userBankDetails if it's an array
             if (isset($data['userBankDetails']) && is_array($data['userBankDetails'])) {
