@@ -42,7 +42,7 @@ class StoreController extends Controller
 
         $total_orders = DB::table('vendor_orders')->where('vendorID', $id)->count();
         $total_items = DB::table('vendor_products')->where('vendorID', $id)->count();
-        $total_earnings = DB::table('vendor_orders')->where('vendorID', $id)->where('status', 'completed')->sum('vendor_revenue') ?? 0;
+        $total_earnings = DB::table('vendor_orders')->where('vendorID', $id)->where('status', 'Order Completed')->sum('subTotal') ?? 0;
         $total_payment = DB::table('payouts')->where('vendorID', $id)->sum('amount') ?? 0;
 
         $user = \App\Models\AppUser::where('vendorID', $id)->where('role', 'vendor')->first();

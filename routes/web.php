@@ -295,6 +295,12 @@ Route::get('/orderReview/edit/{id}', [App\Http\Controllers\OrderReviewController
 
 Route::middleware(['permission:coupons,coupons'])->group(function () {
     Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->name('coupons');
+    Route::get('/coupons/datatable', [App\Http\Controllers\CouponController::class, 'datatable'])->name('coupons.datatable');
+    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->name('coupons.store');
+    Route::post('/coupons/bulk-delete', [App\Http\Controllers\CouponController::class, 'bulkDestroy'])->name('coupons.bulk-destroy');
+    Route::post('/coupons/toggle/{id}', [App\Http\Controllers\CouponController::class, 'toggle'])->name('coupons.toggle');
+    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->name('coupons.destroy');
 });
 Route::middleware(['permission:coupons,coupons.edit'])->group(function () {
     Route::get('/coupons/edit/{id}', [App\Http\Controllers\CouponController::class, 'edit'])->name('coupons.edit');
@@ -774,12 +780,18 @@ Route::middleware(['permission:providers,providers.view'])->group(function () {
 
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons'])->group(function () {
     Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
+    Route::get('/ondemand-coupons-data', [App\Http\Controllers\OnDemandServiceController::class, 'couponsDatatable'])->name('ondemand.coupons.datatable');
+    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
+    Route::post('/ondemand-coupons/toggle/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponToggle'])->name('ondemand.coupons.toggle');
+    Route::post('/ondemand-coupons/delete', [App\Http\Controllers\OnDemandServiceController::class, 'couponDestroy'])->name('ondemand.coupons.destroy');
 });
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons.create'])->group(function () {
     Route::get('/ondemand-coupon/create', [App\Http\Controllers\OnDemandServiceController::class, 'CouponCreate'])->name('ondemand.coupons.create');
+    Route::post('/ondemand-coupons', [App\Http\Controllers\OnDemandServiceController::class, 'couponStore'])->name('ondemand.coupons.store');
 });
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons.edit'])->group(function () {
     Route::get('/ondemand-coupons/edit/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'CouponEdit'])->name('ondemand.coupons.edit');
+    Route::put('/ondemand-coupons/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponUpdate'])->name('ondemand.coupons.update');
 });
 Route::middleware(['permission:ondemand-services,ondemand.services.index'])->group(function () {
     Route::get('/ondemand-services/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Services'])->name('ondemand.services.index');
@@ -868,21 +880,25 @@ Route::middleware(['permission:subscription-history,subscription.history'])->gro
     Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
 });
 
-Route::middleware(['permission:advertisements,advertisements.edit'])->group(function () {
-    Route::get('/advertisements/edit/{id}', [App\Http\Controllers\AdvertisementsController::class, 'edit'])->name('advertisements.edit');
+Route::middleware(['permission:advertisements,advertisements'])->group(function () {
+    Route::get('advertisements', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('advertisements');
+    Route::get('/advertisements/datatable', [App\Http\Controllers\AdvertisementsController::class, 'datatable'])->name('advertisements.datatable');
+    Route::post('/advertisements/delete', [App\Http\Controllers\AdvertisementsController::class, 'destroy'])->name('advertisements.destroy');
 });
 Route::middleware(['permission:advertisements,advertisements.create'])->group(function () {
     Route::get('/advertisements/create', [App\Http\Controllers\AdvertisementsController::class, 'create'])->name('advertisements.create');
+    Route::post('/advertisements', [App\Http\Controllers\AdvertisementsController::class, 'store'])->name('advertisements.store');
 });
-Route::middleware(['permission:advertisements,advertisements'])->group(function () {
-    Route::get('advertisements', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('advertisements');
-});
-Route::middleware(['permission:advertisements,advertisements'])->group(function () {
-    Route::get('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('restaurants.advertisements');
+Route::middleware(['permission:advertisements,advertisements.edit'])->group(function () {
+    Route::get('/advertisements/edit/{id}', [App\Http\Controllers\AdvertisementsController::class, 'edit'])->name('advertisements.edit');
+    Route::put('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'update'])->name('advertisements.update');
 });
 Route::middleware(['permission:advertisements,advertisements.view'])->group(function () {
     Route::get('/advertisements/view/{id}', [App\Http\Controllers\AdvertisementsController::class, 'view'])->name('advertisements.view');
     Route::get('/advertisement/chat/{id}', [App\Http\Controllers\AdvertisementsController::class, 'chat'])->name('advertisement.chat');
+});
+Route::middleware(['permission:advertisements,advertisements'])->group(function () {
+    Route::get('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('restaurants.advertisements');
 });
 Route::middleware(['permission:advertisements-list,advertisements.request'])->group(function () {
     Route::get('advertisements-list/requestes', [App\Http\Controllers\AdvertisementsController::class, 'requested'])->name('advertisements.request');

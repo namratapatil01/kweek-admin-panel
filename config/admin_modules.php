@@ -376,7 +376,8 @@ return [
     'advertisements' => [
         'model' => \App\Models\Advertisement::class,
         'label' => 'Advertisements',
-        'permission' => 'advertisement',
+        'permission' => 'advertisements',
+        'legacy_route' => 'advertisements',
         'searchable' => ['title'],
         'columns' => [
             ['field' => 'title', 'label' => 'Title'],

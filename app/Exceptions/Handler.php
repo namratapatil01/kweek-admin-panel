@@ -2,7 +2,13 @@
 
 namespace App\Exceptions;
 
+use App\Support\ApiResponse;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -37,5 +43,35 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    protected function invalidJson($request, ValidationException $exception): JsonResponse
+    {
+        return ApiResponse::error(
+            'Validation failed',
+            $exception->status,
+            $exception->errors()
+        );
+    }
+
+    protected function unauthenticated($request, AuthenticationException $exception): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return ApiResponse::error('Unauthenticated.', 401);
+        }
+
+        return redirect()->guest(route('login'));
+    }
+
+    public function render($request, Throwable $e)
+    {
+        if (($request->expectsJson() || $request->is('api/*')) && $e instanceof HttpException) {
+            return ApiResponse::error(
+                $e->getMessage() ?: 'Error',
+                $e->getStatusCode()
+            );
+        }
+
+        return parent::render($request, $e);
     }
 }

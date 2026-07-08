@@ -69,7 +69,7 @@
         }
     </script>
 
-    <!-- @yield('style') -->
+    @yield('style')
      
      <style>
         :root {
@@ -202,8 +202,15 @@
             if (globalSettings.applicationName) {
                 $("#app_name").html(globalSettings.applicationName);
             }
+            var localFallbackLogo = "{{ asset('images/kweek-logo.png') }}";
             if (globalSettings.appLogo) {
-                $("#logo_web").attr('src', globalSettings.appLogo);
+                // Try to load the stored logo; fall back to local file if it fails (e.g. Firebase URL broken)
+                var testImg = new Image();
+                testImg.onload = function() { $("#logo_web").attr('src', globalSettings.appLogo); };
+                testImg.onerror = function() { $("#logo_web").attr('src', localFallbackLogo); };
+                testImg.src = globalSettings.appLogo;
+            } else {
+                $("#logo_web").attr('src', localFallbackLogo);
             }
             if (globalSettings.admin_panel_color) {
                 document.documentElement.style.setProperty('--admin-panel-color', globalSettings.admin_panel_color);

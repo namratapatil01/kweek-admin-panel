@@ -17,49 +17,34 @@
                 <li class="breadcrumb-item active">{{trans('lang.coupon_plural')}}</li>
             </ol>
         </div>
-        <div>
-        </div>
     </div>
     <div class="container-fluid">
-       <div class="admin-top-section"> 
+       <div class="admin-top-section">
         <div class="row">
             <div class="col-12">
                     @if($id!='')
                         <div class="resttab-sec">
-
                             <div class="menu-tab tabDiv">
                                 <ul>
-                                    <li ><a href="{{route('providers.view', $id)}}"><img src="{{ asset('images/provider.png') }}"> {{trans('lang.tab_basic')}}</a>
-                                    </li>
+                                    <li ><a href="{{route('providers.view', $id)}}"><img src="{{ asset('images/provider.png') }}"> {{trans('lang.tab_basic')}}</a></li>
                                     <li><a href="{{route('ondemand.services.index', $id)}}"><img src="{{ asset('images/service.png') }}"> {{trans('lang.services')}}</a></li>
-                                    <li>
                                     <li><a href="{{route('ondemand.workers.index', $id)}}"><img src="{{ asset('images/worker.png') }}"> {{trans('lang.workers')}}</a></li>
-                                    <li>
                                     <li><a href="{{route('ondemand.bookings.index',$id)}}"><img src="{{ asset('images/booking.png') }}"> {{trans('lang.booking_plural')}}</a></li>
-                                    <li>
                                     <li class="active"><a href="{{route('ondemand.coupons', $id)}}"><img src="{{ asset('images/coupon.png') }}"> {{trans('lang.coupon_plural')}}</a></li>
-
+                                    <li><a href="{{route('providerPayouts.payout', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payouts')}}</a></li>
+                                    <li><a href="{{route('payoutRequests.providers', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payout_request')}}</a></li>
                                     <li>
-                                        <a href="{{route('providerPayouts.payout', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payouts')}}</a>
+                                        <a href="{{route('users.walletstransaction',$id)}}" class="wallet_transaction"><img src="{{ asset('images/wallet.png') }}"> {{trans('lang.wallet_transaction')}}</a>
                                     </li>
-                                    <li>
-                                        <a href="{{route('payoutRequests.providers', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payout_request')}}</a>
-                                    </li>
-                                    <li>
-                                        <a href="{{route('users.walletstransaction',$id)}}"
-                                            class="wallet_transaction"><img src="{{ asset('images/wallet.png') }}"> {{trans('lang.wallet_transaction')}}</a>
-                                    </li>
-                                    <?php 
-                    
+                                    <?php
                                         $subscription =  route("subscription.subscriptionPlanHistory", ":id");
                                         $subscription =  str_replace(":id", "providerID=" . $id, $subscription);
                                     ?>
-                                    <li> 
+                                    <li>
                                         <a href="{{ $subscription }}"><img src="{{ asset('images/subscription.png') }}">  {{trans('lang.subscription_history')}}</a>
                                     </li>
                                 </ul>
                             </div>
-
                         </div>
                     @endif
                 <div class="d-flex top-title-section pb-4 justify-content-between">
@@ -68,11 +53,9 @@
                         <h3 class="mb-0">{{trans('lang.coupon_plural')}}</h3>
                         <span class="counter ml-3 total_count"></span>
                     </div>
-                   
                 </div>
             </div>
-        </div> 
-       
+        </div>
        </div>
        <div class="table-list">
        <div class="row">
@@ -84,28 +67,21 @@
                     <p class="mb-0 text-dark-2">{{trans('lang.coupon_table_text')}}</p>
                    </div>
                    <div class="card-header-right d-flex align-items-center">
-                    <div class="card-header-btn mr-3"> 
+                    <div class="card-header-btn mr-3">
                     @if($id=='')
                         <a class="btn-primary btn rounded-full" href="{!! route('ondemand.coupons.create') !!}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.coupon_create')}}</a>
                     @else
                     <a class="btn-primary btn rounded-full" href="{!! route('ondemand.coupons.create','id='.$id) !!}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.coupon_create')}}</a>
                     @endif
                      </div>
-                   </div>                
+                   </div>
                  </div>
                  <div class="card-body">
                          <div class="table-responsive m-t-10">
-                            <table id="couponTable" class="display nowrap table table-hover table-striped table-bordered table table-striped" cellspacing="0" width="100%">
+                            <table id="couponTable" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
                                 <thead>
                                 <tr>
-                                <?php if (in_array('ondemand.coupons.delete', json_decode(@session('user_permissions')))) { ?>
-
-                                    <th class="delete-all"><input type="checkbox" id="is_active"><label
-                                                class="col-3 control-label" for="is_active"
-                                        ><a id="deleteAll" class="do_not_delete"
-                                            href="javascript:void(0)"><i
-                                                        class="fa fa-trash"></i> {{trans('lang.all')}}</a></label></th>
-                                        <?php }?>
+                                    <th class="delete-all"><input type="checkbox" id="is_active"><label class="col-3 control-label" for="is_active"><a id="deleteAll" class="do_not_delete" href="javascript:void(0)"><i class="fa fa-trash"></i> {{trans('lang.all')}}</a></label></th>
                                     <th>{{trans('lang.coupon_code')}}</th>
                                     <th>{{trans('lang.coupon_discount')}}</th>
                                     @unless($id != '')
@@ -117,8 +93,7 @@
                                     <th>{{trans('lang.actions')}}</th>
                                 </tr>
                                 </thead>
-                                <tbody id="append_list1">
-                                </tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
                     </div>
@@ -129,410 +104,95 @@
     </div>
 </div>
 
-
 @endsection
 
 @section('scripts')
-
 <script type="text/javascript">
+$(document).ready(function () {
+    var providerId = "{{ $id }}";
+    var sectionId = (typeof getCookie === 'function' ? getCookie('section_id') : '') || '';
 
-    var section_id = getCookie('section_id') || '';
-    var user_permissions = '<?php echo @session('user_permissions') ?>';
-    user_permissions = JSON.parse(user_permissions);
-    var checkDeletePermission = false;
-
-    if ($.inArray('ondemand.coupons.delete', user_permissions) >= 0) {
-            checkDeletePermission = true;
-    }
-
-    var database = kweekDb();
-
-    var id="{{$id}}";
-    if(id!=''){
-        $('.tabDiv').show();
-        var ref = database.collection('providers_coupons').where('providerId','==',id);
-    }else{
-        $('.tabDiv').hide();
-        var ref = database.collection('providers_coupons');
-    }
-
-    if(section_id){
-        ref = ref.where('sectionId', '==', section_id);
-    }
-
-    var currentCurrency = '';
-    var currencyAtRight = false;
-    var decimal_degits = 0;
-
-    var refCurrency = database.collection('currencies').where('isActive', '==', true);
-    refCurrency.get().then(async function (snapshots) {
-        var currencyData = snapshots.docs[0].data();
-        currentCurrency = currencyData.symbol;
-        currencyAtRight = currencyData.symbolAtRight;
-
-        if (currencyData.decimal_degits) {
-            decimal_degits = currencyData.decimal_degits;
-        }
-
-    });
-
-    var append_list = '';
-
-    $(document).ready(function () {
-        if(id!=''){
-            var wallet_route = "{{route('users.walletstransaction','id')}}";
-            $(".wallet_transaction").attr("href", wallet_route.replace('id', 'providerID='+id));
-
-            getProviderNameForFilter(id);
-        }
-        $(document.body).on('click', '.redirecttopage', function () {
-            var url = $(this).attr('data-url');
-            window.location.href = url;
-        });
-
-        jQuery("#data-table_processing").show();
-
-        const table = $('#couponTable').DataTable({
-            pageLength: 10, // Number of rows per page
-            processing: false, // Show processing indicator
-            serverSide: true, // Enable server-side processing
-            responsive: true,
-            ajax: async function (data, callback, settings) {
-                const start = data.start;
-                const length = data.length;
-                const searchValue = data.search.value.toLowerCase();
-                const orderColumnIndex = data.order[0].column;
-                const orderDirection = data.order[0].dir;
-                var orderableColumns = (checkDeletePermission) ? ['', 'code', 'discount', 'providerName', 'privacy', 'expiresAt', '', ''] : ['code', 'discount',  'providerName', 'privacy', 'expiresAt', '', '']; // Ensure this matches the actual column names
-                const orderByField = orderableColumns[orderColumnIndex]; // Adjust the index to match your table
-                if (searchValue.length >= 3 || searchValue.length === 0) {
-                    $('#data-table_processing').show();
+    if (providerId !== '') {
+        var wallet_route = "{{ route('users.walletstransaction','id') }}";
+        $(".wallet_transaction").attr("href", wallet_route.replace('id', 'providerID=' + providerId));
+        $.get('{{ route("ondemand.providers.list") }}', function (res) {
+            if (res.data) {
+                var provider = res.data.find(function (p) { return p.id === providerId; });
+                if (provider) {
+                    $('#providerName').text(provider.name);
                 }
-                await ref.get().then(async function (querySnapshot) {
-                    if (querySnapshot.empty) {
-                        $('.total_count').text(0);
-                        console.error("No data found in database.");
-                        $('#data-table_processing').hide(); // Hide loader
-                        callback({
-                            draw: data.draw,
-                            recordsTotal: 0,
-                            recordsFiltered: 0,
-                            data: [] // No data
-                        });
-                        return;
-                    }
-
-                    let records = [];
-                    let filteredRecords = [];
-                    var sectionNames = {};
-                    const sectionDocs = await database.collection('sections').get();
-                    sectionDocs.forEach(doc => {
-                        sectionNames[doc.id] = doc.data().name;
-                    });
-                    var providerNames = {};
-                    const storeDocs = await database.collection('users').get();
-                    storeDocs.forEach(doc => {
-                        providerNames[doc.id] = doc.data().firstName + ' ' + doc.data().lastName;
-                    });
-                    await Promise.all(querySnapshot.docs.map(async (doc) => {
-                        let childData = doc.data();
-                        if (childData.hasOwnProperty("providerId")) {
-                            childData.providerName = providerNames[childData.providerId] || '';
-                        } else {
-                            childData.providerName = '';
-                        }
-
-                        if (childData.hasOwnProperty("sectionId")) {
-                            childData.section = sectionNames[childData.sectionId] || '';
-                        } else {
-                            childData.section = '';
-                        }
-                        childData.privacy = (childData.isPublic) ? '{{trans("lang.public")}}' : '{{trans("lang.private")}}';
-                        childData.id = doc.id; // Ensure the document ID is included in the data
-
-                        if (searchValue) {
-                            var date = '';
-                            var time = '';
-                            if (childData.hasOwnProperty("expiresAt") && childData.expiresAt) {
-                                try {
-                                    var expDate = typeof childData.expiresAt.toDate === 'function' ? childData.expiresAt.toDate() : new Date(childData.expiresAt);
-                                    date = expDate.toDateString();
-                                    time = expDate.toLocaleTimeString('en-US');
-                                } catch (err) {
-                                    console.error(err);
-                                }
-                            }
-                            var expireAt = date + '<br> ' + time;
-                            if (
-                                (childData.code && childData.code.toLowerCase().toString().includes(searchValue)) ||
-                               
-                                (expireAt && expireAt.toString().toLowerCase().indexOf(searchValue) > -1) ||
-                                (childData.discount && childData.discount.toString().toLowerCase().includes(searchValue)) ||
-                                (childData.providerName && childData.providerName.toString().toLowerCase().includes(searchValue)) ||
-                                (childData.privacy && childData.privacy.toString().toLowerCase().includes(searchValue))
-
-                            ) {
-                                filteredRecords.push(childData);
-                            }
-                        } else {
-                            filteredRecords.push(childData);
-                        }
-                    }));
-
-                    filteredRecords.sort((a, b) => {
-                        let aValue = a[orderByField] ? a[orderByField].toString().toLowerCase().trim() : '';
-                        let bValue = b[orderByField] ? b[orderByField].toString().toLowerCase().trim() : '';
-
-                        if (orderByField === 'expiresAt') {
-                            try {
-                                var aDate = a[orderByField] ? (typeof a[orderByField].toDate === 'function' ? a[orderByField].toDate() : new Date(a[orderByField])) : null;
-                                var bDate = b[orderByField] ? (typeof b[orderByField].toDate === 'function' ? b[orderByField].toDate() : new Date(b[orderByField])) : null;
-                                aValue = aDate ? aDate.getTime() : 0;
-                                bValue = bDate ? bDate.getTime() : 0;
-                            } catch (err) {
-                                aValue = 0;
-                                bValue = 0;
-                            }
-                        }
-                        if(orderByField === 'discount') {
-                            aValue = a[orderByField] ? parseInt(a[orderByField]) : 0;
-                            bValue = b[orderByField] ? parseInt(b[orderByField]) : 0;
-
-                        }
-
-                        if (orderDirection === 'asc') {
-                            return (aValue > bValue) ? 1 : -1;
-                        } else {
-                            return (aValue < bValue) ? 1 : -1;
-                        }
-                    });
-
-                    const totalRecords = filteredRecords.length;
-                    $('.total_count').text(totalRecords);
-                    const paginatedRecords = filteredRecords.slice(start, start + length);
-
-                    await Promise.all(paginatedRecords.map(async (childData) => {
-                        var getData = await buildHTML(childData);
-                        records.push(getData);
-                    }));
- $(function () {
-                                $('[data-toggle="tooltip"]').tooltip();
-                            });
-                    $('#data-table_processing').hide(); // Hide loader
-                    callback({
-                        draw: data.draw,
-                        recordsTotal: totalRecords, // Total number of records in database
-                        recordsFiltered: totalRecords, // Number of records after filtering (if any)
-                        data: records // The actual data to display in the table
-                    });
-                }).catch(function (error) {
-                    console.error("Error fetching data from database:", error);
-                    $('#data-table_processing').hide(); // Hide loader
-                    callback({
-                        draw: data.draw,
-                        recordsTotal: 0,
-                        recordsFiltered: 0,
-                        data: [] // No data due to error
-                    });
-                });
-            },
-            // order: (checkDeletePermission) ? [[5, 'desc']] : [[4, 'desc']],
-            // columnDefs: [
-            //     {
-            //         targets: (checkDeletePermission) ? 5 : 4,
-            //         type: 'date',
-            //         render: function (data) {
-            //             return data;
-            //         }
-            //     },
-            //     { orderable: false, targets: (checkDeletePermission) ? [0, 4, 6, 7] : [3, 5, 6] },
-            // ],
-             order: (function() {
-        const show = (id === '');
-        const titleColIndex = checkDeletePermission 
-            ? (show ? 5 : 4)  // Checkbox exists → Title is col 2 or 1
-            : (show ? 4 : 3);  // No checkbox → Title is col 1 or 0
-        return [[titleColIndex, 'asc']];
-    })(),
-
-    columnDefs: (function() {
-        const show = (id === '');
-        let targets = [];
-
-        if (checkDeletePermission) {
-            targets.push(0); // Checkbox always non-sortable
-        }
-
-        const publishCol = checkDeletePermission 
-            ? (show ? 5 : 4)   // Publish column index
-            : (show ? 4 : 3);
-
-        const actionsCol = publishCol + 1;
-
-        targets.push(publishCol);  // Publish toggle
-        targets.push(actionsCol);  // Actions
-
-        return [{ orderable: false, targets: targets }];
-    })(),
-            "language": {
-                "zeroRecords": "{{trans("lang.no_record_found")}}",
-                "emptyTable": "{{trans("lang.no_record_found")}}",
-                "processing": "" // Remove default loader
-            },
-
+            }
         });
-        function debounce(func, wait) {
-            let timeout;
-            const context = this;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), wait);
-            };
-        }
-        $('#search-input').on('input', debounce(function () {
-            const searchValue = $(this).val();
-            if (searchValue.length >= 3) {
-                $('#data-table_processing').show();
-                table.search(searchValue).draw();
-            } else if (searchValue.length === 0) {
-                $('#data-table_processing').show();
-                table.search('').draw();
-            }
-        }, 300));
-
-    });
-
-    async function buildHTML(val) {
-
-        var html = [];
-        var count = 0;
-        var discount_price = '';
-
-        if (currencyAtRight) {
-            if (val.discountType == 'Percentage') {
-                discount_price = val.discount + "%";
-            } else {
-                discount_price = parseFloat(val.discount).toFixed(decimal_degits) + "" + currentCurrency;
-            }
-        } else {
-            if (val.discountType == 'Percentage') {
-                discount_price = val.discount + "%";
-            } else {
-                discount_price = currentCurrency + "" + parseFloat(val.discount).toFixed(decimal_degits);
-            }
-        }
-
-        var id = val.id;
-        var route1 = '{{route("ondemand.coupons.edit",":id")}}';
-        var idOfProviderDetailPage="<?php echo $id; ?>";
-        if(idOfProviderDetailPage!=''){
-            route1 = route1.replace(':id', val.id+"?id="+idOfProviderDetailPage);
-        }else{
-            route1 = route1.replace(':id', id);
-        }
-
-        if(checkDeletePermission){
-            html.push('<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
-            'for="is_open_' + id + '" ></label></td>');
-        }
-        html.push('<a  data-url="' + route1 + '" href="'+route1+'" class="redirecttopage">' + val.code + '</a>');
-        html.push(discount_price);
-
-       $("#providerName").text(val.providerName);
-@if($id == '')
-        if (val.hasOwnProperty("providerId")) {
-            var providerView = '{{route("providers.view",":id")}}';
-            providerView = providerView.replace(':id', val.providerId);
-             if(val.providerName==""){
-                providerView="javascript:void(0)";
-                providerName="{{trans('lang.unknown')}}"
-            }
-            html.push('<td><a href="' + providerView + '">' + val.providerName + '</a></td>');
-        } else {
-            html.push('<td></td>');
-        }
-        @endif
-
-        if (val.hasOwnProperty('isPublic') && val.isPublic) {
-            html.push('<td class="success"><span class="badge badge-success py-2 px-3">{{trans("lang.public")}}</sapn></td>');
-        } else {
-            html.push('<td class="danger"><span class="badge badge-danger py-2 px-3">{{trans("lang.private")}}</sapn></td>');
-        }
-        var date = '';
-        var time = '';
-        if (val.hasOwnProperty("expiresAt") && val.expiresAt) {
-            try {
-                var expDate = typeof val.expiresAt.toDate === 'function' ? val.expiresAt.toDate() : new Date(val.expiresAt);
-                date = expDate.toDateString();
-                time = expDate.toLocaleTimeString('en-US');
-            } catch (err) {
-                console.error(err);
-            }
-            html.push('<td class="dt-time">' + date + '<br> ' + time + '</td>');
-        } else {
-            html.push('<td></td>');
-        }
-        if (val.isEnabled) {
-            html.push('<label class="switch"><input type="checkbox" checked id="' + val.id + '" name="isActive"><span class="slider round"></span></label>');
-        } else {
-            html.push('<label class="switch"><input type="checkbox" id="' + val.id + '" name="isActive"><span class="slider round"></span></label>');
-        }
-        var actionHtml = '';
-        actionHtml += '<span class="action-btn"><a href="' + route1 + '" data-toggle="tooltip" title="{{trans("lang.edit")}}"><i class="mdi mdi-lead-pencil"></i></a>';
-        if(checkDeletePermission){
-            actionHtml += '<a id="' + val.id + '" name="coupon_delete_btn" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" title="{{trans("lang.delete")}}"><i class="mdi mdi-delete"></i></a>';
-        }
-        actionHtml += '</span>';
-
-        html.push(actionHtml);
-
-        return html;
     }
 
-    $(document).on("click", "input[name='isActive']", function (e) {
-        var ischeck = $(this).is(':checked');
-        var id = this.id;
-        var isEnabled = ischeck ? true : false;
-        database.collection('providers_coupons').doc(id).update({
-            'isEnabled': isEnabled
-        });
-    });
-
-
-    $("#is_active").click(function () {
-        $("#couponTable .is_open").prop('checked', $(this).prop('checked'));
-    });
-
-    $("#deleteAll").click(function () {
-        if ($('#couponTable .is_open:checked').length) {
-            if (confirm("{{trans('lang.selected_delete_alert')}}")) {
-                jQuery("#data-table_processing").show();
-                $('#couponTable .is_open:checked').each(async function () {
-                    var dataId = $(this).attr('dataId');
-                    await deleteDocumentWithImage('providers_coupons',dataId,'image');
-                    window.location.reload();
-                });
+    var table = $('#couponTable').DataTable({
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        ajax: {
+            url: '{{ route("ondemand.coupons.datatable") }}',
+            type: 'GET',
+            data: function (d) {
+                d.provider_id = providerId;
+                d.section_id = sectionId;
+            },
+            dataSrc: function (json) {
+                $('.total_count').text(json.recordsTotal || 0);
+                return json.data || [];
             }
-        } else {
-            alert("{{trans('lang.select_delete_alert')}}");
+        },
+        columnDefs: [{ orderable: false, targets: [0, -2, -1] }],
+        language: {
+            zeroRecords: "{{ trans('lang.no_record_found') }}",
+            emptyTable: "{{ trans('lang.no_record_found') }}",
+            processing: ""
         }
     });
 
-    $(document).on("click", "a[name='coupon_delete_btn']",async  function (e) {
-        var id = this.id;
-        await deleteDocumentWithImage('providers_coupons',id,'image');
-        jQuery("#data-table_processing").show();
-        window.location = "{{! url()->current() }}";
+    $('#is_active').on('change', function () {
+        $('#couponTable .is_open').prop('checked', $(this).prop('checked'));
     });
-async function getProviderNameForFilter(providerId){
-        await database.collection('users').where('id', '==', providerId).get().then(async function (snapshots) {
-            var providerData = snapshots.docs[0].data();
-            providerName = providerData.firstName+' '+providerData.lastName;
-            $('.PageTitle').html("{{trans('lang.coupon_plural')}} - " + providerName);
+
+    $('#deleteAll').on('click', function () {
+        var ids = [];
+        $('#couponTable .is_open:checked').each(function () {
+            ids.push($(this).attr('dataId'));
         });
+        if (!ids.length) {
+            alert('{{ trans("lang.select_delete_alert") }}');
+            return;
+        }
+        if (!confirm('{{ trans("lang.selected_delete_alert") }}')) return;
+        $.post('{{ route("ondemand.coupons.destroy") }}', {
+            _token: '{{ csrf_token() }}',
+            ids: ids
+        }).done(function () {
+            table.ajax.reload();
+        });
+    });
 
-}
+    $(document).on('click', '.btn-delete-provider-coupon', function () {
+        var id = $(this).data('id');
+        if (!confirm('{{ trans("lang.selected_delete_alert") }}')) return;
+        $.post('{{ route("ondemand.coupons.destroy") }}', {
+            _token: '{{ csrf_token() }}',
+            id: id
+        }).done(function () {
+            table.ajax.reload();
+        });
+    });
 
+    $(document).on('change', '.toggle-provider-coupon', function () {
+        var id = $(this).data('id');
+        var chk = $(this);
+        $.post('{{ url("ondemand-coupons/toggle") }}/' + id, {
+            _token: '{{ csrf_token() }}'
+        }).done(function (res) {
+            chk.prop('checked', res.enabled);
+        }).fail(function () {
+            chk.prop('checked', !chk.prop('checked'));
+        });
+    });
+});
 </script>
-
 @endsection

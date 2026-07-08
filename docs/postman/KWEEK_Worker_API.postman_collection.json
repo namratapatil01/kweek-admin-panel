@@ -1,0 +1,333 @@
+{
+  "info": {
+    "name": "KWEEK Worker API",
+    "description": "Worker APIs for Nexa_worker Flutter app migration from Firebase to Laravel/MySQL",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "token", "value": "" },
+    { "key": "job_id", "value": "" },
+    { "key": "provider_id", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Worker\",\n  \"email\": \"worker@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"providerId\": \"{{provider_id}}\",\n  \"address\": \"Bangalore\",\n  \"salary\": \"15000\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"worker@example.com\",\n  \"password\": \"password123\",\n  \"fcmToken\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"worker@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/password/forgot"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"worker@example.com\",\n  \"token\": \"TOKEN_FROM_EMAIL\",\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/password/reset"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/worker/logout"
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/worker/account"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        { "name": "Get Profile", "request": { "method": "GET", "url": "{{base_url}}/api/worker/profile" } },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9999999999\",\n  \"address\": \"Bangalore\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/profile"
+          }
+        },
+        {
+          "name": "Upload Profile Image",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "image", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/api/worker/profile/image"
+          }
+        },
+        {
+          "name": "Set Online",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"online\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/availability"
+          }
+        },
+        { "name": "Parent Provider", "request": { "method": "GET", "url": "{{base_url}}/api/worker/provider" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Home (Public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/worker/home"
+          }
+        },
+        { "name": "Dashboard", "request": { "method": "GET", "url": "{{base_url}}/api/worker/dashboard" } }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "List Upcoming",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/worker/jobs?tab=upcoming",
+              "query": [{ "key": "tab", "value": "upcoming" }]
+            }
+          }
+        },
+        {
+          "name": "List Today",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/worker/jobs?tab=today",
+              "query": [{ "key": "tab", "value": "today" }]
+            }
+          }
+        },
+        {
+          "name": "List Completed",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/worker/jobs?tab=completed",
+              "query": [{ "key": "tab", "value": "completed" }]
+            }
+          }
+        },
+        { "name": "Job Details", "request": { "method": "GET", "url": "{{base_url}}/api/worker/jobs/{{job_id}}" } },
+        { "name": "Accept Job", "request": { "method": "POST", "url": "{{base_url}}/api/worker/jobs/{{job_id}}/accept" } },
+        {
+          "name": "Reject Job",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Unavailable\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/jobs/{{job_id}}/reject"
+          }
+        },
+        { "name": "Start Job", "request": { "method": "POST", "url": "{{base_url}}/api/worker/jobs/{{job_id}}/start" } },
+        { "name": "Stop Timer", "request": { "method": "POST", "url": "{{base_url}}/api/worker/jobs/{{job_id}}/stop-timer" } },
+        {
+          "name": "Add Extra Charges",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"extraCharges\": 100,\n  \"extraChargesDescription\": \"Extra parts\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/jobs/{{job_id}}/extra-charges"
+          }
+        },
+        {
+          "name": "Complete Job",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"otp\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/jobs/{{job_id}}/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        { "name": "Inbox", "request": { "method": "GET", "url": "{{base_url}}/api/worker/chat/inbox" } },
+        { "name": "Messages", "request": { "method": "GET", "url": "{{base_url}}/api/worker/chat/{{job_id}}/messages" } },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{job_id}}\",\n  \"receiverId\": \"\",\n  \"message\": \"I am on the way\",\n  \"messageType\": \"text\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/chat/send"
+          }
+        },
+        {
+          "name": "Upload Media",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "mediaType", "type": "text", "value": "image" }
+              ]
+            },
+            "url": "{{base_url}}/api/worker/chat/upload"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews & Misc",
+      "item": [
+        { "name": "List Reviews", "request": { "method": "GET", "url": "{{base_url}}/api/worker/reviews" } },
+        { "name": "Review By Order", "request": { "method": "GET", "url": "{{base_url}}/api/worker/reviews/order/{{job_id}}" } },
+        { "name": "Ratings", "request": { "method": "GET", "url": "{{base_url}}/api/worker/ratings" } },
+        { "name": "Earnings Summary", "request": { "method": "GET", "url": "{{base_url}}/api/worker/earnings" } },
+        { "name": "Notifications", "request": { "method": "GET", "url": "{{base_url}}/api/worker/notifications" } },
+        {
+          "name": "Terms",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/worker/terms"
+          }
+        },
+        {
+          "name": "Privacy",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/worker/privacy"
+          }
+        },
+        { "name": "Document Templates", "request": { "method": "GET", "url": "{{base_url}}/api/worker/documents" } },
+        { "name": "Document Status", "request": { "method": "GET", "url": "{{base_url}}/api/worker/documents/status" } },
+        {
+          "name": "Submit Documents",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documents\": [\n    { \"id\": \"doc1\", \"frontURL\": \"https://example.com/front.jpg\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/worker/documents"
+          }
+        }
+      ]
+    }
+  ]
+}
