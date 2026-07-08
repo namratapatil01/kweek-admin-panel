@@ -52,9 +52,34 @@ class AppUser extends Authenticatable
         return $this->hasMany(VendorOrder::class, 'authorID', 'id');
     }
 
+    public function parcelOrders()
+    {
+        return $this->hasMany(ParcelOrder::class, 'authorID', 'id');
+    }
+
+    public function rentalOrders()
+    {
+        return $this->hasMany(RentalOrder::class, 'authorID', 'id');
+    }
+
+    public function rides()
+    {
+        return $this->hasMany(Ride::class, 'authorID', 'id');
+    }
+
+    public function providerOrders()
+    {
+        return $this->hasMany(ProviderOrder::class, 'authorID', 'id');
+    }
+
     public function walletEntries()
     {
         return $this->hasMany(Wallet::class, 'user_id', 'id');
+    }
+
+    public function scopeCustomers($query)
+    {
+        return $query->where('role', 'customer');
     }
 
     public function scopeDrivers($query)

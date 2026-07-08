@@ -1,5 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\Customer\CustomerAuthController;
+use App\Http\Controllers\Api\Customer\CustomerCatalogController;
+use App\Http\Controllers\Api\Customer\CustomerCouponController;
+use App\Http\Controllers\Api\Customer\CustomerDashboardController;
+use App\Http\Controllers\Api\Customer\CustomerFavoriteController;
+use App\Http\Controllers\Api\Customer\CustomerMiscController;
+use App\Http\Controllers\Api\Customer\CustomerOrderController;
+use App\Http\Controllers\Api\Customer\CustomerProfileController;
+use App\Http\Controllers\Api\Customer\CustomerReviewController;
+use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
@@ -13,6 +23,68 @@ use Illuminate\Support\Facades\Route;
 | Mobile apps use these endpoints for auth, entities, and file uploads.
 |
 */
+
+Route::prefix('customer')->group(function () {
+    Route::post('register', [CustomerAuthController::class, 'register']);
+    Route::post('login', [CustomerAuthController::class, 'login']);
+    Route::post('auth/google', [CustomerAuthController::class, 'loginWithGoogle']);
+    Route::post('auth/apple', [CustomerAuthController::class, 'loginWithApple']);
+    Route::post('password/forgot', [CustomerAuthController::class, 'forgotPassword']);
+    Route::post('password/reset', [CustomerAuthController::class, 'resetPassword']);
+    Route::get('home', [CustomerDashboardController::class, 'home']);
+
+    Route::middleware(['auth:sanctum', 'app.role:customer'])->group(function () {
+        Route::post('logout', [CustomerAuthController::class, 'logout']);
+
+        Route::get('profile', [CustomerProfileController::class, 'show']);
+        Route::put('profile', [CustomerProfileController::class, 'update']);
+        Route::post('profile/image', [CustomerProfileController::class, 'uploadImage']);
+
+        Route::get('dashboard', [CustomerDashboardController::class, 'dashboard']);
+
+        Route::get('sections', [CustomerCatalogController::class, 'sections']);
+        Route::get('categories', [CustomerCatalogController::class, 'categories']);
+        Route::get('vendors', [CustomerCatalogController::class, 'vendors']);
+        Route::get('products', [CustomerCatalogController::class, 'products']);
+        Route::get('services', [CustomerCatalogController::class, 'services']);
+        Route::get('brands', [CustomerCatalogController::class, 'brands']);
+        Route::get('search', [CustomerCatalogController::class, 'search']);
+        Route::get('catalog/{type}/{id}', [CustomerCatalogController::class, 'show'])
+            ->where('type', 'vendor|product|service|category|provider-category|brand')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('orders', [CustomerOrderController::class, 'index']);
+        Route::post('orders', [CustomerOrderController::class, 'store']);
+        Route::get('orders/{type}/{id}', [CustomerOrderController::class, 'show'])
+            ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+        Route::patch('orders/{type}/{id}/status', [CustomerOrderController::class, 'updateStatus'])
+            ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+
+        Route::get('favorites/{type}', [CustomerFavoriteController::class, 'index'])
+            ->where('type', 'vendor|item|service|provider');
+        Route::post('favorites/{type}', [CustomerFavoriteController::class, 'store'])
+            ->where('type', 'vendor|item|service|provider');
+        Route::delete('favorites/{type}/{id}', [CustomerFavoriteController::class, 'destroy'])
+            ->where('type', 'vendor|item|service|provider');
+
+        Route::get('wallet', [CustomerWalletController::class, 'balance']);
+        Route::get('wallet/transactions', [CustomerWalletController::class, 'transactions']);
+        Route::post('wallet/topup', [CustomerWalletController::class, 'topUp']);
+
+        Route::get('reviews', [CustomerReviewController::class, 'index']);
+        Route::post('reviews', [CustomerReviewController::class, 'store']);
+        Route::post('ratings', [CustomerReviewController::class, 'storeRating']);
+
+        Route::get('coupons', [CustomerCouponController::class, 'index']);
+
+        Route::get('notifications', [CustomerMiscController::class, 'notifications']);
+        Route::get('referral', [CustomerMiscController::class, 'referral']);
+        Route::get('gift-cards', [CustomerMiscController::class, 'giftCards']);
+        Route::post('gift-cards/purchase', [CustomerMiscController::class, 'purchaseGiftCard']);
+        Route::post('complaints', [CustomerMiscController::class, 'complaints']);
+        Route::post('sos', [CustomerMiscController::class, 'sos']);
+    });
+});
 
 Route::prefix('v1')->group(function () {
   Route::prefix('auth')->group(function () {
@@ -32,7 +104,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('entities', function () {
             return response()->json([
-                'success' => true,
+                'status' => true,
                 'data' => app(\App\Services\EntityRegistry::class)->slugs(),
             ]);
         });
