@@ -53,7 +53,9 @@
                 if (obj.hasOwnProperty(key)) {
                     const val = obj[key];
                     if (typeof val === 'string' && val.trim() !== '') {
-                        const isDateKey = /date|createdat|updatedat|expiresat|expiry/i.test(key);
+                        const isDateKey = /createdat|updatedat|expiresat|expiryat|expires_at|expiry_at/i.test(key)
+                            || /date$/i.test(key)
+                            || key === 'date';
                         const isDateString = /^\d{4}-\d{2}-\d{2}/.test(val) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val);
                         if (isDateKey || isDateString) {
                             const parsed = Date.parse(val);

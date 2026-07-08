@@ -682,7 +682,47 @@
 
             return geohash;
         }
-        
+
+        window.chkAlphabets = function (event, msg) {
+            if (!(event.which >= 97 && event.which <= 122) && !(event.which >= 65 && event.which <= 90)) {
+                if (msg && document.getElementById(msg)) {
+                    document.getElementById(msg).innerHTML = 'Accept only Alphabets';
+                }
+                return false;
+            }
+            if (msg && document.getElementById(msg)) {
+                document.getElementById(msg).innerHTML = '';
+            }
+            return true;
+        };
+
+        window.chkAlphabets2 = function (event, msg) {
+            if (!(event.which >= 48 && event.which <= 57)) {
+                if (msg && document.getElementById(msg)) {
+                    document.getElementById(msg).innerHTML = 'Accept only Number';
+                }
+                return false;
+            }
+            if (msg && document.getElementById(msg)) {
+                document.getElementById(msg).innerHTML = '';
+            }
+            return true;
+        };
+
+        window.chkAlphabets3 = function (event, msg) {
+            var value = event.target ? event.target.value : '';
+            if ((event.which != 46 || value.indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
+                if (msg && document.getElementById(msg)) {
+                    document.getElementById(msg).innerHTML = 'Accept only Number and Dot(.)';
+                }
+                return false;
+            }
+            if (msg && document.getElementById(msg)) {
+                document.getElementById(msg).innerHTML = '';
+            }
+            return true;
+        };
+
     </script>
 
     @yield('scripts')

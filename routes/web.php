@@ -78,6 +78,20 @@ Route::middleware(['permission:vendors-document,vendor.document.edit'])->group(f
     Route::get('/vendors/document/upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'DocumentUpload'])->name('vendors.document.upload');
 });
 
+// Vendors MySQL AJAX endpoints
+Route::middleware(['auth'])->group(function () {
+    Route::get('/vendors/datatable', [App\Http\Controllers\VendorController::class, 'datatable'])->name('vendors.datatable');
+    Route::post('/vendors/toggle-status', [App\Http\Controllers\VendorController::class, 'toggleStatus'])->name('vendors.toggle-status');
+    Route::post('/vendors/destroy', [App\Http\Controllers\VendorController::class, 'destroy'])->name('vendors.destroy');
+    Route::post('/vendors/bulk-destroy', [App\Http\Controllers\VendorController::class, 'bulkDestroy'])->name('vendors.bulk-destroy');
+    Route::get('/vendors/api/get-vendor/{id}', [App\Http\Controllers\VendorController::class, 'getVendor'])->name('vendors.get-vendor');
+    Route::post('/vendors/api/store-vendor', [App\Http\Controllers\VendorController::class, 'storeVendor'])->name('vendors.store-vendor');
+    Route::post('/vendors/api/update-vendor/{id}', [App\Http\Controllers\VendorController::class, 'updateVendor'])->name('vendors.update-vendor');
+    Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
+    Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
+    Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+});
+
 
 Route::middleware(['permission:stores,stores'])->group(function () {
     Route::get('/stores', [App\Http\Controllers\StoreController::class, 'index'])->name('stores');

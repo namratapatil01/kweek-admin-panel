@@ -140,6 +140,19 @@
                     $(".gift_card_image").html('<span class="image-item"><img class="rounded" style="width:50px" src="' + imageUrl + '" alt="image" id="img" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"></span>');
                 }
 
+                function formatExpiryDay(value) {
+                    if (value === null || value === undefined || value === '') {
+                        return '';
+                    }
+                    if (typeof value === 'number') {
+                        return String(value);
+                    }
+                    if (typeof value === 'string') {
+                        return value;
+                    }
+                    return '';
+                }
+
                 placeholder.get().then(async function (snapshotsimage) {
                     var placeholderImageData = snapshotsimage.data();
                     placeholderImage = placeholderImageData.image;
@@ -158,7 +171,7 @@
                                 if (data.isEnable) {
                                     $("#status").prop('checked', true);
                                 }
-                                $('#expiry').val(data.expiryDay || data.expiry_day || '');
+                                $('#expiry').val(formatExpiryDay(data.expiryDay || data.expiry_day || ''));
                                 if (data.image && data.image != '') {
                                     photo = data.image;
                                     oldImagePath = data.image;
