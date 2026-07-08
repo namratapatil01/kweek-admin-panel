@@ -104,6 +104,16 @@
         placeholderImage = placeholderImageData.image;
     })
 
+    function normalizeImageUrl(url) {
+        if (!url) {
+            return '';
+        }
+        if (url.indexOf('/storage/') !== -1) {
+            return window.location.origin + url.substring(url.indexOf('/storage/'));
+        }
+        return url;
+    }
+
 
     $(document).ready(function () {
         $(document.body).on('click', '.redirecttopage', function () {
@@ -177,19 +187,20 @@
         newdate = '';
 
         var id = val.id;
-        var route1 = '{{route("gift-card.edit",":id")}}';
-        route1 = route1.replace(':id', id);
+        var route1 = '{{ url('gift-card/edit') }}/' + id;
+        var imageUrl = normalizeImageUrl(val.image || '');
+        var expiryDay = val.expiryDay || val.expiry_day || '';
         if(checkDeletePermission){
         html = html + '<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
             'for="is_open_' + id + '" ></label></td>';
         }
-        if (val.image != '') {
-            html = html + '<td><img class="rounded" style="width:50px" src="' + val.image + '" alt="image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"><a href="' + route1 + '" class="left_space redirecttopage">' + val.title + '</a></td>';
+        if (imageUrl != '') {
+            html = html + '<td><img class="rounded" style="width:50px" src="' + imageUrl + '" alt="image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'"><a href="' + route1 + '" class="left_space redirecttopage">' + val.title + '</a></td>';
         } else {
             html = html + '<td><img class="rounded" style="width:50px" src="' + placeholderImage + '" alt="image"><a href="' + route1 + '" class="left_space redirecttopage">' + val.title + '</a></td>';
         }
         
-        html = html + '<td>'+val.expiryDay+' Days</td>';
+        html = html + '<td>' + (expiryDay !== '' ? expiryDay + ' Days' : '') + '</td>';
         if (val.isEnable) {
             html = html + '<td><label class="switch"><input type="checkbox" checked id="' + val.id + '" name="isActive"><span class="slider round"></span></label></td>';
         } else {
