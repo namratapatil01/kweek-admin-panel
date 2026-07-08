@@ -253,91 +253,94 @@
         });
 
         if (requestId != '') {
-            var ref = database.collection('subscription_plans').where('id', '==', id);
             jQuery("#data-table_processing").show();
-            ref.get().then(async function(snapshots) {
-                if (snapshots.docs.length) {
-                    var data = snapshots.docs[0].data();
-                    $("#plan_name").val(data.name);
-                    $("#plan_price").val(data.price);
-                    $('#description').val(data.description);
-                    if (data.isEnable) {
-                        $("#status").prop('checked', true);
-                    } 
-                    if (data.expiryDay != '-1') {
-                        $("#limited_days").prop('checked', true);
-                        $('.expiry-limit-div').removeClass('d-none');
-                        $('#plan_validity').val(data.expiryDay);
-                    } else {
-                        $("#unlimited_days").prop('checked', true);
-                    }
-                    if (data.itemLimit != '-1') {
-                        $("#limited_item").prop('checked', true);
-                        $('.item-limit-div').removeClass('d-none');
-                    } else {
-                        $("#unlimited_item").prop('checked', true);
-                    }
-                    if (data.orderLimit != '-1') {
-                        $("#limited_order").prop('checked', true);
-                        $('.order-limit-div').removeClass('d-none');
-                    } else {
-                        $("#unlimited_order").prop('checked', true);
-                    }
-                    $('#item_limit').val(data.itemLimit);
-                    $('#order_limit').val(data.orderLimit);
+            $.ajax({
+                url: "{{ url('subscription-plans/get-plan') }}/" + id,
+                type: "GET",
+                success: function(data) {
+                    if (data) {
+                        $("#plan_name").val(data.name);
+                        $("#plan_price").val(data.price);
+                        $('#description').val(data.description);
+                        if (data.isEnable || data.isEnable == 'true') {
+                            $("#status").prop('checked', true);
+                        } 
+                        if (data.expiryDay != '-1') {
+                            $("#limited_days").prop('checked', true);
+                            $('.expiry-limit-div').removeClass('d-none');
+                            $('#plan_validity').val(data.expiryDay);
+                        } else {
+                            $("#unlimited_days").prop('checked', true);
+                        }
+                        if (data.itemLimit != '-1') {
+                            $("#limited_item").prop('checked', true);
+                            $('.item-limit-div').removeClass('d-none');
+                        } else {
+                            $("#unlimited_item").prop('checked', true);
+                        }
+                        if (data.orderLimit != '-1') {
+                            $("#limited_order").prop('checked', true);
+                            $('.order-limit-div').removeClass('d-none');
+                        } else {
+                            $("#unlimited_order").prop('checked', true);
+                        }
+                        $('#item_limit').val(data.itemLimit);
+                        $('#order_limit').val(data.orderLimit);
 
-                    if (data.hasOwnProperty('features')) {
-                        Object.entries(data.features).forEach(([key, value]) => {
-                            if (value) {
-                                $('input[name="features"][value="' + key + '"]').prop(
-                                    'checked',
-                                    true);
+                        if (data.hasOwnProperty('features') && data.features) {
+                            Object.entries(data.features).forEach(([key, value]) => {
+                                if (value && value !== 'false') {
+                                    $('input[name="features"][value="' + key + '"]').prop('checked', true);
+                                }
+                            });
+
+                            if (data.isCommissionPlan == true || data.isCommissionPlan == 'true') {
+                                $('input[name="features"]').attr('disabled', true);
+                                $('input[name="planType"]').attr('disabled', true);
+                                $('#status').attr('disabled', true);
+                                $('.status-div').addClass('d-none');
+                                $('#section').attr('disabled', true);
+                                $('#plan_price').attr('readonly', true);
                             }
-                        })
+                        }
 
-                        if (data.isCommissionPlan == true) {
-                            $('input[name="features"]').attr('disabled', true);
-                            $('input[name="planType"]').attr('disabled', true);
-                            $('#status').attr('disabled', true);
-                            $('.status-div').addClass('d-none');
+                        if (data.isCommissionPlan == true || data.isCommissionPlan == 'true') {
+                            $('#commissionPlan-features-div').removeClass('d-none');
+                            planPoints = data.plan_points || [];
+                            renderPlanPoints();
+                            $('#free_type').prop('checked', true);
                             $('#section').attr('disabled', true);
-                            $('#plan_price').attr('readonly', true);
+                            $("#limited_days_div").addClass('d-none');
+                            $('.limited_item_div').addClass('d-none');
+                            $('.limited_order_div').addClass('d-none'); 
+                        } else {
+                            $('.plan_price_div').removeClass('d-none');
+                            $("#limited_days_div").removeClass('d-none');
+                        }
+                        if (data.type == 'paid') {
+                            $('#paid_type').prop('checked', true);
+                            $('.plan_price_div').removeClass('d-none');
+                        } else {
+                            $('#free_type').prop('checked', true);
+                            $('.plan_price_div').addClass('d-none');
+                        }
+                      
+                        if (data.image != '' && data.image != null) {
+                            photo = data.image;
+                            planImageFile = data.image;
+                            $(".plan_image").append('<img onerror="this.onerror=null;this.src=\'' +
+                                placeholderImage + '\'" class="rounded" style="width:50px" src="' +
+                                photo + '" alt="image">');
+                        } else {
+                            $(".plan_image").append('<img class="rounded" style="width:50px" src="' +
+                                placeholderImage + '" alt="image">');
                         }
                     }
-
-                    if (data.isCommissionPlan == true) {
-                        $('#commissionPlan-features-div').removeClass('d-none');
-                        planPoints = data.plan_points;
-                        renderPlanPoints();
-                        $('#free_type').prop('checked', true);
-                        $('#section').attr('disabled', true);
-                        $("#limited_days_div").addClass('d-none');
-                        $('.limited_item_div').addClass('d-none');
-                        $('.limited_order_div').addClass('d-none'); 
-                    } else {
-                        $('.plan_price_div').removeClass('d-none');
-                        $("#limited_days_div").removeClass('d-none');
-                    }
-                    if (data.type == 'paid') {
-                        $('#paid_type').prop('checked', true);
-                        $('.plan_price_div').removeClass('d-none');
-                    } else {
-                        $('#free_type').prop('checked', true);
-                        $('.plan_price_div').addClass('d-none');
-                    }
-                  
-                    if (data.image != '' && data.image != null) {
-                        photo = data.image;
-                        planImageFile = data.image;
-                        $(".plan_image").append('<img onerror="this.onerror=null;this.src=\'' +
-                            placeholderImage + '\'" class="rounded" style="width:50px" src="' +
-                            photo + '" alt="image">');
-                    } else {
-                        $(".plan_image").append('<img class="rounded" style="width:50px" src="' +
-                            placeholderImage + '" alt="image">');
-                    }
+                    jQuery("#data-table_processing").hide();
+                },
+                error: function(err) {
+                    jQuery("#data-table_processing").hide();
                 }
-                jQuery("#data-table_processing").hide();
             });
         }
     });
@@ -478,89 +481,63 @@
             return false;
 
         } else {
+            var savePayload = {
+                'id': requestId != '' ? id : null,
+                'name': plan_name,
+                'price': plan_price,
+                'description': description,
+                'expiryDay': expiry_limit,
+                'isEnable': status,
+                'itemLimit': item_limit,
+                'orderLimit': order_limit,
+                'features': featuresObject,
+                'plan_points': (requestId != '' ? planPoints : null),
+                'type': planType,
+                'sectionId': section_id,
+                'isCommissionPlan': false,
+                '_token': '{{ csrf_token() }}'
+            };
 
-            requestId == '' ? (
-                    storeImageData().then(IMG => {
-                        if (IMG == '') {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append(
-                                "<p>{{ trans('lang.item_image_help') }}</p>");
-                            window.scrollTo(0, 0);
-                            return false;
-                        }
-                        jQuery("#data-table_processing").show();
-                        database.collection('subscription_plans').doc(id).set({
-                            'id': id,
-                            'name': plan_name,
-                            'price': plan_price,
-                            'description': description,
-                            'expiryDay': expiry_limit,
-                            'isEnable': status,
-                            'itemLimit': item_limit,
-                            'orderLimit': order_limit,
-                            'features': featuresObject,
-                            'plan_points': null,
-                            'type': planType,
-                            'createdAt': createdAt,
-                            'image': IMG,
-                            'sectionId': section_id,
-                            'isCommissionPlan':false
-                        }).then(function(result) {
+            storeImageData().then(IMG => {
+                if (IMG == '') {
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>{{ trans('lang.item_image_help') }}</p>");
+                    window.scrollTo(0, 0);
+                    return false;
+                }
+                savePayload.image = IMG;
+
+                jQuery("#data-table_processing").show();
+                
+                $.ajax({
+                    url: "{{ route('subscription-plans.store') }}",
+                    type: "POST",
+                    data: savePayload,
+                    success: function(response) {
+                        if (response.success) {
                             jQuery("#data-table_processing").hide();
                             $(".success_top").show();
                             $(".success_top").html("");
                             window.scrollTo(0, 0);
                             window.location.href = "{{ route('subscription-plans.index') }}";
-                        }).catch(function(error) {
+                        } else {
                             $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + error + "</p>");
-                        })
-                    }).catch(function(error) {
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + error + "</p>");
-                    })) :
-                (
-                    storeImageData().then(IMG => {
-                        if (IMG == '') {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append(
-                                "<p>{{ trans('lang.item_image_help') }}</p>");
-                            window.scrollTo(0, 0);
-                            return false;
-                        }
-                        database.collection('subscription_plans').doc(id).update({
-                            'name': plan_name,
-                            'price': plan_price,
-                            'description': description,
-                            'expiryDay': expiry_limit,
-                            'isEnable': status,
-                            'itemLimit': item_limit,
-                            'orderLimit': order_limit,
-                            'features': featuresObject,
-                            'plan_points': planPoints,
-                            'image': IMG,
-                            'type': planType,
-                            'sectionId': section_id
-                        }).then(function(result) {
+                            $(".error_top").html("<p>" + response.error + "</p>");
                             jQuery("#data-table_processing").hide();
-                            $(".success_top").show();
-                            $(".success_top").html("");
-                            window.scrollTo(0, 0);
-                            window.location.href = "{{ route('subscription-plans.index') }}";
-                        }).catch(function(error) {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + error + "</p>");
-                        })
-                    }).catch(function(error) {
+                        }
+                    },
+                    error: function(err) {
                         $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + error + "</p>");
-                    }));
+                        $(".error_top").html("<p>" + err.responseText + "</p>");
+                        jQuery("#data-table_processing").hide();
+                    }
+                });
+            }).catch(function(error) {
+                $(".error_top").show();
+                $(".error_top").html("<p>" + error + "</p>");
+                jQuery("#data-table_processing").hide();
+            });
         }
     });
 

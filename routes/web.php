@@ -834,6 +834,12 @@ Route::middleware(['web'])->prefix('admin-data')->group(function () {
 Route::middleware(['permission:subscription-plans,subscription-plans'])->group(function () {
     Route::get('/subscription-plans', [App\Http\Controllers\SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
     Route::get('/current-subscriber/{id}', [App\Http\Controllers\SubscriptionPlanController::class, 'currentSubscriberList'])->name('current-subscriber.list');
+    Route::get('/subscription-plans/datatable', [App\Http\Controllers\SubscriptionPlanController::class, 'datatable'])->name('subscription-plans.datatable');
+    Route::post('/subscription-plans/store', [App\Http\Controllers\SubscriptionPlanController::class, 'storeModel'])->name('subscription-plans.store');
+    Route::post('/subscription-plans/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyModel'])->name('subscription-plans.delete');
+    Route::post('/subscription-plans/bulk-delete', [App\Http\Controllers\SubscriptionPlanController::class, 'bulkDestroyModel'])->name('subscription-plans.bulk-delete');
+    Route::get('/subscription-plans/get-plan/{id}', [App\Http\Controllers\SubscriptionPlanController::class, 'getPlan'])->name('subscription-plans.get-plan');
+    Route::get('/subscription-plans/overview', [App\Http\Controllers\SubscriptionPlanController::class, 'overview'])->name('subscription-plans.overview');
 });
 Route::middleware(['permission:subscription-plans,subscription-plans.'.((str_contains(Request::url(), 'save')) ? (explode("save", Request::url())[1] ? "edit" : "create") : Request::url())])->group(function () {
     Route::get('/subscription-plans/save/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'save'])->name('subscription-plans.save');

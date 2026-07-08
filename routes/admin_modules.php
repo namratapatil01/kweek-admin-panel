@@ -16,7 +16,7 @@ $moduleControllers = [
     'documents' => \App\Http\Controllers\DocumentController::class,
     'review-attributes' => \App\Http\Controllers\ReviewAttributeController::class,
     'coupons' => \App\Http\Controllers\CouponController::class,
-    'subscription-plans' => \App\Http\Controllers\SubscriptionPlanController::class,
+
     'vehicle-types' => \App\Http\Controllers\VehicleTypeController::class,
     'rental-vehicle-types' => \App\Http\Controllers\RentalVehicleTypeController::class,
     'rental-packages' => \App\Http\Controllers\RentalPackageController::class,
