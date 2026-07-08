@@ -265,7 +265,9 @@
                     serviceType: "{!! isset($user) ? addslashes($user->serviceType) : '' !!}"
                 };
                 if (driver.firstName) {
-                    $(".userTitle").text(' - ' + driver.firstName + " " + driver.lastName);
+                    if (storeID == '') {
+                        $(".userTitle").text(' - ' + driver.firstName + " " + driver.lastName);
+                    }
                     if (driver.role == "vendor") {
                         var vendor_basic = "{{ route('stores.view', 'id') }}";
                         var vendor_item = "{{ route('vendors.items', 'id') }}";

@@ -295,6 +295,12 @@ Route::get('/orderReview/edit/{id}', [App\Http\Controllers\OrderReviewController
 
 Route::middleware(['permission:coupons,coupons'])->group(function () {
     Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->name('coupons');
+    Route::get('/coupons/datatable', [App\Http\Controllers\CouponController::class, 'datatable'])->name('coupons.datatable');
+    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->name('coupons.store');
+    Route::post('/coupons/bulk-delete', [App\Http\Controllers\CouponController::class, 'bulkDestroy'])->name('coupons.bulk-destroy');
+    Route::post('/coupons/toggle/{id}', [App\Http\Controllers\CouponController::class, 'toggle'])->name('coupons.toggle');
+    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->name('coupons.destroy');
 });
 Route::middleware(['permission:coupons,coupons.edit'])->group(function () {
     Route::get('/coupons/edit/{id}', [App\Http\Controllers\CouponController::class, 'edit'])->name('coupons.edit');

@@ -717,6 +717,34 @@
         var database = kweekDb();
         
         var vendorDataFromMySql = {!! isset($vendor) ? json_encode(array_merge($vendor->toArray(), $vendor->payload ?? [])) : 'null' !!};
+        if (vendorDataFromMySql) {
+            if (vendorDataFromMySql.subscription_plan && typeof vendorDataFromMySql.subscription_plan === 'string') {
+                try {
+                    vendorDataFromMySql.subscription_plan = JSON.parse(vendorDataFromMySql.subscription_plan);
+                } catch(e) {}
+            }
+            if (!vendorDataFromMySql.subscriptionPlanId && vendorDataFromMySql.subscription_plan_id) {
+                vendorDataFromMySql.subscriptionPlanId = vendorDataFromMySql.subscription_plan_id;
+            }
+            if (!vendorDataFromMySql.subscriptionExpiryDate && vendorDataFromMySql.hasOwnProperty('subscription_expiry_date')) {
+                if (vendorDataFromMySql.subscription_expiry_date) {
+                    var expiryDateStr = vendorDataFromMySql.subscription_expiry_date;
+                    vendorDataFromMySql.subscriptionExpiryDate = {
+                        toDate: function() { return new Date(expiryDateStr); }
+                    };
+                } else {
+                    vendorDataFromMySql.subscriptionExpiryDate = null;
+                }
+            }
+            // Sometimes it's unlimited and expiry date is omitted, but we need the property to exist
+            if (!vendorDataFromMySql.hasOwnProperty('subscriptionExpiryDate')) {
+                vendorDataFromMySql.subscriptionExpiryDate = null;
+            }
+            
+            if (!vendorDataFromMySql.subscriptionTotalOrders && vendorDataFromMySql.subscription_total_orders) {
+                vendorDataFromMySql.subscriptionTotalOrders = vendorDataFromMySql.subscription_total_orders;
+            }
+        }
         var ref = {
             get: function() {
                 return new Promise(function(resolve, reject) {

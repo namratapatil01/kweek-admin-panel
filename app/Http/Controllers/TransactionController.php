@@ -22,14 +22,18 @@ class TransactionController extends Controller
             $parsedId = str_replace('storeID=', '', $id);
             $vendor = \App\Models\Vendor::find($parsedId);
             if ($vendor) {
-                // Still need the user object for UI details if it exists
-                $user = \App\Models\AppUser::where('vendorID', $vendor->id)->where('role', 'vendor')->first();
-                if (!$user && isset($vendor->payload['author'])) {
+                // The wallet table stores the AppUser's ID (vendor author) in the user_id column
+                // Prioritize the true author/owner of the store
+                if (isset($vendor->payload['author'])) {
                     $user = \App\Models\AppUser::find($vendor->payload['author']);
                 }
                 
-                // The wallet table stores the AppUser's ID (vendor author) in the user_id column
-                $parsedId = $user ? $user->id : $vendor->id; 
+                // Fallback if author is not set or not found
+                if (!$user) {
+                    $user = \App\Models\AppUser::where('vendorID', $vendor->id)->where('role', 'vendor')->first();
+                }
+                
+                $parsedId = $user ? $user->id : $vendor->id;
             }
         } elseif (str_starts_with($id, 'driverID=')) {
             $parsedId = str_replace('driverID=', '', $id);
