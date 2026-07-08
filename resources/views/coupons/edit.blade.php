@@ -67,21 +67,15 @@ select.cf-input { appearance: auto; }
     color: #3d7bdb;
     margin-bottom: 6px;
 }
-.cf-check-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-    cursor: pointer;
+.cf-check-row {
+    margin-bottom: 10px;
 }
-.cf-check-wrap input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    accent-color: #3d7bdb;
-    flex-shrink: 0;
+.cf-check-row input[type="checkbox"] + label {
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0;
 }
-.cf-check-label { font-size: 13px; color: #333; font-weight: 500; }
 .cf-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
 .cf-btn-save {
     background: #1e2a35;
@@ -152,18 +146,16 @@ select.cf-input { appearance: auto; }
                         <input type="text"
                                name="code"
                                class="cf-input @error('code') is-invalid @enderror"
-                               placeholder="Insert Coupon Code"
                                value="{{ strtoupper(old('code', $payload['code'] ?? '')) }}"
                                required>
                         @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group mb-3">
                         <label class="cf-label">Discount Type</label>
-                        @php $dt = old('discount_type', $payload['discount_type'] ?? ''); @endphp
+                        @php $dt = old('discount_type', $payload['discountType'] ?? $payload['discount_type'] ?? ''); @endphp
                         <select name="discount_type"
                                 class="cf-input @error('discount_type') is-invalid @enderror"
                                 required>
-                            <option value="">Select Discount Type</option>
                             <option value="Percentage" {{ $dt == 'Percentage' ? 'selected' : '' }}>Percent</option>
                             <option value="Fix Price"  {{ $dt == 'Fix Price'  ? 'selected' : '' }}>Fix Price</option>
                         </select>
@@ -178,7 +170,6 @@ select.cf-input { appearance: auto; }
                         <input type="number"
                                name="discount"
                                class="cf-input @error('discount') is-invalid @enderror"
-                               placeholder="Insert Discount (Fixed Amount (e.g. ₹50.00) or Percent (e.g. 10) for 10%)"
                                step="0.01" min="0"
                                value="{{ old('discount', $payload['discount'] ?? '') }}"
                                required>
@@ -188,19 +179,22 @@ select.cf-input { appearance: auto; }
                         <label class="cf-label">Expires At</label>
                         @php
                             $expiresAtVal = '';
-                            if (!empty($payload['expires_at'])) {
+                            $rawExpires = $payload['expiresAt'] ?? $payload['expires_at'] ?? null;
+                            if (!empty($rawExpires)) {
                                 try {
-                                    $expiresAtVal = \Carbon\Carbon::parse($payload['expires_at'])->format('Y-m-d H:i:s');
+                                    $expiresAtVal = \Carbon\Carbon::parse($rawExpires)->format('Y-m-d');
                                 } catch (\Exception $e) {}
                             }
                         @endphp
-                        <input type="text"
-                               name="expires_at"
-                               id="expires_at_input"
-                               class="cf-input @error('expires_at') is-invalid @enderror"
-                               placeholder="Insert Expires At"
-                               value="{{ old('expires_at', $expiresAtVal) }}"
-                               autocomplete="off">
+                        <div class="input-group date" id="datetimepicker1">
+                            <input type="text"
+                                   name="expires_at"
+                                   id="expires_at_input"
+                                   class="cf-input date_picker @error('expires_at') is-invalid @enderror"
+                                   value="{{ old('expires_at', $expiresAtVal) }}"
+                                   autocomplete="off">
+                        </div>
+                        <div class="cf-hint">Insert Expires At</div>
                         @error('expires_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
@@ -225,8 +219,7 @@ select.cf-input { appearance: auto; }
                     <label class="cf-label">Description</label>
                     <textarea name="description"
                               class="cf-input"
-                              rows="7"
-                              placeholder="Insert Description">{{ old('description', $payload['description'] ?? '') }}</textarea>
+                              rows="7">{{ old('description', $payload['description'] ?? '') }}</textarea>
                 </div>
 
                 {{-- Row 5: Image --}}
@@ -254,19 +247,16 @@ select.cf-input { appearance: auto; }
                 </div>
 
                 {{-- Row 6: Enabled + isPublic --}}
-                <div class="form-group mb-1">
-                    <label class="cf-check-wrap">
-                        <input type="checkbox" name="isEnabled" value="1"
-                               {{ old('isEnabled', $coupon->isEnabled ?? 1) ? 'checked' : '' }}>
-                        <span class="cf-check-label">Enabled</span>
-                    </label>
+                <div class="form-group cf-check-row">
+                    <input type="checkbox" name="isEnabled" id="coupon_enabled" value="1"
+                           {{ old('isEnabled', $coupon->isEnabled ?? 1) ? 'checked' : '' }}>
+                    <label for="coupon_enabled">Enabled</label>
                 </div>
-                <div class="form-group mb-3">
-                    <label class="cf-check-wrap">
-                        <input type="checkbox" name="is_public" value="1"
-                               {{ old('is_public', $payload['is_public'] ?? 1) ? 'checked' : '' }}>
-                        <span class="cf-check-label">isPublic</span>
-                    </label>
+                <div class="form-group cf-check-row mb-3">
+                    @php $isPublicVal = old('is_public', ($payload['isPublic'] ?? $payload['is_public'] ?? 1)); @endphp
+                    <input type="checkbox" name="is_public" id="coupon_public" value="1"
+                           {{ $isPublicVal ? 'checked' : '' }}>
+                    <label for="coupon_public">isPublic</label>
                 </div>
 
                 {{-- Action Buttons --}}
@@ -287,11 +277,15 @@ select.cf-input { appearance: auto; }
 @endsection
 
 @section('scripts')
+<script src="{{ asset('js/bootstrap-datepicker.min.js') }}"></script>
+<link href="{{ asset('css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
 <script>
 $(document).ready(function () {
-    if (typeof flatpickr !== 'undefined') {
-        flatpickr('#expires_at_input', { enableTime: true, dateFormat: 'Y-m-d H:i:S' });
-    }
+    $('#datetimepicker1').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
+    });
 });
 function cfPreviewImg(input) {
     var file = input.files[0];

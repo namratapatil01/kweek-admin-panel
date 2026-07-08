@@ -27,7 +27,7 @@ $moduleControllers = [
     'on-boarding' => \App\Http\Controllers\OnBoardingController::class,
     'popular-destinations' => \App\Http\Controllers\PopularDestinationController::class,
     'banner-items' => \App\Http\Controllers\BannerController::class,
-    'advertisements' => \App\Http\Controllers\AdvertisementsController::class,
+    // 'advertisements' is handled by explicit routes in web.php (AdvertisementsController)
     'vendor-orders' => \App\Http\Controllers\OrderController::class,
     'rides' => \App\Http\Controllers\RideController::class,
     'users' => \App\Http\Controllers\CustomerController::class,

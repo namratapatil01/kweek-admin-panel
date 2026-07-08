@@ -42,7 +42,9 @@ class CouponController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.code')) LIKE ?", ["%{$search}%"])
-                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.discount')) LIKE ?", ["%{$search}%"]);
+                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.discount')) LIKE ?", ["%{$search}%"])
+                  ->orWhere('title', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%");
             });
         }
 
@@ -58,30 +60,36 @@ class CouponController extends Controller
         foreach ($coupons as $coupon) {
             $payload = json_decode($coupon->payload ?? '{}', true) ?? [];
 
-            $code         = $payload['code']        ?? '—';
-            $discount     = $payload['discount']     ?? '0';
-            $discountType = $payload['discount_type'] ?? 'Percentage';
-            $isPublic     = $payload['is_public']    ?? 0;
-            $expiresAt    = $payload['expires_at']   ?? null;
+            // Support both Firebase keys and admin form keys
+            $code         = $payload['code'] ?? $coupon->title ?? $coupon->name ?? '—';
+            $discount     = $payload['discount'] ?? $coupon->price ?? '0';
+            $discountType = $payload['discountType'] ?? $payload['discount_type'] ?? 'Percentage';
+            $isPublic     = $payload['isPublic'] ?? $payload['is_public'] ?? 0;
+            $expiresAt    = $payload['expiresAt'] ?? $payload['expires_at'] ?? null;
 
             $discountLabel = $discountType === 'Percentage'
                 ? $discount . '%'
-                : '₹' . number_format((float)$discount, 2);
+                : '₹' . number_format((float) $discount, 2);
 
             $privacyBadge = $isPublic
                 ? '<span class="badge badge-success px-3 py-1">Public</span>'
                 : '<span class="badge badge-warning px-3 py-1">Private</span>';
 
-            $expiryLabel = $expiresAt
-                ? date('D M d Y g:i:s A', strtotime($expiresAt))
-                : '—';
+            $expiryLabel = '—';
+            if ($expiresAt) {
+                try {
+                    $expiryLabel = date('D M d Y g:i:s A', strtotime($expiresAt));
+                } catch (\Throwable $e) {
+                    $expiryLabel = (string) $expiresAt;
+                }
+            }
 
             $vendorTitle = $vendorTitles[$coupon->vendorID] ?? '—';
             $storeLink   = $coupon->vendorID
                 ? '<a href="' . route('stores.view', $coupon->vendorID) . '" class="text-primary">' . e($vendorTitle) . '</a>'
                 : '—';
 
-            $enabled = (bool) $coupon->isEnabled;
+            $enabled = (bool) ($coupon->isEnabled ?? $coupon->isEnable ?? $coupon->isActive ?? false);
             $toggleChecked = $enabled ? 'checked' : '';
             $toggleHtml = '<label class="coupon-toggle-switch">
                 <input type="checkbox" class="toggle-enabled" data-id="' . $coupon->id . '" ' . $toggleChecked . '>
@@ -148,11 +156,16 @@ class CouponController extends Controller
         $payload = [
             'code'          => strtoupper($request->code),
             'discount'      => $request->discount,
+            'discountType'  => $request->discount_type,
             'discount_type' => $request->discount_type,
+            'expiresAt'     => $request->expires_at
+                                ? date('Y-m-d H:i:s', strtotime($request->expires_at))
+                                : null,
             'expires_at'    => $request->expires_at
                                 ? date('Y-m-d H:i:s', strtotime($request->expires_at))
                                 : null,
             'description'   => $request->description ?? '',
+            'isPublic'      => $request->is_public ? true : false,
             'is_public'     => $request->is_public ? 1 : 0,
             'image'         => null,
             'firestore_id'  => $id,
@@ -162,7 +175,8 @@ class CouponController extends Controller
         DB::table('coupons')->insert([
             'id'        => $id,
             'vendorID'  => $request->vendor_id ?: null,
-            'isEnabled' => 1,
+            'isEnabled' => $request->boolean('isEnabled', true) ? 1 : 0,
+            'isEnable'  => $request->boolean('isEnabled', true) ? 1 : 0,
             'payload'   => json_encode($payload),
             'created_at' => now(),
             'updated_at' => now(),
@@ -203,20 +217,25 @@ class CouponController extends Controller
         }
 
         $oldPayload = json_decode($existing->payload ?? '{}', true) ?? [];
+        $expiresAt = $request->expires_at
+            ? date('Y-m-d H:i:s', strtotime($request->expires_at))
+            : null;
         $newPayload = array_merge($oldPayload, [
             'code'          => strtoupper($request->code),
             'discount'      => $request->discount,
+            'discountType'  => $request->discount_type,
             'discount_type' => $request->discount_type,
-            'expires_at'    => $request->expires_at
-                                ? date('Y-m-d H:i:s', strtotime($request->expires_at))
-                                : null,
+            'expiresAt'     => $expiresAt,
+            'expires_at'    => $expiresAt,
             'description'   => $request->description ?? '',
+            'isPublic'      => $request->is_public ? true : false,
             'is_public'     => $request->is_public ? 1 : 0,
         ]);
 
         DB::table('coupons')->where('id', $coupon)->update([
             'vendorID'   => $request->vendor_id ?: null,
-            'isEnabled'  => $request->input('isEnabled', 1),
+            'isEnabled'  => $request->boolean('isEnabled', true) ? 1 : 0,
+            'isEnable'   => $request->boolean('isEnabled', true) ? 1 : 0,
             'payload'    => json_encode($newPayload),
             'updated_at' => now(),
         ]);
