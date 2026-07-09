@@ -217,6 +217,7 @@ Route::get('/vendorFilters/edit/{id}', [App\Http\Controllers\VendorFiltersContro
 
 Route::middleware(['permission:categories,categories'])->group(function () {
     Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index'])->name('categories');
+    Route::patch('/categories/{id}/toggle-publish', [App\Http\Controllers\CategoryController::class, 'togglePublish'])->name('categories.toggle-publish');
 });
 Route::middleware(['permission:categories,categories.edit'])->group(function () {
     Route::get('/categories/edit/{id}', [App\Http\Controllers\CategoryController::class, 'edit'])->name('categories.edit');

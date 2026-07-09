@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+use App\Services\DocumentStoreService;
 use Google\Client as Google_Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -32,21 +33,25 @@ class OrderController extends Controller
         ]);
     }
 
-    public function edit(...$params): View
+    public function edit(DocumentStoreService $store, ...$params): View
     {
         $id = (string) end($params);
 
         return view('orders.edit', [
             'id' => $id,
             'oid' => '',
+            'order' => $store->getDocument('vendor_orders', $id),
         ]);
     }
 
-    public function review($oid, $id = ''): View
+    public function review($oid, $id = '', DocumentStoreService $store): View
     {
+        $orderId = $oid !== '' ? $oid : $id;
+
         return view('orders.edit', [
             'oid' => $oid,
             'id' => $id,
+            'order' => $orderId !== '' ? $store->getDocument('vendor_orders', $orderId) : null,
         ]);
     }
 
