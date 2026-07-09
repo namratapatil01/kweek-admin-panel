@@ -93,6 +93,12 @@ class CustomerController extends Controller
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
+    public function show(...$params): View
+    {
+        $id = (string) end($params);
+        return view('users.view', ['id' => $id]);
+    }
+
     protected function normalizeCustomerInput(array $data): array
     {
         if (array_key_exists('active', $data)) {
@@ -101,5 +107,73 @@ class CustomerController extends Controller
         }
 
         return $data;
+    }
+
+    protected function buildDatatableRow($record): array
+    {
+        $config = $this->moduleConfig();
+        $route = $this->routePrefix();
+        $id = $record->id;
+        $row = [];
+
+        static $placeholderImage = null;
+        if ($placeholderImage === null) {
+            $placeholderImage = asset('images/default_user.png');
+            $placeholderRaw = \DB::table('settings')->where('id', 'placeHolderImage')->value('value');
+            if ($placeholderRaw) {
+                $decoded = json_decode($placeholderRaw, true);
+                if (!empty($decoded['image'])) {
+                    $placeholderImage = $decoded['image'];
+                }
+            }
+        }
+
+        $canDelete = $this->userCanDeleteModule($config);
+
+        // Checkbox
+        $row[] = $canDelete ? '<div class="d-flex align-items-center"><input type="checkbox" class="row-select is_active" id="row_' . e($id) . '" data-id="' . e($id) . '"><label class="control-label mb-0" for="row_' . e($id) . '" style="min-width: 20px; padding-left: 0;"></label></div>' : '';
+
+        // User Info (Image + Name)
+        $profilePic = ($record->profilePictureURL && $record->profilePictureURL !== 'undefined' && $record->profilePictureURL !== 'null') ? $record->profilePictureURL : $placeholderImage;
+        $name = e(trim($record->firstName . ' ' . $record->lastName));
+        $userInfo = '<div class="d-flex align-items-center">
+                        <img src="' . e($profilePic) . '" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'" alt="user" class="rounded-circle mr-3" style="width: 40px; height: 40px; object-fit: cover;">
+                        <div>
+                            <span class="font-weight-bold" style="color: #000; text-decoration: underline;">' . $name . '</span>
+                        </div>
+                    </div>';
+        $row[] = $userInfo;
+
+        // Contact Info
+        $contactInfo = '<div>
+                            <div>' . e($record->email ?: '-') . '</div>
+                            <div>' . e($record->phoneNumber ?: '-') . '</div>
+                        </div>';
+        $row[] = $contactInfo;
+
+        // Date
+        $dateStr = $record->created_at ? $record->created_at->format('D M d Y h:i:s A') : '-';
+        $row[] = '<div style="font-size: 0.9rem;">' . $dateStr . '</div>';
+
+        // Active Toggle
+        $isActive = filter_var($record->active, FILTER_VALIDATE_BOOLEAN);
+        $checked = $isActive ? 'checked' : '';
+        $row[] = '<label class="switch"><input type="checkbox" class="is_active" id="' . e($id) . '" ' . $checked . '><span class="slider round"></span></label>';
+
+        // Actions
+        $btnStyle = 'width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid; margin-right: 5px; text-decoration: none; transition: 0.3s;';
+        $actions = '<div class="d-flex align-items-center">';
+        $actions .= '<a href="' . route('users.walletstransaction', $id) . '" title="Wallet History" style="' . $btnStyle . ' color: #d97706; border-color: #fcd34d; background: #fff;"><i class="ri-wallet-line" style="font-size: 16px;"></i></a>';
+        $actions .= '<a href="' . route($route . '.show', $id) . '" title="View" style="' . $btnStyle . ' color: #9333ea; border-color: #d8b4fe; background: #fff;"><i class="mdi mdi-eye" style="font-size: 16px;"></i></a>';
+        if (! ($config['readonly'] ?? false)) {
+            $actions .= '<a href="' . route($route . '.edit', $id) . '" title="Edit" style="' . $btnStyle . ' color: #0284c7; border-color: #7dd3fc; background: #fff;"><i class="mdi mdi-lead-pencil" style="font-size: 16px;"></i></a>';
+        }
+        if ($canDelete) {
+            $actions .= '<a href="javascript:void(0)" class="delete-row" data-id="' . e($id) . '" title="Delete" style="' . $btnStyle . ' color: #dc2626; border-color: #fca5a5; background: #fff;"><i class="mdi mdi-delete" style="font-size: 16px;"></i></a>';
+        }
+        $actions .= '</div>';
+        $row[] = $actions;
+
+        return $row;
     }
 }

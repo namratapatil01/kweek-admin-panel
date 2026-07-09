@@ -208,31 +208,18 @@
                     window.scrollTo(0, 0);
                 } else {
                     if (mapType == "ONLINE") {
-                        var coordinates_parse = coordinates_object;
-                        var coordinates = $.parseJSON(coordinates_parse);
-                        var latitude = coordinates[0].lat;
-                        var longitude = coordinates[0].lng;
-                        var area = [];
-                        for (let i = 0; i < coordinates.length; i++) {
-                            var item = coordinates[i];
-                            area.push(new kweekDb.GeoPoint(item.lat, item.lng));
-                        }
-                        jQuery("#overlay").show();
-                        database.collection('zone').doc(id).set({
-                            'id': id,
-                            'name': name,
-                            'latitude': latitude,
-                            'longitude': longitude,
-                            'area': area,
-                            'publish': publish,
-                        }).then(function(result) {
-                            jQuery("#overlay").hide();
-                            window.location.href = '{{ route('zone') }}';
-                        });
-                    } else {
-                        var coordinates, latitude, longitude;
                         var coordinates_parse = $.parseJSON(coordinates_object);
-                        // Check if coordinates_parse is an array and has at least one item
+                        var latitude = coordinates_parse[0].lat;
+                        var longitude = coordinates_parse[0].lng;
+                        var area = [];
+                        for (let i = 0; i < coordinates_parse.length; i++) {
+                            var item = coordinates_parse[i];
+                            area.push({ latitude: item.lat, longitude: item.lng });
+                        }
+                        submitZoneData(name, latitude, longitude, area, publish);
+                    } else {
+                        var coordinates_parse = $.parseJSON(coordinates_object);
+                        // ... the rest of the parsing logic ...
                         if (Array.isArray(coordinates_parse) && coordinates_parse.length > 0) {
                             // Check if the first item in coordinates_parse is an array (polygon)
                             if (Array.isArray(coordinates_parse[0])) {
@@ -303,17 +290,7 @@
                         }
                         jQuery("#overlay").show();
                         if (latitude && longitude && area.length > 0) {
-                            database.collection('zone').doc(id).set({
-                                'id': id,
-                                'name': name,
-                                'latitude': latitude,
-                                'longitude': longitude,
-                                'area': area,
-                                'publish': publish,
-                            }).then(function(result) {
-                                jQuery("#overlay").hide();
-                                window.location.href = '{{ route('zone') }}';
-                            });
+                            submitZoneData(name, latitude, longitude, area, publish);
                         } else {
                             console.error("Invalid latitude, longitude, or area:", latitude, longitude, area);
                             $(".error_top").show();
@@ -324,17 +301,43 @@
                 }
             });
 
-            database.collection('settings').doc('DriverNearBy').get().then(function (snapshots) {
-                var data = snapshots.data();
-                if (data && data.selectedMapType === 'osm') {
-                    mapType = 'OFFLINE';
+        function submitZoneData(name, latitude, longitude, area, publish) {
+            var formData = new FormData();
+            formData.append('name', name);
+            formData.append('latitude', latitude);
+            formData.append('longitude', longitude);
+            formData.append('area', JSON.stringify(area));
+            formData.append('publish', publish ? '1' : '0');
+            
+            fetch('{{ route("zone.store") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                jQuery("#overlay").hide();
+                if (data.success) {
+                    window.location.href = '{{ route("zone") }}';
+                } else {
+                    $(".error_top").show().html("<p>" + (data.message || 'Error occurred') + "</p>");
+                    window.scrollTo(0, 0);
                 }
-                bindZoneMapButtons();
-                waitForMaps(initMap);
-            }).catch(function () {
-                bindZoneMapButtons();
-                waitForMaps(initMap);
+            }).catch(error => {
+                jQuery("#overlay").hide();
+                $(".error_top").show().html("<p>" + error + "</p>");
+                window.scrollTo(0, 0);
             });
+        }
+
+            var dbMapType = '{{ \DB::table("settings")->where("id", "DriverNearBy")->value("value") ? (json_decode(\DB::table("settings")->where("id", "DriverNearBy")->value("value"))->selected_map_type ?? "google") : "google" }}';
+            if (dbMapType === 'osm') {
+                mapType = 'OFFLINE';
+            }
+            bindZoneMapButtons();
+            waitForMaps(initMap);
         });
 
         function bindZoneMapButtons() {

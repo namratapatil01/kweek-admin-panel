@@ -459,12 +459,10 @@ return [
         'default_sort_dir' => 'desc',
         'searchable' => ['firstName', 'lastName', 'email', 'phoneNumber'],
         'columns' => [
-            ['field' => 'firstName', 'label' => 'First Name'],
-            ['field' => 'lastName', 'label' => 'Last Name'],
-            ['field' => 'email', 'label' => 'Email'],
-            ['field' => 'phoneNumber', 'label' => 'Phone'],
-            ['field' => 'active', 'label' => 'Active', 'type' => 'boolean'],
+            ['field' => 'userInfo', 'label' => 'User Info'],
+            ['field' => 'contactInfo', 'label' => 'Contact Info'],
             ['field' => 'created_at', 'label' => 'Date', 'type' => 'datetime'],
+            ['field' => 'active', 'label' => 'Active', 'type' => 'boolean'],
         ],
         'form' => [
             ['name' => 'firstName', 'type' => 'text', 'label' => 'First Name', 'required' => true],
@@ -496,6 +494,7 @@ return [
             ['name' => 'latitude', 'type' => 'number', 'label' => 'Latitude'],
             ['name' => 'longitude', 'type' => 'number', 'label' => 'Longitude'],
             ['name' => 'publish', 'type' => 'checkbox', 'label' => 'Published'],
+            ['name' => 'area', 'type' => 'json', 'label' => 'Area'],
         ],
     ],
     'notifications' => [

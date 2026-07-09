@@ -304,19 +304,37 @@ foreach ($countries as $keycountry => $valuecountry) {
     }
 
     async function storeImageData() {
-        var newPhoto = '';
+        if (!photo || photo.startsWith('http://') || photo.startsWith('https://')) {
+            return photo;
+        }
+        
         try {
-            if (photo != "") {
-                photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
-                var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });
-                var downloadURL = await uploadTask.ref.getDownloadURL();
-                newPhoto = downloadURL;
-                photo = downloadURL;
+            const responseBlob = await fetch(photo);
+            const blob = await responseBlob.blob();
+            
+            const formData = new FormData();
+            formData.append('file', blob, fileName || 'user-image.jpg');
+            formData.append('directory', 'users');
+            
+            const response = await fetch('{{ url("admin-data/upload") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw result.message || 'Image upload failed.';
             }
+            
+            return result.url;
         } catch (error) {
             console.log("ERR ===", error);
+            return '';
         }
-        return newPhoto;
     }
     $(document).on("click", ".remove-btn", function () {
         $(".image-item").remove();

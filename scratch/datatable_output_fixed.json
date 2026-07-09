@@ -1,0 +1,121 @@
+{
+    "with_section": {
+        "draw": 1,
+        "recordsTotal": 5,
+        "recordsFiltered": 5,
+        "data": [
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffashion_app_banner_top2_1728906947077.png?alt=media&amp;token=56005e10-92ba-4ce3-8180-770c9226dcd6\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6364f1d4f2e06\/edit\" class=\"banner-name-link\">Fashion Top 2<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"6364f1d4f2e06\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6364f1d4f2e06\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffashion_app_banner_top1_1728906910956.png?alt=media&amp;token=9e30d39f-dd5b-40c2-95af-f741c893b9a5\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/636b903864788\/edit\" class=\"banner-name-link\">Fashion Top 1<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"636b903864788\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/636b903864788\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffashion_mbanner2_1728648593809.png?alt=media&amp;token=58451aca-a1ef-4e75-8df6-17d3d26b8e6f\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/65efe5aa1e35f\/edit\" class=\"banner-name-link\">Fashion Middle 2<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"65efe5aa1e35f\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/65efe5aa1e35f\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffashion_mbanner1_1728648465608.png?alt=media&amp;token=7c89ea7c-e1b6-4a6c-8998-916ef98b244a\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/637787b93d2f6\/edit\" class=\"banner-name-link\">Fashion Middle 1<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"637787b93d2f6\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/637787b93d2f6\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffashion_mbanner3_1764247888418.png?alt=media&amp;token=fc3f0e9f-6090-447f-ab59-95d5b4e176ca\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/68cbdbf5235af\/edit\" class=\"banner-name-link\">Banner1<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"68cbdbf5235af\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/68cbdbf5235af\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ]
+        ]
+    },
+    "without_section": {
+        "draw": 1,
+        "recordsTotal": 29,
+        "recordsFiltered": 29,
+        "data": [
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"http:\/\/127.0.0.1:8000\/storage\/banners\/a18b076a-6b89-4635-86ed-e4423fb3e5c6.jpg\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/banner_1783420252046_3a4ast5oy\/edit\" class=\"banner-name-link\">taxibaner<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\"  id=\"banner_1783420252046_3a4ast5oy\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/banner_1783420252046_3a4ast5oy\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffood_app_banner_top2_1728907218456.png?alt=media&amp;token=5ab44034-59e4-487d-873a-ed92f829af93\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b13fe1137c\/edit\" class=\"banner-name-link\">Restaurants Top 2<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"639b13fe1137c\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b13fe1137c\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Ffood_app_banner_top1_1728907183302.png?alt=media&amp;token=5c386fc5-b47e-42e4-86cc-bef759611cbd\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6392281b155c8\/edit\" class=\"banner-name-link\">Restaurants Top 1<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"6392281b155c8\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6392281b155c8\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fbanner_small_1_1709539850879.png?alt=media&amp;token=57f350a0-5a9d-4137-878e-41e0e5287a02\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b14623439b\/edit\" class=\"banner-name-link\">Restaurants Middle 4<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"639b14623439b\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b14623439b\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fbanner_small_3_1709539831471.png?alt=media&amp;token=ed1fcf2c-2c10-46e0-951f-38c75b807a26\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b144df001b\/edit\" class=\"banner-name-link\">Restaurants Middle 3<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"639b144df001b\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/639b144df001b\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fbanner_small_2_1728644153601.png?alt=media&amp;token=f141a1ea-716f-483d-a80e-ef4b5c55b277\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6707b762c8c54\/edit\" class=\"banner-name-link\">Restaurant<\/a><\/div>",
+                "middle",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"6707b762c8c54\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6707b762c8c54\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fbanner_1728541473362.png?alt=media&amp;token=3f23494a-ad0d-4ab6-a2ea-146f7d29c662\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6707721b529bb\/edit\" class=\"banner-name-link\">Parcel Banner1<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"6707721b529bb\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6707721b529bb\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fparcel_banner2_1728541844811.png?alt=media&amp;token=d8c8cde3-22ba-401f-b4e5-17e432c89dbe\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/670774840911e\/edit\" class=\"banner-name-link\">Parcel Banner1<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"670774840911e\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/670774840911e\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fondemand_app_banner2_1728908096505.png?alt=media&amp;token=3a5d043e-bca5-48df-a5e5-0c5c32b91ca5\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6628bb69e364c\/edit\" class=\"banner-name-link\">ondemand<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"6628bb69e364c\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/6628bb69e364c\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ],
+            [
+                "",
+                "<div class=\"banner-info-container\"><img class=\"banner-img\" src=\"https:\/\/firebasestorage.googleapis.com\/v0\/b\/emart-8d99f.appspot.com\/o\/images%2Fondemand_app_banner1_1728907960672.png?alt=media&amp;token=107538bf-76fc-4f02-9512-e57a8be88569\" onerror=\"this.onerror=null;this.src='http:\/\/127.0.0.1:8000\/images\/default_user.png'\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/65f1a3fe910d8\/edit\" class=\"banner-name-link\">Homeservice<\/a><\/div>",
+                "top",
+                "<label class=\"switch\"><input type=\"checkbox\" checked id=\"65f1a3fe910d8\" name=\"isSwitch\"><span class=\"slider round\"><\/span><\/label>",
+                "<div class=\"action-btn-container\"><a href=\"http:\/\/127.0.0.1:8000\/banners\/65f1a3fe910d8\/edit\" class=\"btn-circle-edit\" data-toggle=\"tooltip\" title=\"Edit\"><i class=\"mdi mdi-lead-pencil\"><\/i><\/a><\/div>"
+            ]
+        ]
+    }
+}

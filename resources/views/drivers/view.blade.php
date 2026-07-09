@@ -269,167 +269,143 @@
             $(".currentCurrency").text(currentCurrency);
         });
 
-        // Email templates still from database (no MySQL table yet)
-        var database = kweekDb();
-        var email_templates = database.collection('email_templates').where('type', '==', 'wallet_topup');
-
-        $(document).ready(async function () {
+        $(document).ready(function () {
             jQuery("#data-table_processing").show();
             if(serviceType !== 'delivery-service' && serviceType !== 'parcel_delivery'){
                 $('.vehicle_tab').show();
             }else{
                 $('.vehicle_tab').hide();
             }
-            await email_templates.get().then(async function (snapshots) {
-                if (snapshots.docs.length > 0) emailTemplatesData = snapshots.docs[0].data();
-            });
             var getDriverUrl = "{{ route('drivers.get-driver', ':id') }}".replace(':id', id);
-            $.get(getDriverUrl, async function (response) {
+            $.get(getDriverUrl, function (response) {
                 var dirver = response.data;
                 if(dirver){
-                // ADD THIS BLOCK:
-                if (dirver.isDocumentVerify === true || dirver.isDocumentVerify === 1 || dirver.isDocumentVerify === '1') {
-                    $('.verified-icon-heading').show();
-                } else {
-                    $('.verified-icon-heading').hide();
-                }
-
-
-                type = dirver.serviceType;
-                
-                $(".driver_name").text(dirver.firstName);
-                $(".email").text(shortEmail(dirver.email));
-                
-                if(dirver.phoneNumber.includes('+')){
-                    $(".phone").text('+' + EditPhoneNumber(dirver.phoneNumber.slice(1)));
-                }else{
-                    $(".phone").text(EditPhoneNumber(dirver.phoneNumber));
-                }
-
-                var wallet_route = "{{route('users.walletstransaction','id')}}";
-                $(".wallet_transaction").attr("href", wallet_route.replace('id', 'driverID='+dirver.id));
-                
-                if (dirver.serviceType) {
-
-                    $(".service_type").text(dirver.serviceType);
-
-                    var url = "javascript:void(0)";
-                    if (dirver.serviceType == "cab-service") {
-                        url = "{{route('drivers.rides','driverId')}}".replace('driverId', dirver.id);
-                    } else if (dirver.serviceType == "rental-service") {
-                        url = "{{route('rental_orders.driver','id')}}".replace("id", dirver.id);
-                    } else if (dirver.serviceType == "delivery-service" || dirver.serviceType == "ecommerce-service") {
-                        url = "{{route('orders','id')}}".replace("id", 'driverId=' + dirver.id);
-                    } else if (dirver.serviceType == "parcel_delivery") {
-                        url = "{{route('parcel_orders.driver','id')}}".replace("id", dirver.id);
+                    if (dirver.isDocumentVerify === true || dirver.isDocumentVerify === 1 || dirver.isDocumentVerify === '1') {
+                        $('.verified-icon-heading').show();
+                    } else {
+                        $('.verified-icon-heading').hide();
                     }
 
-                    $('.service_type_orders').html('<a href="' + url + '"><i class="ri-shopping-bag-line"></i> {{trans('lang.order_plural')}}</a>');
-                    $('.total_orders').html(dirver.total_orders || 0);
-                }
-
-                if (dirver.zoneId) {
-                    database.collection('zone').doc(dirver.zoneId).get().then((zoneSnap) => {
-                        if (zoneSnap.exists) {
-                            const zoneName = zoneSnap.data().name || '';
-                            $(".zone_name").text(zoneName);
-                        } else {
-                            $(".zone_name").text('-');
-                        }
-                    });
-                }else {
-                    $(".zone_name").text('-');
-                }
-                var wallet_balance = 0;
-                if (dirver.hasOwnProperty('wallet_amount') && dirver.wallet_amount != null && !isNaN(dirver.wallet_amount)) {
-                    wallet_balance = dirver.wallet_amount;
-                }
-                if (currencyAtRight) {
-                    wallet_balance = parseFloat(wallet_balance).toFixed(decimal_degits) + "" + currentCurrency;
-                } else {
-                    wallet_balance = currentCurrency + "" + parseFloat(wallet_balance).toFixed(decimal_degits);
-                }
-                $('.wallet_balance').html(wallet_balance);
-                var image = "";
-                if (dirver.profilePictureURL) {
-                    if(dirver.profilePictureURL){
-                        photo=dirver.profilePictureURL;
+                    type = dirver.serviceType;
+                    
+                    $(".driver_name").text(dirver.firstName);
+                    $(".email").text(shortEmail(dirver.email));
+                    
+                    if(dirver.phoneNumber.includes('+')){
+                        $(".phone").text('+' + EditPhoneNumber(dirver.phoneNumber.slice(1)));
                     }else{
-                        photo=placeholderImage;
+                        $(".phone").text(EditPhoneNumber(dirver.phoneNumber));
                     }
-                    image = '<img width="200px" id="" height="auto" src="' + photo + '" class="clickable-image profile-image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
-                } else {
-                    image = '<img width="200px" id="" height="auto" src="' + placeholderImage + '" class="clickable-image profile-image">';
-                }
-                $(".profile_image").html(image);
-                
-              
-                $('.clickable-image').on('click', function () {
-                var imageSrc = $(this).attr('src'); // Get the source of the clicked image
-                var $parentBox = $(this).closest('.driver-detail-box'); // Find the parent driver-detail-box
-                var headingText;
-                // Determine the heading based on the image class
-                if ($(this).hasClass('profile-image')) {
-                    headingText = 'Profile Image'; // Fallback for profile_image, as it may not have an h4
-                } else if ($(this).hasClass('vehicle-profile-image')) {
-                    headingText = $parentBox.find('h4').text() || 'Vehicle Profile Image';
-                } else if ($(this).hasClass('driver-proof-image')) {
-                    headingText = $parentBox.find('h4').text() || 'Driver Proof Image';
-                } else if ($(this).hasClass('vehicle-proof-image')) {
-                    headingText = $parentBox.find('h4').text() || 'Vehicle Proof Image';
-                } else {
-                    headingText = 'Image Preview'; // Fallback for any other case
-                }
-                $('#previewImage').attr('src', imageSrc); // Set the image source in the modal
-                $('#modalImageTitle').text(headingText); // Set the heading in the modal
-                $('#imagePreviewModal').modal('show'); // Show the modal
-            });
-            $('.close, [data-dismiss="modal"]').on('click', function () {
-                    $('#imagePreviewModal').modal('hide');
-                });
-                if (dirver.hasOwnProperty('userBankDetails') && dirver.userBankDetails != null) {
-                    // if (dirver.userBankDetails.hasOwnProperty('bankName')) {
-                        $(".bank_name").text(dirver.userBankDetails.bankName);
-                    // }
-                    if (dirver.userBankDetails.hasOwnProperty('branchName')) {
-                        $(".branch_name").text(dirver.userBankDetails.branchName);
+
+                    var wallet_route = "{{route('users.walletstransaction','id')}}";
+                    $(".wallet_transaction").attr("href", wallet_route.replace('id', 'driverID='+dirver.id));
+                    
+                    if (dirver.serviceType) {
+                        $(".service_type").text(dirver.serviceType);
+
+                        var url = "javascript:void(0)";
+                        if (dirver.serviceType == "cab-service") {
+                            url = "{{route('drivers.rides','driverId')}}".replace('driverId', dirver.id);
+                        } else if (dirver.serviceType == "rental-service") {
+                            url = "{{route('rental_orders.driver','id')}}".replace("id", dirver.id);
+                        } else if (dirver.serviceType == "delivery-service" || dirver.serviceType == "ecommerce-service") {
+                            url = "{{route('orders','id')}}".replace("id", 'driverId=' + dirver.id);
+                        } else if (dirver.serviceType == "parcel_delivery") {
+                            url = "{{route('parcel_orders.driver','id')}}".replace("id", dirver.id);
+                        }
+
+                        $('.service_type_orders').html('<a href="' + url + '"><i class="ri-shopping-bag-line"></i> {{trans('lang.order_plural')}}</a>');
+                        $('.total_orders').html(dirver.total_orders || 0);
                     }
-                    if (dirver.userBankDetails.hasOwnProperty('holderName')) {
-                        $(".holer_name").text(dirver.userBankDetails.holderName);
+
+                    $(".zone_name").text(dirver.zone_name || '-');
+
+                    var wallet_balance = 0;
+                    if (dirver.hasOwnProperty('wallet_amount') && dirver.wallet_amount != null && !isNaN(dirver.wallet_amount)) {
+                        wallet_balance = dirver.wallet_amount;
                     }
-                    if (dirver.userBankDetails.hasOwnProperty('accountNumber')) {
-                        $(".account_number").text(dirver.userBankDetails.accountNumber);
+                    if (currencyAtRight) {
+                        wallet_balance = parseFloat(wallet_balance).toFixed(decimal_degits) + "" + currentCurrency;
+                    } else {
+                        wallet_balance = currentCurrency + "" + parseFloat(wallet_balance).toFixed(decimal_degits);
                     }
-                    if (dirver.userBankDetails.hasOwnProperty('otherDetails')) {
-                        $(".other_information").text(dirver.userBankDetails.otherDetails);
+                    $('.wallet_balance').html(wallet_balance);
+                    var image = "";
+                    if (dirver.profilePictureURL) {
+                        photo = dirver.profilePictureURL;
+                        image = '<img width="200px" id="" height="auto" src="' + photo + '" class="clickable-image profile-image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">';
+                    } else {
+                        image = '<img width="200px" id="" height="auto" src="' + placeholderImage + '" class="clickable-image profile-image">';
                     }
-                    if (
-                        !dirver.userBankDetails.bankName &&
-                        !dirver.userBankDetails.branchName &&
-                        !dirver.userBankDetails.holderName &&
-                        !dirver.userBankDetails.accountNumber &&
-                        !dirver.userBankDetails.otherDetails
-                    ) {
+                    $(".profile_image").html(image);
+                    
+                  
+                    $('.clickable-image').on('click', function () {
+                        var imageSrc = $(this).attr('src'); // Get the source of the clicked image
+                        var $parentBox = $(this).closest('.driver-detail-box'); // Find the parent driver-detail-box
+                        var headingText;
+                        // Determine the heading based on the image class
+                        if ($(this).hasClass('profile-image')) {
+                            headingText = 'Profile Image'; // Fallback for profile_image, as it may not have an h4
+                        } else if ($(this).hasClass('vehicle-profile-image')) {
+                            headingText = $parentBox.find('h4').text() || 'Vehicle Profile Image';
+                        } else if ($(this).hasClass('driver-proof-image')) {
+                            headingText = $parentBox.find('h4').text() || 'Driver Proof Image';
+                        } else if ($(this).hasClass('vehicle-proof-image')) {
+                            headingText = $parentBox.find('h4').text() || 'Vehicle Proof Image';
+                        } else {
+                            headingText = 'Image Preview'; // Fallback for any other case
+                        }
+                        $('#previewImage').attr('src', imageSrc); // Set the image source in the modal
+                        $('#modalImageTitle').text(headingText); // Set the heading in the modal
+                        $('#imagePreviewModal').modal('show'); // Show the modal
+                    });
+                    $('.close, [data-dismiss="modal"]').on('click', function () {
+                        $('#imagePreviewModal').modal('hide');
+                    });
+
+                    // Parse bank details
+                    var bankDetails = null;
+                    if (dirver.userBankDetails) {
+                        try {
+                            bankDetails = typeof dirver.userBankDetails === 'string' ? JSON.parse(dirver.userBankDetails) : dirver.userBankDetails;
+                        } catch (e) {
+                            bankDetails = dirver.userBankDetails;
+                        }
+                    }
+
+                    if (bankDetails) {
+                        $(".bank_name").text(bankDetails.bankName || '');
+                        $(".branch_name").text(bankDetails.branchName || '');
+                        $(".holer_name").text(bankDetails.holderName || '');
+                        $(".account_number").text(bankDetails.accountNumber || '');
+                        $(".other_information").text(bankDetails.otherDetails || '');
+                        
+                        if (
+                            !bankDetails.bankName &&
+                            !bankDetails.branchName &&
+                            !bankDetails.holderName &&
+                            !bankDetails.accountNumber &&
+                            !bankDetails.otherDetails
+                        ) {
+                            $("#bankDetailsBox").hide();
+                            $("#noBankData").show();
+                        } else {
+                            $("#bankDetailsBox").show();
+                            $("#noBankData").hide();
+                        }
+                    } else {
                         $("#bankDetailsBox").hide();
                         $("#noBankData").show();
-                    } else {
-                        $("#bankDetailsBox").show();
-                        $("#noBankData").hide();
                     }
                 } else {
-                    $("#bankDetailsBox").hide();
-                    $("#noBankData").show();
+                    $('.driver_detail_div').html('<h5 class="font-weight-bold align text-danger text-center">{{trans('lang.driver_unknown_deleted')}}</h5>')
                 }
-            }
-            else{
-                $('.driver_detail_div').html('<h5 class="font-weight-bold align text-danger text-center">{{trans('lang.driver_unknown_deleted')}}</h5>')
-            }
                 jQuery("#data-table_processing").hide();
             });
         });
-        // });
+
         $("#add-wallet-btn").click(function () {
-            var date = kweekDb.FieldValue.serverTimestamp();
             var amount = $('#amount').val();
             if (amount == '' || amount <= 0) {
                 $('#wallet_error').text('{{trans("lang.add_wallet_amount_error")}}');
@@ -445,13 +421,8 @@
                 amount: amount,
                 note: note
             }, function(response) {
-                var newWalletAmount = response.wallet_amount;
                 window.location.reload();
             }).fail(function(xhr) {
-                jQuery("#data-table_processing").hide();
-                var errMessage = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Error updating wallet";
-                $('#wallet_error').text(errMessage);
-            });
                 jQuery("#data-table_processing").hide();
                 var errMessage = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Error updating wallet";
                 $('#wallet_error').text(errMessage);

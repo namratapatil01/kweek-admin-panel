@@ -90,6 +90,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
     Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
     Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+    Route::get('/vendors/api/get-documents/{id}', [App\Http\Controllers\VendorController::class, 'getDocuments'])->name('vendors.get-documents');
+    Route::post('/vendors/api/verify-document', [App\Http\Controllers\VendorController::class, 'verifyDocument'])->name('vendors.verify-document');
+    Route::get('/vendors/api/get-document-upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'getDocumentUploadDetails'])->name('vendors.get-document-upload');
+    Route::post('/vendors/api/save-document-upload', [App\Http\Controllers\VendorController::class, 'saveDocumentUpload'])->name('vendors.save-document-upload');
 });
 
 
@@ -384,15 +388,22 @@ Route::middleware(['permission:cab-service-god-eye,cab-service-map'])->group(fun
 Route::prefix('settings')->group(function () {
     Route::middleware(['permission:currency,currencies'])->group(function () {
         Route::get('/currencies', [App\Http\Controllers\CurrencyController::class, 'index'])->name('currencies');
+        Route::get('/currencies/datatable', [App\Http\Controllers\CurrencyController::class, 'datatable'])->name('settings.currencies.datatable');
+        Route::post('/currencies/store', [App\Http\Controllers\CurrencyController::class, 'store'])->name('settings.currencies.store');
+        Route::post('/currencies/destroy', [App\Http\Controllers\CurrencyController::class, 'destroy'])->name('settings.currencies.destroy');
+        Route::post('/currencies/toggle-status', [App\Http\Controllers\CurrencyController::class, 'toggleStatus'])->name('settings.currencies.toggle-status');
     });
     Route::middleware(['permission:currency,currencies.edit'])->group(function () {
-        Route::get('/currencies/edit/{id}', [App\Http\Controllers\CurrencyController::class, 'edit'])->name('currencies.edit');
+        Route::get('/currencies/edit/{id}', [App\Http\Controllers\CurrencyController::class, 'edit'])->name('settings.currencies.edit');
+        Route::put('/currencies/update/{id}', [App\Http\Controllers\CurrencyController::class, 'update'])->name('settings.currencies.update');
     });
     Route::middleware(['permission:currency,currencies.create'])->group(function () {
-        Route::get('/currencies/create', [App\Http\Controllers\CurrencyController::class, 'create'])->name('currencies.create');
+        Route::get('/currencies/create', [App\Http\Controllers\CurrencyController::class, 'create'])->name('settings.currencies.create');
     });
     Route::middleware(['permission:global-setting,settings.app.globals'])->group(function () {
         Route::get('app/globals', [App\Http\Controllers\SettingsController::class, 'globals'])->name('settings.app.globals');
+        Route::get('app/sections-list', [App\Http\Controllers\SettingsController::class, 'getSectionsList'])->name('settings.sections.list');
+        Route::get('app/vendors-by-section', [App\Http\Controllers\SettingsController::class, 'getVendorsBySection'])->name('settings.vendors.by-section');
     });
     Route::middleware(['permission:app-banners-setting,settings.app.banners'])->group(function () {
         Route::get('app/banners', [App\Http\Controllers\SettingsController::class, 'banners'])->name('settings.app.banners');
@@ -878,6 +889,8 @@ Route::middleware(['permission:subscription-plans,subscription-plans.'.((str_con
 });
 Route::middleware(['permission:subscription-history,subscription.history'])->group(function () {
     Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
+    Route::get('/subscription-plan/history/datatable/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'historyDatatable'])->name('subscription.subscriptionPlanHistory.datatable');
+    Route::post('/subscription-plan/history/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyHistory'])->name('subscription.subscriptionPlanHistory.delete');
 });
 
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {

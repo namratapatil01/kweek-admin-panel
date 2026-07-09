@@ -20,11 +20,15 @@ if (empty($service_type)) {
 @endphp
 
 
+@php
+    $globalSettings = \App\Models\Setting::query()->find('globalSettings')?->value ?? [];
+    $appLogo = $globalSettings['appLogo'] ?? asset('images/kweek-logo.png');
+@endphp
 <div class="navbar-header position-relative">
     <a class="navbar-brand" href="<?php echo URL::to('/'); ?>">
         <b>
-            <img src="{{ asset('images/kweek-logo.png') }}" onerror="this.onerror=null; this.src='{{ asset('images/logo_web.png') }}';" alt="KWEEK" class="dark-logo" width="100%" id="logo_web">
-            <img src="{{ asset('images/kweek-logo.png') }}" onerror="this.onerror=null; this.src='{{ asset('images/logo-light-icon.png') }}';" alt="KWEEK" class="light-logo">
+            <img src="{{ $appLogo }}" onerror="this.onerror=null; this.src='{{ asset('images/logo_web.png') }}';" alt="KWEEK" class="dark-logo" width="100%" id="logo_web">
+            <img src="{{ $appLogo }}" onerror="this.onerror=null; this.src='{{ asset('images/logo-light-icon.png') }}';" alt="KWEEK" class="light-logo" id="logo_web_icon">
         </b>
     </a>
     <div class="sidebar-toggle">  
