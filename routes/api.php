@@ -29,6 +29,15 @@ use App\Http\Controllers\Api\Worker\WorkerJobController;
 use App\Http\Controllers\Api\Worker\WorkerMiscController;
 use App\Http\Controllers\Api\Worker\WorkerProfileController;
 use App\Http\Controllers\Api\Worker\WorkerReviewController;
+use App\Http\Controllers\Api\Driver\DriverAuthController;
+use App\Http\Controllers\Api\Driver\DriverChatController;
+use App\Http\Controllers\Api\Driver\DriverDashboardController;
+use App\Http\Controllers\Api\Driver\DriverMiscController;
+use App\Http\Controllers\Api\Driver\DriverOrderController;
+use App\Http\Controllers\Api\Driver\DriverOwnerController;
+use App\Http\Controllers\Api\Driver\DriverProfileController;
+use App\Http\Controllers\Api\Driver\DriverReviewController;
+use App\Http\Controllers\Api\Driver\DriverWalletController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
@@ -237,6 +246,83 @@ Route::prefix('worker')->group(function () {
         Route::get('documents/status', [WorkerMiscController::class, 'documentStatus']);
         Route::post('documents', [WorkerMiscController::class, 'submitDocuments']);
         Route::post('documents/upload', [WorkerMiscController::class, 'uploadDocument']);
+    });
+});
+
+Route::prefix('driver')->group(function () {
+    Route::post('register', [DriverAuthController::class, 'register']);
+    Route::post('login', [DriverAuthController::class, 'login']);
+    Route::post('auth/google', [DriverAuthController::class, 'loginWithGoogle']);
+    Route::post('auth/apple', [DriverAuthController::class, 'loginWithApple']);
+    Route::post('auth/phone', [DriverAuthController::class, 'loginWithPhone']);
+    Route::post('password/forgot', [DriverAuthController::class, 'forgotPassword']);
+    Route::post('password/reset', [DriverAuthController::class, 'resetPassword']);
+    Route::get('home', [DriverDashboardController::class, 'home']);
+    Route::get('terms', [DriverMiscController::class, 'terms']);
+    Route::get('privacy', [DriverMiscController::class, 'privacy']);
+    Route::get('catalog', [DriverMiscController::class, 'catalog']);
+
+    Route::middleware(['auth:sanctum', 'app.role:driver'])->group(function () {
+        Route::post('logout', [DriverAuthController::class, 'logout']);
+        Route::delete('account', [DriverAuthController::class, 'deleteAccount']);
+
+        Route::get('profile', [DriverProfileController::class, 'show']);
+        Route::put('profile', [DriverProfileController::class, 'update']);
+        Route::post('profile/image', [DriverProfileController::class, 'uploadImage']);
+        Route::put('availability', [DriverProfileController::class, 'setOnline']);
+        Route::put('location', [DriverProfileController::class, 'updateLocation']);
+        Route::put('bank-details', [DriverProfileController::class, 'updateBankDetails']);
+
+        Route::get('dashboard', [DriverDashboardController::class, 'dashboard']);
+
+        Route::get('orders', [DriverOrderController::class, 'index']);
+        Route::get('orders/{type}/{id}', [DriverOrderController::class, 'show'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{type}/{id}/accept', [DriverOrderController::class, 'accept'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{type}/{id}/reject', [DriverOrderController::class, 'reject'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{type}/{id}/start', [DriverOrderController::class, 'start'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{type}/{id}/complete', [DriverOrderController::class, 'complete'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+        Route::patch('orders/{type}/{id}/status', [DriverOrderController::class, 'updateStatus'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('wallet', [DriverWalletController::class, 'balance']);
+        Route::get('wallet/transactions', [DriverWalletController::class, 'transactions']);
+        Route::get('earnings', [DriverWalletController::class, 'earnings']);
+        Route::post('wallet/withdraw', [DriverWalletController::class, 'withdraw']);
+        Route::get('wallet/payouts', [DriverWalletController::class, 'payoutHistory']);
+        Route::get('withdraw-method', [DriverWalletController::class, 'getWithdrawMethod']);
+        Route::put('withdraw-method', [DriverWalletController::class, 'saveWithdrawMethod']);
+
+        Route::get('chat/inbox', [DriverChatController::class, 'inbox']);
+        Route::get('chat/{orderId}/messages', [DriverChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/send', [DriverChatController::class, 'send']);
+        Route::post('chat/upload', [DriverChatController::class, 'upload']);
+
+        Route::get('reviews', [DriverReviewController::class, 'index']);
+        Route::get('reviews/order/{orderId}', [DriverReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('ratings', [DriverReviewController::class, 'ratings']);
+
+        Route::get('notifications', [DriverMiscController::class, 'notifications']);
+        Route::get('documents', [DriverMiscController::class, 'documents']);
+        Route::get('documents/status', [DriverMiscController::class, 'documentStatus']);
+        Route::post('documents', [DriverMiscController::class, 'submitDocuments']);
+        Route::post('documents/upload', [DriverMiscController::class, 'uploadDocument']);
+
+        Route::get('owner/drivers', [DriverOwnerController::class, 'index']);
+        Route::post('owner/drivers', [DriverOwnerController::class, 'store']);
+        Route::get('owner/drivers/{id}', [DriverOwnerController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('owner/drivers/{id}', [DriverOwnerController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('owner/drivers/{id}/image', [DriverOwnerController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
     });
 });
 
