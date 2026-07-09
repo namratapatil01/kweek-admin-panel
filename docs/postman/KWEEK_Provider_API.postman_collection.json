@@ -5,8 +5,9 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
     { "key": "token", "value": "" },
+    { "key": "section_id", "value": "6285dcf511651" },
     { "key": "booking_id", "value": "" },
     { "key": "service_id", "value": "" },
     { "key": "worker_id", "value": "" },
@@ -217,13 +218,7 @@
           "name": "Categories",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/categories?sectionId=&parentCategoryId=",
-              "query": [
-                { "key": "sectionId", "value": "" },
-                { "key": "parentCategoryId", "value": "" }
-              ]
-            }
+            "url": "{{base_url}}/api/provider/categories?sectionId={{section_id}}&parentCategoryId="
           }
         }
       ]
@@ -242,7 +237,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"AC Repair\",\n  \"description\": \"Split AC repair and service\",\n  \"price\": 499,\n  \"disPrice\": 399,\n  \"priceUnit\": \"Fixed\",\n  \"categoryId\": \"\",\n  \"sectionId\": \"\",\n  \"address\": \"Bangalore\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"publish\": true,\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\",\n  \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"]\n}",
+              "raw": "{\n  \"title\": \"AC Repair\",\n  \"description\": \"Split AC repair and service\",\n  \"price\": 499,\n  \"disPrice\": 399,\n  \"priceUnit\": \"Fixed\",\n  \"categoryId\": \"\",\n  \"sectionId\": \"{{section_id}}\",\n  \"address\": \"Bangalore\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"publish\": true,\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\",\n  \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"]\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/api/provider/services"
@@ -302,50 +297,35 @@
           "name": "List New Bookings",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/bookings?tab=new",
-              "query": [{ "key": "tab", "value": "new" }]
-            }
+            "url": "{{base_url}}/api/provider/bookings?tab=new"
           }
         },
         {
           "name": "List Today Bookings",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/bookings?tab=today",
-              "query": [{ "key": "tab", "value": "today" }]
-            }
+            "url": "{{base_url}}/api/provider/bookings?tab=today"
           }
         },
         {
           "name": "List Upcoming Bookings",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/bookings?tab=upcoming",
-              "query": [{ "key": "tab", "value": "upcoming" }]
-            }
+            "url": "{{base_url}}/api/provider/bookings?tab=upcoming"
           }
         },
         {
           "name": "List Completed Bookings",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/bookings?tab=completed",
-              "query": [{ "key": "tab", "value": "completed" }]
-            }
+            "url": "{{base_url}}/api/provider/bookings?tab=completed"
           }
         },
         {
           "name": "List Cancelled Bookings",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/bookings?tab=cancelled",
-              "query": [{ "key": "tab", "value": "cancelled" }]
-            }
+            "url": "{{base_url}}/api/provider/bookings?tab=cancelled"
           }
         },
         {
@@ -434,10 +414,7 @@
           "name": "List Workers",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/workers?online=",
-              "query": [{ "key": "online", "value": "" }]
-            }
+            "url": "{{base_url}}/api/provider/workers?online="
           }
         },
         {
@@ -600,20 +577,14 @@
           "name": "Inbox",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/chat/inbox?type=customer",
-              "query": [{ "key": "type", "value": "customer" }]
-            }
+            "url": "{{base_url}}/api/provider/chat/inbox?type=customer"
           }
         },
         {
           "name": "Messages",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/provider/chat/{{booking_id}}/messages?type=customer",
-              "query": [{ "key": "type", "value": "customer" }]
-            }
+            "url": "{{base_url}}/api/provider/chat/{{booking_id}}/messages?type=customer"
           }
         },
         {

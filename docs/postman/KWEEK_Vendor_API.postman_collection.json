@@ -5,8 +5,9 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
     { "key": "token", "value": "" },
+    { "key": "section_id", "value": "6285dcf511651" },
     { "key": "order_id", "value": "" },
     { "key": "product_id", "value": "" },
     { "key": "driver_id", "value": "" }
@@ -27,7 +28,7 @@
             "header": [{ "key": "Accept", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Store\",\n  \"email\": \"vendor@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"sectionId\": \"\"\n}",
+              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Store\",\n  \"email\": \"vendor@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"sectionId\": \"{{section_id}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/api/vendor/register"
@@ -79,7 +80,7 @@
       "item": [
         {
           "name": "List New Orders",
-          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/vendor/orders?tab=new", "query": [{ "key": "tab", "value": "new" }] } },
+          "request": { "method": "GET", "url": "{{base_url}}/api/vendor/orders?tab=new" },
           "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json(); if (json.data && json.data.data && json.data.data.length) pm.collectionVariables.set('order_id', json.data.data[0].id);"] } }]
         },
         { "name": "Order Detail", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/orders/{{order_id}}" } },

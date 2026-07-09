@@ -80,7 +80,7 @@ class CustomerCatalogService
         return $this->paginateDocuments(
             Brand::query()
                 ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
-                ->where('is_publish', true)
+                ->published()
                 ->orderBy('title')
         , $perPage);
     }

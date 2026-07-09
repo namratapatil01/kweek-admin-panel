@@ -63,8 +63,8 @@ class CustomerDashboardService
     {
         return BannerItem::query()
             ->where('sectionId', $sectionId)
-            ->where('is_publish', true)
-            ->orderBy('set_order')
+            ->published()
+            ->orderByRaw("CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.set_order')), '0') AS UNSIGNED)")
             ->get()
             ->map(fn ($b) => $b->toDocumentArray());
     }

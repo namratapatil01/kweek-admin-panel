@@ -5,8 +5,9 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
     { "key": "token", "value": "" },
+    { "key": "section_id", "value": "6285dcf511651" },
     { "key": "order_type", "value": "vendor" },
     { "key": "order_id", "value": "" },
     { "key": "fleet_driver_id", "value": "" }
@@ -27,7 +28,7 @@
             "header": [{ "key": "Accept", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Driver\",\n  \"email\": \"driver@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"serviceType\": \"delivery-service\",\n  \"sectionId\": \"\",\n  \"carName\": \"Swift\",\n  \"carNumber\": \"KA01AB1234\"\n}",
+              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Driver\",\n  \"email\": \"driver@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"serviceType\": \"delivery-service\",\n  \"sectionId\": \"{{section_id}}\",\n  \"carName\": \"Swift\",\n  \"carNumber\": \"KA01AB1234\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/api/driver/register"
@@ -217,7 +218,7 @@
           "request": {
             "auth": { "type": "noauth" },
             "method": "GET",
-            "url": { "raw": "{{base_url}}/api/driver/home?serviceType=delivery-service", "query": [{ "key": "serviceType", "value": "delivery-service" }] }
+            "url": "{{base_url}}/api/driver/home?serviceType=delivery-service"
           }
         },
         { "name": "Dashboard", "request": { "method": "GET", "url": "{{base_url}}/api/driver/dashboard" } },
@@ -238,13 +239,7 @@
           "name": "List Available",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=available",
-              "query": [
-                { "key": "type", "value": "{{order_type}}" },
-                { "key": "tab", "value": "available" }
-              ]
-            }
+            "url": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=available"
           },
           "event": [{
             "listen": "test",
@@ -262,26 +257,14 @@
           "name": "List Active",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=active",
-              "query": [
-                { "key": "type", "value": "{{order_type}}" },
-                { "key": "tab", "value": "active" }
-              ]
-            }
+            "url": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=active"
           }
         },
         {
           "name": "List Completed",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=completed",
-              "query": [
-                { "key": "type", "value": "{{order_type}}" },
-                { "key": "tab", "value": "completed" }
-              ]
-            }
+            "url": "{{base_url}}/api/driver/orders?type={{order_type}}&tab=completed"
           }
         },
         { "name": "Order Details", "request": { "method": "GET", "url": "{{base_url}}/api/driver/orders/{{order_type}}/{{order_id}}" } },

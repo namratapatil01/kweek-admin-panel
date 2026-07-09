@@ -5,8 +5,9 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" },
-    { "key": "token", "value": "" }
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "section_id", "value": "6285dcf511651" }
   ],
   "auth": {
     "type": "bearer",
@@ -201,14 +202,14 @@
           "request": {
             "auth": { "type": "noauth" },
             "method": "GET",
-            "url": "{{base_url}}/api/customer/home"
+            "url": "{{base_url}}/api/customer/home?section_id={{section_id}}"
           }
         },
         {
           "name": "Dashboard",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{base_url}}/api/customer/dashboard?section_id=", "query": [{ "key": "section_id", "value": "" }] }
+            "url": "{{base_url}}/api/customer/dashboard?section_id={{section_id}}"
           }
         }
       ]
@@ -217,19 +218,19 @@
       "name": "Catalog",
       "item": [
         { "name": "Sections", "request": { "method": "GET", "url": "{{base_url}}/api/customer/sections" } },
-        { "name": "Categories", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/categories?type=vendor&section_id=", "query": [{ "key": "type", "value": "vendor" }, { "key": "section_id", "value": "" }] } } },
-        { "name": "Vendors", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/vendors?section_id=", "query": [{ "key": "section_id", "value": "" }] } } },
-        { "name": "Products", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/products?section_id=&vendor_id=", "query": [{ "key": "section_id", "value": "" }, { "key": "vendor_id", "value": "" }] } } },
-        { "name": "Services", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/services?section_id=", "query": [{ "key": "section_id", "value": "" }] } } },
-        { "name": "Brands", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/brands?section_id=", "query": [{ "key": "section_id", "value": "" }] } } },
-        { "name": "Search", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/search?q=pizza&type=all", "query": [{ "key": "q", "value": "pizza" }, { "key": "type", "value": "all" }] } } },
+        { "name": "Categories", "request": { "method": "GET", "url": "{{base_url}}/api/customer/categories?type=vendor&section_id={{section_id}}" } },
+        { "name": "Vendors", "request": { "method": "GET", "url": "{{base_url}}/api/customer/vendors?section_id={{section_id}}" } },
+        { "name": "Products", "request": { "method": "GET", "url": "{{base_url}}/api/customer/products?section_id={{section_id}}&vendor_id=" } },
+        { "name": "Services", "request": { "method": "GET", "url": "{{base_url}}/api/customer/services?section_id={{section_id}}" } },
+        { "name": "Brands", "request": { "method": "GET", "url": "{{base_url}}/api/customer/brands?section_id={{section_id}}" } },
+        { "name": "Search", "request": { "method": "GET", "url": "{{base_url}}/api/customer/search?q=pizza&type=all&section_id={{section_id}}" } },
         { "name": "Catalog Detail", "request": { "method": "GET", "url": "{{base_url}}/api/customer/catalog/vendor/{id}" } }
       ]
     },
     {
       "name": "Orders",
       "item": [
-        { "name": "List Orders", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/orders?type=vendor&section_id=", "query": [{ "key": "type", "value": "vendor" }, { "key": "section_id", "value": "" }] } } },
+        { "name": "List Orders", "request": { "method": "GET", "url": "{{base_url}}/api/customer/orders?type=vendor&section_id={{section_id}}" } },
         {
           "name": "Create Order",
           "request": {
@@ -237,7 +238,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type\": \"vendor\",\n  \"section_id\": \"\",\n  \"vendorID\": \"\",\n  \"status\": \"Order Placed\",\n  \"products\": [],\n  \"address\": {},\n  \"payment_method\": \"cod\",\n  \"subTotal\": 500\n}",
+              "raw": "{\n  \"type\": \"vendor\",\n  \"section_id\": \"{{section_id}}\",\n  \"vendorID\": \"\",\n  \"status\": \"Order Placed\",\n  \"products\": [],\n  \"address\": {},\n  \"payment_method\": \"cod\",\n  \"subTotal\": 500\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/api/customer/orders"
@@ -259,7 +260,7 @@
       "name": "Favorites",
       "item": [
         { "name": "List Favorites", "request": { "method": "GET", "url": "{{base_url}}/api/customer/favorites/vendor" } },
-        { "name": "Add Favorite", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"store_id\": \"\",\n  \"section_id\": \"\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/customer/favorites/vendor" } },
+        { "name": "Add Favorite", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"store_id\": \"\",\n  \"section_id\": \"{{section_id}}\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/customer/favorites/vendor" } },
         { "name": "Remove Favorite", "request": { "method": "DELETE", "url": "{{base_url}}/api/customer/favorites/vendor/{id}" } }
       ]
     },
@@ -306,7 +307,7 @@
     {
       "name": "Misc",
       "item": [
-        { "name": "Coupons", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/customer/coupons?type=vendor", "query": [{ "key": "type", "value": "vendor" }] } } },
+        { "name": "Coupons", "request": { "method": "GET", "url": "{{base_url}}/api/customer/coupons?type=vendor&section_id={{section_id}}" } },
         { "name": "Notifications", "request": { "method": "GET", "url": "{{base_url}}/api/customer/notifications" } },
         { "name": "Referral", "request": { "method": "GET", "url": "{{base_url}}/api/customer/referral" } },
         { "name": "Gift Cards", "request": { "method": "GET", "url": "{{base_url}}/api/customer/gift-cards" } },
