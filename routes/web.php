@@ -767,6 +767,13 @@ Route::middleware(['permission:ondemand-categories,ondemand.categories.edit'])->
 
 Route::middleware(['permission:providers,providers'])->group(function () {
     Route::get('/providers', [App\Http\Controllers\ProvidersController::class, 'index'])->name('providers');
+    Route::get('/providers/datatable', [App\Http\Controllers\ProvidersController::class, 'datatable'])->name('providers.datatable');
+    Route::post('/providers/toggle-status', [App\Http\Controllers\ProvidersController::class, 'toggleStatus'])->name('providers.toggle-status');
+    Route::post('/providers/destroy', [App\Http\Controllers\ProvidersController::class, 'destroy'])->name('providers.destroy');
+    Route::post('/providers/bulk-destroy', [App\Http\Controllers\ProvidersController::class, 'bulkDestroy'])->name('providers.bulk-destroy');
+    Route::get('/providers/api/meta', [App\Http\Controllers\ProvidersController::class, 'getMeta'])->name('providers.meta');
+    Route::get('/providers/api/subscription-plans', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlans'])->name('providers.subscription-plans');
+    Route::get('/providers/api/subscription-plan/{id}', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlan'])->name('providers.subscription-plan');
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
@@ -782,7 +789,6 @@ Route::middleware(['permission:providers,providers.view'])->group(function () {
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons'])->group(function () {
     Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
     Route::get('/ondemand-coupons-data', [App\Http\Controllers\OnDemandServiceController::class, 'couponsDatatable'])->name('ondemand.coupons.datatable');
-    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
     Route::post('/ondemand-coupons/toggle/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponToggle'])->name('ondemand.coupons.toggle');
     Route::post('/ondemand-coupons/delete', [App\Http\Controllers\OnDemandServiceController::class, 'couponDestroy'])->name('ondemand.coupons.destroy');
 });
@@ -813,13 +819,20 @@ Route::middleware(['permission:ondemand-bookings,ondemand.bookings.print'])->gro
     Route::get('/ondemand-bookings/print/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'BookingsPrint'])->name('ondemand.bookings.print');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.index'])->group(function () {
+    Route::get('/ondemand-workers-data', [App\Http\Controllers\OnDemandServiceController::class, 'workersDatatable'])->name('ondemand.workers.datatable');
+    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
+    Route::post('/ondemand-workers/toggle-status', [App\Http\Controllers\OnDemandServiceController::class, 'workersToggleStatus'])->name('ondemand.workers.toggle-status');
+    Route::post('/ondemand-workers/delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersDestroy'])->name('ondemand.workers.destroy');
+    Route::post('/ondemand-workers/bulk-delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersBulkDestroy'])->name('ondemand.workers.bulk-destroy');
     Route::get('/ondemand-workers/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Workers'])->name('ondemand.workers.index');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.create'])->group(function () {
     Route::get('/ondemand-worker/create', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersCreate'])->name('ondemand.workers.create');
+    Route::post('/ondemand-workers/store', [App\Http\Controllers\OnDemandServiceController::class, 'workersStore'])->name('ondemand.workers.store');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.edit'])->group(function () {
     Route::get('/ondemand-worker/edit/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersEdit'])->name('ondemand.workers.edit');
+    Route::post('/ondemand-workers/update/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'workersUpdate'])->name('ondemand.workers.update');
 });
 
 Route::middleware(['permission:on-board,onboard.list'])->group(function () {

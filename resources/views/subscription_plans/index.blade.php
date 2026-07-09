@@ -100,8 +100,7 @@
 @section('scripts')
     <script type="text/javascript">
         var section_id = getCookie('section_id') || '';
-        var database = firebase.firestore();
-        var ref = database.collection('subscription_plans');
+        var database = kweekDb();
        
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = Object.values(JSON.parse(user_permissions));
@@ -124,6 +123,19 @@
             var placeholderImageData = snapshotsimage.data();
             placeholderImage = placeholderImageData.image;
         })
+
+        function resolveImageUrl(url) {
+            if (!url) {
+                return placeholderImage;
+            }
+            if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0) {
+                return url;
+            }
+            if (url.indexOf('/') === 0) {
+                return window.location.origin + url;
+            }
+            return url;
+        }
         
         $(document).ready(async function() {
             
@@ -145,6 +157,12 @@
                     type: "GET",
                     data: function(d) {
                         d.section_id = section_id;
+                    },
+                    complete: function() {
+                        jQuery("#data-table_processing").hide();
+                    },
+                    error: function() {
+                        jQuery("#data-table_processing").hide();
                     }
                 },
                 columns: [
@@ -164,7 +182,7 @@
                         render: function(data, type, row) {
                             var rowId = row.id || '';
                             var rowName = row.name || '';
-                            var rowImage = row.image || placeholderImage;
+                            var rowImage = resolveImageUrl(row.image);
                             var url = "{{ url('current-subscriber') }}/" + rowId;
                             return '<img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="" style="width:70px;height:70px;" src="' + rowImage + '"> <a href="' + url + '" id="' + rowId + '">' + rowName + '</a>';
                         }
@@ -223,10 +241,16 @@
                     orderable: false,
                     targets: (checkDeletePermission) ? [0, 5, 6] : [4, 5]
                 }],
+                initComplete: function(settings, json) {
+                    jQuery("#data-table_processing").hide();
+                    if (json && typeof json.recordsFiltered !== 'undefined') {
+                        $('.total_count').text(json.recordsFiltered);
+                    }
+                },
                 "language": {
                     "zeroRecords": "{{ trans('lang.no_record_found') }}",
                     "emptyTable": "{{ trans('lang.no_record_found') }}",
-                    "processing": "" // Remove default loader
+                    "processing": ""
                 },
             });
 
@@ -338,7 +362,7 @@
                         response.data.forEach(function(data) {
                             getEarnings(data.id);
                             var dName = data.name || (data.payload && data.payload.name) || 'Plan';
-                            var img = data.image || (data.payload && data.payload.image) || placeholderImage;
+                            var img = resolveImageUrl(data.image || (data.payload && data.payload.image));
                             html += ` <div class="col-md-4">
                                 <div class="card card-box-with-icon">
                                     <div class="card-body">
@@ -347,7 +371,6 @@
                                         <h4 class="text-dark-2 mb-1 h4 earnings_${data.id}"></h4>
                                         <p class="mb-0 text-dark-2">${dName}</p>
                                         </div>
-                                        <span class="background-img"><img src="${img}" onerror="this.src='${placeholderImage}'"></span>
                                     </div>
                                 </div>
                             </div>`;

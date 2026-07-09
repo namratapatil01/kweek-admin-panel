@@ -198,7 +198,13 @@ trait ProvidesMySqlCrud
                 'status' => $request->input('status'),
             ]);
 
-            if ($this->moduleSlug() !== 'users') {
+            // Skip section filtering for global modules that are not section-scoped.
+            $sectionScopedModules = ['users'];
+            $config = $this->moduleConfig();
+            $skipSection = in_array($this->moduleSlug(), $sectionScopedModules, true)
+                || ($config['section_scoped'] ?? null) === false;
+
+            if (! $skipSection) {
                 if ($request->filled('section_id')) {
                     $filters['section_id'] = $request->input('section_id');
                 }

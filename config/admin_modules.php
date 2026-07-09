@@ -502,6 +502,7 @@ return [
         'model' => \App\Models\AppNotification::class,
         'label' => 'Notifications',
         'permission' => 'notification',
+        'section_scoped' => false,
         'searchable' => ['subject', 'message'],
         'columns' => [
             ['field' => 'subject', 'label' => 'Subject'],
