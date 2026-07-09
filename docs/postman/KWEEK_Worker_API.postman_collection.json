@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
     { "key": "token", "value": "" },
     { "key": "job_id", "value": "" },
     { "key": "provider_id", "value": "" }
@@ -183,30 +183,21 @@
           "name": "List Upcoming",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/worker/jobs?tab=upcoming",
-              "query": [{ "key": "tab", "value": "upcoming" }]
-            }
+            "url": "{{base_url}}/api/worker/jobs?tab=upcoming"
           }
         },
         {
           "name": "List Today",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/worker/jobs?tab=today",
-              "query": [{ "key": "tab", "value": "today" }]
-            }
+            "url": "{{base_url}}/api/worker/jobs?tab=today"
           }
         },
         {
           "name": "List Completed",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/worker/jobs?tab=completed",
-              "query": [{ "key": "tab", "value": "completed" }]
-            }
+            "url": "{{base_url}}/api/worker/jobs?tab=completed"
           }
         },
         { "name": "Job Details", "request": { "method": "GET", "url": "{{base_url}}/api/worker/jobs/{{job_id}}" } },

@@ -86,11 +86,66 @@ Flutter project: `emart_customer` (`/Users/sujiyan/Downloads/emart_customer`)
 
 | Firebase Collection | MySQL Table | Laravel Model | Customer API | Provider API |
 |---|---|---|---|---|
-| `chat_driver` | `chat_driver` | `ChatDriver` | Planned (Vendor/Rider phase) | — |
+| `chat_driver` | `chat_driver` | `ChatDriver` | Planned (Vendor/Rider phase) | — | `GET/POST /api/driver/chat/*` |
 | `chat_store` | `chat_store` | `ChatStore` | Planned | — |
 | `chat_worker` | `chat_worker` | `ChatWorker` | Planned | `GET/POST /api/provider/chat/*?type=worker` + `/api/worker/chat/*` |
 | `chat_provider` | `chat_provider` | `ChatProvider` | Planned | `GET/POST /api/provider/chat/*` |
-| `thread` (subcollection) | `chat_threads` | `ChatThread` | Planned | Via provider/worker chat message endpoints |
+| `thread` (subcollection) | `chat_threads` | `ChatThread` | Planned | Via provider/worker chat message endpoints | Via `/api/driver/chat/*` |
+
+## Driver App (`emart_driver`)
+
+| Firebase Collection | MySQL Table | Laravel Model | Driver API |
+|---|---|---|---|
+| `users` (role=driver) | `app_users` | `AppUser` | `POST /api/driver/register`, `POST /api/driver/login`, Profile |
+| `vendor_orders` | `vendor_orders` | `VendorOrder` | `/api/driver/orders?type=vendor` |
+| `rides` | `rides` | `Ride` | `/api/driver/orders?type=ride` |
+| `parcel_orders` | `parcel_orders` | `ParcelOrder` | `/api/driver/orders?type=parcel` |
+| `rental_orders` | `rental_orders` | `RentalOrder` | `/api/driver/orders?type=rental` |
+| `wallet` | `wallet` | `Wallet` | `/api/driver/wallet`, `/api/driver/wallet/transactions` |
+| `driver_payouts` | `driver_payouts` | `DriverPayout` | `/api/driver/wallet/payouts`, `/api/driver/wallet/withdraw` |
+| `withdraw_method` | `withdraw_methods` | `WithdrawMethod` | `GET/PUT /api/driver/withdraw-method` |
+| `chat_driver` + `thread` | `chat_driver` + `chat_threads` | `ChatDriver` / `ChatThread` | `/api/driver/chat/*` |
+| `items_review` | `items_reviews` | `ItemReview` | `/api/driver/reviews` |
+| `rating` | `ratings` | `Rating` | `/api/driver/ratings` |
+| `documents` / `documents_verify` | same | `Document` / `DocumentVerify` | `/api/driver/documents` |
+| `settings` | `settings` | `Setting` | `/api/driver/home`, `/api/driver/dashboard` |
+| `on_boarding` (type=driver) | `on_boarding` | `OnBoarding` | `/api/driver/home` |
+| `sections` | `sections` | `Section` | `/api/driver/home`, `/api/driver/catalog` |
+| `zone` | `zones` | `Zone` | `/api/driver/catalog` |
+| `vehicle_type` | `vehicle_types` | `VehicleType` | `/api/driver/catalog` |
+| `carMake` / `car_model` | `car_makes` / `car_models` | `CarMake` / `CarModel` | `/api/driver/catalog` |
+| `notifications` | `notifications` | `AppNotification` | `/api/driver/notifications` |
+| `currencies` | `currencies` | `Currency` | `/api/driver/home` |
+
+No new tables created for Driver APIs. See `docs/DRIVER_API_DOCUMENTATION.md`.
+
+## Vendor App (`emart_vendor`)
+
+| Firebase Collection | MySQL Table | Laravel Model | Vendor API |
+|---|---|---|---|
+| `users` (role=vendor) | `app_users` | `AppUser` | `POST /api/vendor/register`, `POST /api/vendor/login`, `/profile` |
+| `vendors` | `vendors` | `Vendor` | `GET/POST/PUT /api/vendor/store` |
+| `vendor_orders` | `vendor_orders` | `VendorOrder` | `/api/vendor/orders` |
+| `vendor_products` | `vendor_products` | `VendorProduct` | `/api/vendor/products` |
+| `vendor_categories` | `vendor_categories` | `VendorCategory` | `/api/vendor/catalog` |
+| `coupons` | `coupons` | `Coupon` | `/api/vendor/coupons` |
+| `wallet` | `wallet` | `Wallet` | `/api/vendor/wallet` |
+| `payouts` | `payouts` | `Payout` | `/api/vendor/wallet/payouts`, `/api/vendor/wallet/withdraw` |
+| `withdraw_method` | `withdraw_methods` | `WithdrawMethod` | `/api/vendor/withdraw-method` |
+| `items_review` | `items_reviews` | `ItemReview` | `/api/vendor/reviews` |
+| `booked_table` | `booked_tables` | `BookedTable` | `/api/vendor/dine-in/bookings` |
+| `chat_store` + `thread` | `chat_store` + `chat_threads` | `ChatStore` / `ChatThread` | `/api/vendor/chat` |
+| `chat_admin` + `thread` | `chat_admin` + `chat_threads` | `ChatAdmin` / `ChatThread` | `/api/vendor/chat?type=admin` |
+| `users` (self-delivery driver) | `app_users` | `AppUser` | `/api/vendor/drivers` |
+| `subscription_plans` | `subscription_plans` | `SubscriptionPlan` | `/api/vendor/subscriptions/plans` |
+| `subscription_history` | `subscription_histories` | `SubscriptionHistory` | `/api/vendor/subscriptions` |
+| `advertisements` | `advertisements` | `Advertisement` | `/api/vendor/advertisements` |
+| `story` | `stories` | `Story` | `/api/vendor/story` |
+| `documents` / `documents_verify` | same | `Document` / `DocumentVerify` | `/api/vendor/documents` |
+| `settings` | `settings` | `Setting` | `/api/vendor/home`, `/api/vendor/dashboard` |
+| `on_boarding` (type=store) | `on_boarding` | `OnBoarding` | `/api/vendor/home` |
+
+No new tables created for Vendor APIs. See `docs/VENDOR_API_DOCUMENTATION.md`.
 
 ## Other
 
