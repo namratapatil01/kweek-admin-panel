@@ -559,7 +559,10 @@ class DriverController extends Controller
             $data['role'] = 'driver';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             $data['isOwner'] = false;
-            $data['ownerId'] = null;    // Ensure non-fleet drivers have null ownerId
+            // Keep ownerId if provided (for fleet drivers), otherwise set to null
+            if (!$request->has('ownerId')) {
+                $data['ownerId'] = null;
+            }
             $data['isDocumentVerify'] = false;
             $data['wallet_amount'] = 0;
             $data['orderCompleted'] = 0;
@@ -708,7 +711,7 @@ class DriverController extends Controller
             }
             
             if ($sectionId) {
-                $query->where('sectionId', $sectionId);
+                $query->where('payload->sectionId', $sectionId);
             }
             
             $types = $query->orderBy('name')->get(['id', 'name']);

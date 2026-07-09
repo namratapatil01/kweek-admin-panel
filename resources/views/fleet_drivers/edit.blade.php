@@ -585,6 +585,21 @@
             })
         })
 
+        $('#vehicle_section_id').on('change', function () {
+            var selected_section_id = $(this).val();
+            var selected_service_type = $('#service_type').val() || service_type;
+            
+            $('.vehicle_type').html('<option value="">{{trans("lang.select")}} {{trans("lang.vehicle_type")}}</option>');
+            
+            if (selected_service_type == "cab-service" || selected_service_type == "rental-service") {
+                $.get("{{ route('drivers.vehicle-types') }}", { service_type: selected_service_type, sectionId: selected_section_id }, function(vRes) {
+                    vRes.vehicleTypes && vRes.vehicleTypes.forEach(function(data) {
+                        $('.vehicle_type').append($('<option></option>').attr("value", data.name).attr("data-id", data.id).text(data.name));
+                    });
+                });
+            }
+        });
+
         $('.car_make').on('change', function () {
             var cab_make_name = $(this).val();
             var options = '<option value="">{{trans("lang.select")}} {{trans("lang.car_model")}}</option>';

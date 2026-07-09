@@ -379,6 +379,7 @@ Route::middleware(['permission:rental-plural-god-eye,rental-plural-map'])->group
 });
 Route::middleware(['permission:cab-service-god-eye,cab-service-map'])->group(function () {
     Route::get('/map/cab', [App\Http\Controllers\MapController::class, 'cab'])->name('map.cab');
+    Route::get('/map/cab/data', [App\Http\Controllers\MapController::class, 'getCabData'])->name('map.cab.data');
 });
 
 Route::prefix('settings')->group(function () {

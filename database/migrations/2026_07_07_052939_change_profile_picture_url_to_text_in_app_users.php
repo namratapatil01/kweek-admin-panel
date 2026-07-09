@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('app_users', function (Blueprint $table) {
-            //
+            $table->longText('profilePictureURL')->nullable()->change();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('app_users', function (Blueprint $table) {
-            //
+            $table->string('profilePictureURL', 255)->nullable()->change();
         });
     }
 };
