@@ -24,7 +24,7 @@ class EntityApiController extends Controller
         );
 
         return EntityResource::collection($paginator)->additional([
-            'success' => true,
+            'status' => true,
             'message' => 'Success',
         ]);
     }

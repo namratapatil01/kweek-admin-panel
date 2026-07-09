@@ -70,7 +70,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive m-t-10">
-                                <table id="userTable" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
+                                <table id="userTable" class="display table table-hover table-striped table-bordered" cellspacing="0" width="100%">
                                     <thead>
                                         <tr>
                                             @php
@@ -167,7 +167,7 @@
             pageLength: 10,
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
             ajax: {
                 url: "{{ route('vendors.datatable') }}",
                 data: function (d) {
@@ -267,4 +267,68 @@
         });
     });
 </script>
+<style>
+    .delete-all {
+        min-width: 80px !important;
+        white-space: nowrap !important;
+    }
+    .delete-all label {
+        display: inline-flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+        flex: none !important;
+    }
+    .action-btn-circle-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: transparent;
+        transition: all 0.2s ease;
+        text-decoration: none !important;
+        font-size: 14px;
+    }
+    .btn-circle-document {
+        border: 1px solid #3b82f6;
+        color: #3b82f6 !important;
+    }
+    .btn-circle-document:hover {
+        background-color: #3b82f6;
+        color: #fff !important;
+    }
+    .btn-circle-subscription {
+        border: 1px solid #a855f7;
+        color: #a855f7 !important;
+    }
+    .btn-circle-subscription:hover {
+        background-color: #a855f7;
+        color: #fff !important;
+    }
+    .btn-circle-edit {
+        border: 1px solid #06b6d4;
+        color: #06b6d4 !important;
+    }
+    .btn-circle-edit:hover {
+        background-color: #06b6d4;
+        color: #fff !important;
+    }
+    .btn-circle-delete {
+        border: 1px solid #ef4444;
+        color: #ef4444 !important;
+    }
+    .btn-circle-delete:hover {
+        background-color: #ef4444;
+        color: #fff !important;
+    }
+</style>
 @endsection

@@ -143,7 +143,7 @@ class VendorController extends Controller
             $vendorIds = $vendors->pluck('vendorID')->filter()->unique()->values()->all();
             $stores = [];
             if (!empty($vendorIds)) {
-                $stores = Vendor::whereIn('id', $vendorIds)->pluck('title', 'id')->toArray();
+                $stores = Vendor::whereIn('id', $vendorIds)->get(['id', 'title', 'photo'])->keyBy('id')->toArray();
             }
 
             $userIds = $vendors->pluck('id')->all();
@@ -185,7 +185,10 @@ class VendorController extends Controller
         $editUrl     = route('vendors.edit', $id);
         $documentUrl = route('vendors.document', $id);
         $storeId     = $vendor->vendorID;
-        $storeTitle  = $storeId && isset($stores[$storeId]) ? $stores[$storeId] : '';
+        
+        $store = $storeId && isset($stores[$storeId]) ? $stores[$storeId] : null;
+        $storeTitle = $store ? $store['title'] : '';
+        $storePhoto = $store ? $store['photo'] : '';
         $storeViewUrl = $storeId ? route('stores.view', $storeId) : '';
 
         $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
@@ -197,29 +200,48 @@ class VendorController extends Controller
             $row[] = '<input type="checkbox" id="is_open_' . $id . '" class="is_open" dataId="' . $id . '" data-vendorid="' . e($storeId ?? '') . '"><label class="col-3 control-label" for="is_open_' . $id . '"></label>';
         }
 
-        $verified = $this->getDocumentStatusIcon($id, $docVerifications);
-        $photo = $vendor->profilePictureURL ?: $placeholderImage;
+        $verifiedHtml = '';
+        if ($vendor->isDocumentVerify) {
+            $verifiedHtml = '<i class="mdi mdi-verified verified-icon" data-toggle="tooltip" title="Verified" style="color: green; margin-left: 5px;"></i>';
+        } else {
+            $verifiedHtml = $this->getDocumentStatusIcon($id, $docVerifications);
+        }
+        
+        $photo = ($vendor->profilePictureURL && $vendor->profilePictureURL !== 'undefined' && $vendor->profilePictureURL !== 'null') ? $vendor->profilePictureURL : asset('images/kweek-logo.png');
         $name  = e(trim(($vendor->firstName ?? '') . ' ' . ($vendor->lastName ?? '')));
-        $row[] = '<img class="rounded" style="width:50px" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">'
-            . '<a href="' . $editUrl . '" class="redirecttopage left_space">' . $name . '</a>' . $verified;
+        $row[] = '<div class="d-flex align-items-center">'
+            . '<img class="rounded" style="width:40px; height:40px; object-fit: cover; margin-right: 10px;" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . asset('images/kweek-logo.png') . '\'">'
+            . '<a href="' . $editUrl . '" class="redirecttopage left_space font-weight-bold">' . $name . '</a>'
+            . $verifiedHtml
+            . '</div>';
 
-        if ($storeTitle && $storeViewUrl) {
-            $row[] = '<a href="' . $storeViewUrl . '" class="redirecttopage left_space">' . e($storeTitle) . '</a>';
+        if ($storeTitle) {
+            $storePhotoUrl = ($storePhoto && $storePhoto !== 'undefined' && $storePhoto !== 'null') ? $storePhoto : asset('images/kweek-logo.png');
+            $storePhotoHtml = '<img class="rounded" style="width:30px; height:30px; margin-right:8px; object-fit: cover;" src="' . e($storePhotoUrl) . '" onerror="this.onerror=null;this.src=\'' . asset('images/kweek-logo.png') . '\'">';
+            if ($storeViewUrl) {
+                $row[] = '<div class="d-flex align-items-center">' . $storePhotoHtml . '<a href="' . $storeViewUrl . '" class="redirecttopage">' . e($storeTitle) . '</a></div>';
+            } else {
+                $row[] = '<div class="d-flex align-items-center">' . $storePhotoHtml . '<span>' . e($storeTitle) . '</span></div>';
+            }
         } else {
             $row[] = '';
         }
 
         $phone = $vendor->phoneNumber ?? '';
-        $maskedPhone = $this->maskPhone($phone);
-        $email = $this->shortEmail($vendor->email ?? '');
-        $row[] = $email . '<br>' . e($maskedPhone);
+        $email = $vendor->email ?? '';
+        $row[] = '<span class="wrap-word">' . e($email) . '<br>' . e($phone) . '</span>';
 
         $subscriptionPlan = $payload['subscription_plan'] ?? null;
         $planName = '';
-        if (is_array($subscriptionPlan) && !empty($subscriptionPlan['name'])) {
-            $planName = $subscriptionPlan['name'];
-        } elseif (is_string($subscriptionPlan)) {
-            $planName = $subscriptionPlan;
+        if (is_array($subscriptionPlan)) {
+            $planName = $subscriptionPlan['name'] ?? '';
+        } elseif (is_string($subscriptionPlan) && $subscriptionPlan !== '') {
+            $decoded = json_decode($subscriptionPlan, true);
+            if (is_array($decoded)) {
+                $planName = $decoded['name'] ?? '';
+            } else {
+                $planName = $subscriptionPlan;
+            }
         }
         $row[] = e($planName);
 
@@ -231,7 +253,7 @@ class VendorController extends Controller
 
         if ($vendor->created_at) {
             $dt = \Carbon\Carbon::parse($vendor->created_at);
-            $row[] = '<span class="wrap-word">' . $dt->format('D, M d Y') . '<br>' . $dt->format('h:i:s A') . '</span>';
+            $row[] = '<span class="wrap-word">' . $dt->format('D M d Y g:i:s A') . '</span>';
         } else {
             $row[] = '';
         }
@@ -239,15 +261,16 @@ class VendorController extends Controller
         $activeChecked = $vendor->active ? 'checked' : '';
         $row[] = '<label class="switch"><input type="checkbox" ' . $activeChecked . ' id="' . $id . '" name="isActive"><span class="slider round"></span></label>';
 
-        $actions = '<span class="action-btn">';
-        $actions .= '<a href="' . $documentUrl . '" data-toggle="tooltip" title="' . e(trans('lang.document')) . '"><i class="fa fa-file"></i></a>';
-        if ($planName) {
-            $planRoute = route('subscription.subscriptionPlanHistory', $id);
-            $actions .= '<a href="' . $planRoute . '" data-toggle="tooltip" title="' . e(trans('lang.subscription_plans')) . '"><i class="mdi mdi-crown"></i></a>';
-        }
-        $actions .= '<a href="' . $editUrl . '" data-toggle="tooltip" title="' . e(trans('lang.edit')) . '"><i class="mdi mdi-lead-pencil"></i></a>';
+        $actions = '<span class="action-btn-circle-container">';
+        $actions .= '<a href="' . $documentUrl . '" class="btn-circle btn-circle-document" data-toggle="tooltip" title="' . e(trans('lang.document')) . '"><i class="fa fa-file"></i></a>';
+        
+        $planRoute = route('subscription.subscriptionPlanHistory', $id);
+        $actions .= '<a href="' . $planRoute . '" class="btn-circle btn-circle-subscription" data-toggle="tooltip" title="' . e(trans('lang.subscription_plans')) . '"><i class="mdi mdi-crown"></i></a>';
+        
+        $actions .= '<a href="' . $editUrl . '" class="btn-circle btn-circle-edit" data-toggle="tooltip" title="' . e(trans('lang.edit')) . '"><i class="mdi mdi-lead-pencil"></i></a>';
+        
         if ($checkDelete) {
-            $actions .= '<a id="' . $id . '" data-vendorid="' . e($storeId ?? '') . '" class="delete-btn" name="user-delete" href="javascript:void(0)" data-toggle="tooltip" title="' . e(trans('lang.delete')) . '"><i class="mdi mdi-delete"></i></a>';
+            $actions .= '<a id="' . $id . '" data-vendorid="' . e($storeId ?? '') . '" class="btn-circle btn-circle-delete delete-btn" name="user-delete" href="javascript:void(0)" data-toggle="tooltip" title="' . e(trans('lang.delete')) . '"><i class="mdi mdi-delete"></i></a>';
         }
         $actions .= '</span>';
         $row[] = $actions;
@@ -296,12 +319,12 @@ class VendorController extends Controller
             ?? DB::table('settings')->where('key', 'placeHolderImage')->value('value');
 
         if (!$raw) {
-            return '';
+            return asset('images/default_user.png');
         }
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? ($decoded['image'] ?? '') : (string) $raw;
+        return is_array($decoded) ? ($decoded['image'] ?? asset('images/default_user.png')) : (string) $raw;
     }
 
     private function shortEmail(?string $email): string
@@ -344,12 +367,12 @@ class VendorController extends Controller
         if ($parsed) {
             $dt = \Carbon\Carbon::parse($parsed);
 
-            return $dt->format('D, M d Y') . ' ' . $dt->format('h:i:s A');
+            return $dt->format('D M d Y g:i:s A');
         }
 
         if (is_string($value) && $value !== '') {
             try {
-                return \Carbon\Carbon::parse($value)->format('D, M d Y h:i:s A');
+                return \Carbon\Carbon::parse($value)->format('D M d Y g:i:s A');
             } catch (\Exception $e) {
                 return e($value);
             }
@@ -635,5 +658,249 @@ class VendorController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    public function getDocuments($id)
+    {
+        try {
+            $vendor = AppUser::find($id);
+            if (!$vendor) {
+                return response()->json(['error' => 'Vendor not found'], 404);
+            }
+
+            $documents = \DB::table('documents')
+                ->where('enable', 1)
+                ->where('type', 'vendor')
+                ->get();
+
+            $verified = \DB::table('documents_verify')->where('id', $id)->first();
+            $verifiedDocs = [];
+            if ($verified && !empty($verified->documents)) {
+                $verifiedDocs = json_decode($verified->documents, true) ?: [];
+            }
+
+            return response()->json([
+                'driver' => $vendor,
+                'documents' => $documents,
+                'verified' => $verifiedDocs
+            ]);
+        } catch (\Exception $e) {
+            Log::error('VendorController@getDocuments error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function verifyDocument(Request $request)
+    {
+        try {
+            $id = $request->input('id');
+            $docId = $request->input('docId');
+            $status = $request->input('status');
+
+            $vendor = AppUser::find($id);
+            if (!$vendor) {
+                return response()->json(['error' => 'Vendor not found'], 404);
+            }
+
+            $verified = \DB::table('documents_verify')->where('id', $id)->first();
+            $documentsArray = [];
+            if ($verified && !empty($verified->documents)) {
+                $documentsArray = json_decode($verified->documents, true) ?: [];
+            }
+
+            $updated = false;
+            foreach ($documentsArray as &$doc) {
+                if ($doc['documentId'] == $docId) {
+                    $doc['status'] = $status;
+                    $updated = true;
+                    break;
+                }
+            }
+            if (!$updated) {
+                $documentsArray[] = [
+                    'documentId' => $docId,
+                    'status' => $status,
+                    'frontImage' => '',
+                    'backImage' => ''
+                ];
+            }
+
+            if ($verified) {
+                \DB::table('documents_verify')
+                    ->where('id', $id)
+                    ->update([
+                        'documents' => json_encode($documentsArray),
+                        'updated_at' => now()
+                    ]);
+            } else {
+                \DB::table('documents_verify')
+                    ->insert([
+                        'id' => $id,
+                        'documents' => json_encode($documentsArray),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+            }
+
+            $this->reverifyVendorDocuments($id);
+
+            $vendor = AppUser::find($id);
+
+            return response()->json([
+                'success' => true,
+                'fcmToken' => $vendor->fcmToken ?? null
+            ]);
+        } catch (\Exception $e) {
+            Log::error('VendorController@verifyDocument error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getDocumentUploadDetails($ownerId, $id)
+    {
+        try {
+            $vendor = AppUser::find($ownerId);
+            if (!$vendor) {
+                return response()->json(['error' => 'Vendor not found'], 404);
+            }
+
+            $document = \DB::table('documents')->where('id', $id)->first();
+            if (!$document) {
+                return response()->json(['error' => 'Document template not found'], 404);
+            }
+
+            $verified = \DB::table('documents_verify')->where('id', $ownerId)->first();
+            $verifiedDocs = [];
+            if ($verified && !empty($verified->documents)) {
+                $verifiedDocs = json_decode($verified->documents, true) ?: [];
+            }
+
+            $selectedDoc = null;
+            foreach ($verifiedDocs as $doc) {
+                if ($doc['documentId'] == $id) {
+                    $selectedDoc = $doc;
+                    break;
+                }
+            }
+
+            return response()->json([
+                'driver' => $vendor,
+                'document' => $document,
+                'verified_doc' => $selectedDoc
+            ]);
+        } catch (\Exception $e) {
+            Log::error('VendorController@getDocumentUploadDetails error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function saveDocumentUpload(Request $request)
+    {
+        try {
+            $ownerId = $request->input('id');
+            $docId = $request->input('docId');
+            $frontImage = $request->input('frontImage', '');
+            $backImage = $request->input('backImage', '');
+            $status = $request->input('status', 'approved');
+
+            $vendor = AppUser::find($ownerId);
+            if (!$vendor) {
+                return response()->json(['error' => 'Vendor not found'], 404);
+            }
+
+            $verified = \DB::table('documents_verify')->where('id', $ownerId)->first();
+            $documentsArray = [];
+            if ($verified && !empty($verified->documents)) {
+                $documentsArray = json_decode($verified->documents, true) ?: [];
+            }
+
+            $updated = false;
+            foreach ($documentsArray as &$doc) {
+                if ($doc['documentId'] == $docId) {
+                    $doc['frontImage'] = $frontImage;
+                    $doc['backImage'] = $backImage;
+                    $doc['status'] = $status;
+                    $updated = true;
+                    break;
+                }
+            }
+            if (!$updated) {
+                $documentsArray[] = [
+                    'documentId' => $docId,
+                    'status' => $status,
+                    'frontImage' => $frontImage,
+                    'backImage' => $backImage
+                ];
+            }
+
+            if ($verified) {
+                \DB::table('documents_verify')
+                    ->where('id', $ownerId)
+                    ->update([
+                        'documents' => json_encode($documentsArray),
+                        'updated_at' => now()
+                    ]);
+            } else {
+                \DB::table('documents_verify')
+                    ->insert([
+                        'id' => $ownerId,
+                        'documents' => json_encode($documentsArray),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+            }
+
+            $this->reverifyVendorDocuments($ownerId);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('VendorController@saveDocumentUpload error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function reverifyVendorDocuments($vendorId)
+    {
+        $enabledDocIds = \DB::table('documents')
+            ->where('enable', 1)
+            ->where('type', 'vendor')
+            ->pluck('id')
+            ->toArray();
+
+        $verified = \DB::table('documents_verify')->where('id', $vendorId)->first();
+        $approvedDocIds = [];
+        if ($verified && !empty($verified->documents)) {
+            $documentsArray = json_decode($verified->documents, true) ?: [];
+            foreach ($documentsArray as $doc) {
+                if (($doc['status'] ?? '') == 'approved') {
+                    $approvedDocIds[] = $doc['documentId'];
+                }
+            }
+        }
+
+        $allApproved = true;
+        foreach ($enabledDocIds as $neededId) {
+            if (!in_array($neededId, $approvedDocIds)) {
+                $allApproved = false;
+                break;
+            }
+        }
+
+        $vendor = AppUser::find($vendorId);
+        if ($vendor) {
+            if ($allApproved && count($enabledDocIds) > 0) {
+                $vendor->update([
+                    'isDocumentVerify' => true,
+                    'active' => true,
+                    'isActive' => true
+                ]);
+            } else {
+                $vendor->update([
+                    'isDocumentVerify' => false,
+                    'active' => false,
+                    'isActive' => false
+                ]);
+            }
+        }
     }
 }

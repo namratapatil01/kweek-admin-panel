@@ -188,26 +188,7 @@ return [
             ['name' => 'image', 'type' => 'image', 'label' => 'Image'],
         ],
     ],
-    'subscription-plans' => [
-        'model' => \App\Models\SubscriptionPlan::class,
-        'view' => 'subscription_plans',
-        'route' => 'subscription-plans',
-        'index_route' => 'subscription-plans.index',
-        'label' => 'Subscription Plans',
-        'permission' => 'subscription-plans',
-        'searchable' => ['name'],
-        'columns' => [
-            ['field' => 'name', 'label' => 'Name'],
-            ['field' => 'price', 'label' => 'Price'],
-            ['field' => 'isEnable', 'label' => 'Enabled', 'type' => 'boolean'],
-        ],
-        'form' => [
-            ['name' => 'name', 'type' => 'text', 'label' => 'Name', 'required' => true],
-            ['name' => 'price', 'type' => 'number', 'label' => 'Price'],
-            ['name' => 'sectionId', 'type' => 'text', 'label' => 'Section ID'],
-            ['name' => 'isEnable', 'type' => 'checkbox', 'label' => 'Enabled'],
-        ],
-    ],
+
     'vehicle-types' => [
         'model' => \App\Models\VehicleType::class,
         'view' => 'vehicle_types',
@@ -395,7 +376,8 @@ return [
     'advertisements' => [
         'model' => \App\Models\Advertisement::class,
         'label' => 'Advertisements',
-        'permission' => 'advertisement',
+        'permission' => 'advertisements',
+        'legacy_route' => 'advertisements',
         'searchable' => ['title'],
         'columns' => [
             ['field' => 'title', 'label' => 'Title'],
@@ -477,12 +459,10 @@ return [
         'default_sort_dir' => 'desc',
         'searchable' => ['firstName', 'lastName', 'email', 'phoneNumber'],
         'columns' => [
-            ['field' => 'firstName', 'label' => 'First Name'],
-            ['field' => 'lastName', 'label' => 'Last Name'],
-            ['field' => 'email', 'label' => 'Email'],
-            ['field' => 'phoneNumber', 'label' => 'Phone'],
-            ['field' => 'active', 'label' => 'Active', 'type' => 'boolean'],
+            ['field' => 'userInfo', 'label' => 'User Info'],
+            ['field' => 'contactInfo', 'label' => 'Contact Info'],
             ['field' => 'created_at', 'label' => 'Date', 'type' => 'datetime'],
+            ['field' => 'active', 'label' => 'Active', 'type' => 'boolean'],
         ],
         'form' => [
             ['name' => 'firstName', 'type' => 'text', 'label' => 'First Name', 'required' => true],
@@ -514,6 +494,7 @@ return [
             ['name' => 'latitude', 'type' => 'number', 'label' => 'Latitude'],
             ['name' => 'longitude', 'type' => 'number', 'label' => 'Longitude'],
             ['name' => 'publish', 'type' => 'checkbox', 'label' => 'Published'],
+            ['name' => 'area', 'type' => 'json', 'label' => 'Area'],
         ],
     ],
     'notifications' => [

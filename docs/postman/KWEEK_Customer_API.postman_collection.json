@@ -1,0 +1,335 @@
+{
+  "info": {
+    "name": "KWEEK Customer API",
+    "description": "Customer APIs for emart_customer Flutter app migration from Firebase to Laravel/MySQL",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "section_id", "value": "6285dcf511651" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"customer@example.com\",\n  \"phoneNumber\": \"9876543210\",\n  \"countryCode\": \"+91\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"fcmToken\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\",\n  \"fcmToken\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/customer/logout"
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"GOOGLE_ID_TOKEN\",\n  \"fcmToken\": \"\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"auto_register\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/auth/google"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Apple Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"APPLE_IDENTITY_TOKEN\",\n  \"fcmToken\": \"\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"customer@example.com\",\n  \"auto_register\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/auth/apple"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/password/forgot"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"token\": \"TOKEN_FROM_EMAIL\",\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/password/reset"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": { "method": "GET", "url": "{{base_url}}/api/customer/profile" }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"9876543210\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.2090\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/profile"
+          }
+        },
+        {
+          "name": "Upload Profile Image",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "image", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/api/customer/profile/image"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Home (Public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/api/customer/home?section_id={{section_id}}"
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/customer/dashboard?section_id={{section_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        { "name": "Sections", "request": { "method": "GET", "url": "{{base_url}}/api/customer/sections" } },
+        { "name": "Categories", "request": { "method": "GET", "url": "{{base_url}}/api/customer/categories?type=vendor&section_id={{section_id}}" } },
+        { "name": "Vendors", "request": { "method": "GET", "url": "{{base_url}}/api/customer/vendors?section_id={{section_id}}" } },
+        { "name": "Products", "request": { "method": "GET", "url": "{{base_url}}/api/customer/products?section_id={{section_id}}&vendor_id=" } },
+        { "name": "Services", "request": { "method": "GET", "url": "{{base_url}}/api/customer/services?section_id={{section_id}}" } },
+        { "name": "Brands", "request": { "method": "GET", "url": "{{base_url}}/api/customer/brands?section_id={{section_id}}" } },
+        { "name": "Search", "request": { "method": "GET", "url": "{{base_url}}/api/customer/search?q=pizza&type=all&section_id={{section_id}}" } },
+        { "name": "Catalog Detail", "request": { "method": "GET", "url": "{{base_url}}/api/customer/catalog/vendor/{id}" } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        { "name": "List Orders", "request": { "method": "GET", "url": "{{base_url}}/api/customer/orders?type=vendor&section_id={{section_id}}" } },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"vendor\",\n  \"section_id\": \"{{section_id}}\",\n  \"vendorID\": \"\",\n  \"status\": \"Order Placed\",\n  \"products\": [],\n  \"address\": {},\n  \"payment_method\": \"cod\",\n  \"subTotal\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/customer/orders"
+          }
+        },
+        { "name": "Order Details", "request": { "method": "GET", "url": "{{base_url}}/api/customer/orders/vendor/{id}" } },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"Cancelled\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/orders/vendor/{id}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        { "name": "List Favorites", "request": { "method": "GET", "url": "{{base_url}}/api/customer/favorites/vendor" } },
+        { "name": "Add Favorite", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"store_id\": \"\",\n  \"section_id\": \"{{section_id}}\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{base_url}}/api/customer/favorites/vendor" } },
+        { "name": "Remove Favorite", "request": { "method": "DELETE", "url": "{{base_url}}/api/customer/favorites/vendor/{id}" } }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        { "name": "Balance", "request": { "method": "GET", "url": "{{base_url}}/api/customer/wallet" } },
+        { "name": "Transactions", "request": { "method": "GET", "url": "{{base_url}}/api/customer/wallet/transactions" } },
+        {
+          "name": "Top Up",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 100,\n  \"payment_method\": \"stripe\",\n  \"payment_status\": \"success\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/wallet/topup"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        { "name": "List Reviews", "request": { "method": "GET", "url": "{{base_url}}/api/customer/reviews" } },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderid\": \"\",\n  \"VendorId\": \"\",\n  \"rating\": 5,\n  \"comment\": \"Great service!\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/reviews"
+          }
+        },
+        {
+          "name": "Submit Rating",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderid\": \"\",\n  \"rating\": 5\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/ratings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Misc",
+      "item": [
+        { "name": "Coupons", "request": { "method": "GET", "url": "{{base_url}}/api/customer/coupons?type=vendor&section_id={{section_id}}" } },
+        { "name": "Notifications", "request": { "method": "GET", "url": "{{base_url}}/api/customer/notifications" } },
+        { "name": "Referral", "request": { "method": "GET", "url": "{{base_url}}/api/customer/referral" } },
+        { "name": "Gift Cards", "request": { "method": "GET", "url": "{{base_url}}/api/customer/gift-cards" } },
+        {
+          "name": "Complaint",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"\",\n  \"title\": \"Issue\",\n  \"description\": \"Details here\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/complaints"
+          }
+        },
+        {
+          "name": "SOS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"\",\n  \"latLong\": { \"latitude\": 28.6139, \"longitude\": 77.2090 }\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/customer/sos"
+          }
+        }
+      ]
+    }
+  ]
+}

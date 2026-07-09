@@ -206,13 +206,17 @@ foreach ($countries as $keycountry => $valuecountry) {
     var photo = "";
     var fileName = "";
     var oldImageFile = '';
-    var placeholderImage = '';
+    var placeholderImage = "{{ asset('images/default_user.png') }}";
     var placeholder = database.collection('settings').doc('placeHolderImage');
 
     placeholder.get().then(async function (snapshotsimage) {
-        var placeholderImageData = snapshotsimage.data();
-        placeholderImage = placeholderImageData.image;
-    })
+        if (snapshotsimage.exists) {
+            var placeholderImageData = snapshotsimage.data();
+            if (placeholderImageData && placeholderImageData.image) {
+                placeholderImage = placeholderImageData.image;
+            }
+        }
+    });
     var currency = database.collection('settings');
 
     var currentCurrency = '';
@@ -405,13 +409,29 @@ foreach ($countries as $keycountry => $valuecountry) {
         var newPhoto = '';
         try {
             if (photo != '' && photo != oldImageFile) {
-                if (String(photo).indexOf('data:image') === 0) {
-                    photo = photo.replace(/^data:image\/[a-z]+;base64,/, "");
+                const responseBlob = await fetch(photo);
+                const blob = await responseBlob.blob();
+                
+                const formData = new FormData();
+                formData.append('file', blob, fileName || 'user-image.jpg');
+                formData.append('directory', 'users');
+                
+                const response = await fetch('{{ url("admin-data/upload") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw result.message || 'Image upload failed.';
                 }
-                var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });
-                var downloadURL = await uploadTask.ref.getDownloadURL();
-                newPhoto = downloadURL;
-                photo = downloadURL;
+                
+                newPhoto = result.url;
+                photo = result.url;
             } else {
                 newPhoto = photo || oldImageFile || '';
             }

@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+@php
+    $userPermissions = json_decode(session('user_permissions', '[]'), true) ?: [];
+    $canDelete = in_array('banners.delete', $userPermissions, true) || in_array('banner.delete', $userPermissions, true);
+@endphp
+
 @section('content')
 <div class="page-wrapper">
     <div class="row page-titles">
@@ -43,7 +48,7 @@
                                 <table id="example24" class="table table-hover table-striped" cellspacing="0" width="100%">
                                     <thead>
                                         <tr>
-                                        <?php if (in_array('banners.delete', json_decode(@session('user_permissions')))) { ?>
+                                        @if($canDelete)
                                             <th class="delete-all" style="width: 90px; vertical-align: middle;">
                                                 <div class="d-flex align-items-center">
                                                     <input type="checkbox" id="is_active" class="mr-2">
@@ -52,7 +57,7 @@
                                                     </a>
                                                 </div>
                                             </th>
-                                        <?php }?>
+                                        @endif
                                             <th>{{trans('lang.banner_info')}}</th>
                                             <th>{{trans('lang.banner_position')}}</th>
                                             <th>{{trans('lang.item_publish')}}</th>
@@ -343,16 +348,22 @@ $(function () {
             type: 'GET',
             data: function (d) {
                 d.sectionId = getCookie('section_id') || '';
+            },
+            dataSrc: function (json) {
+                $('.total_count').text(json.recordsTotal || 0);
+                return json.data || [];
             }
         },
         columns: [
+            @if($canDelete)
             { data: 0, orderable: false },
+            @endif
             { data: 1, orderable: true },
             { data: 2, orderable: true },
             { data: 3, orderable: false },
             { data: 4, orderable: false }
         ],
-        order: [[1, 'desc']],
+        order: [[{{ $canDelete ? 1 : 0 }}, 'desc']],
         pageLength: 10,
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",
@@ -392,7 +403,7 @@ $(function () {
                 collection: 'banner_items',
                 id: id,
                 data: { is_publish: isChecked },
-                merge: true
+                merge: 1
             },
             success: function (response) {
                 // Status updated successfully

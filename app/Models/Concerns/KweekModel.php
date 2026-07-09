@@ -44,4 +44,15 @@ abstract class KweekModel extends Model
 
         return $value;
     }
+
+    public function scopePublished($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('publish', true)
+                ->orWhere('isActive', true)
+                ->orWhere('isEnable', true)
+                ->orWhere('isEnabled', true)
+                ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.is_publish')) IN ('true', '1', 1)");
+        });
+    }
 }

@@ -52,9 +52,34 @@ class AppUser extends Authenticatable
         return $this->hasMany(VendorOrder::class, 'authorID', 'id');
     }
 
+    public function parcelOrders()
+    {
+        return $this->hasMany(ParcelOrder::class, 'authorID', 'id');
+    }
+
+    public function rentalOrders()
+    {
+        return $this->hasMany(RentalOrder::class, 'authorID', 'id');
+    }
+
+    public function rides()
+    {
+        return $this->hasMany(Ride::class, 'authorID', 'id');
+    }
+
+    public function providerOrders()
+    {
+        return $this->hasMany(ProviderOrder::class, 'authorID', 'id');
+    }
+
     public function walletEntries()
     {
         return $this->hasMany(Wallet::class, 'user_id', 'id');
+    }
+
+    public function scopeCustomers($query)
+    {
+        return $query->where('role', 'customer');
     }
 
     public function scopeDrivers($query)
@@ -65,6 +90,31 @@ class AppUser extends Authenticatable
     public function scopeVendors($query)
     {
         return $query->where('role', 'vendor');
+    }
+
+    public function scopeProviders($query)
+    {
+        return $query->where('role', 'provider');
+    }
+
+    public function scopeWorkers($query)
+    {
+        return $query->where('role', 'worker');
+    }
+
+    public function providerServices()
+    {
+        return $this->hasMany(ProviderService::class, 'payload->author', 'id');
+    }
+
+    public function providerWorkers()
+    {
+        return $this->hasMany(ProviderWorker::class, 'providerId', 'id');
+    }
+
+    public function providerCoupons()
+    {
+        return $this->hasMany(ProviderCoupon::class, 'providerId', 'id');
     }
 
     public function scopeApproved($query)
