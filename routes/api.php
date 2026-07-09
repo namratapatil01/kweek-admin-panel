@@ -38,6 +38,21 @@ use App\Http\Controllers\Api\Driver\DriverOwnerController;
 use App\Http\Controllers\Api\Driver\DriverProfileController;
 use App\Http\Controllers\Api\Driver\DriverReviewController;
 use App\Http\Controllers\Api\Driver\DriverWalletController;
+use App\Http\Controllers\Api\Vendor\VendorAdvertisementController;
+use App\Http\Controllers\Api\Vendor\VendorAuthController;
+use App\Http\Controllers\Api\Vendor\VendorChatController;
+use App\Http\Controllers\Api\Vendor\VendorCouponController;
+use App\Http\Controllers\Api\Vendor\VendorDashboardController;
+use App\Http\Controllers\Api\Vendor\VendorDineInController;
+use App\Http\Controllers\Api\Vendor\VendorDriverController;
+use App\Http\Controllers\Api\Vendor\VendorMiscController;
+use App\Http\Controllers\Api\Vendor\VendorOrderController;
+use App\Http\Controllers\Api\Vendor\VendorProductController;
+use App\Http\Controllers\Api\Vendor\VendorProfileController;
+use App\Http\Controllers\Api\Vendor\VendorReviewController;
+use App\Http\Controllers\Api\Vendor\VendorStoryController;
+use App\Http\Controllers\Api\Vendor\VendorSubscriptionController;
+use App\Http\Controllers\Api\Vendor\VendorWalletController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EntityApiController;
 use App\Http\Controllers\Api\V1\FileUploadController;
@@ -323,6 +338,112 @@ Route::prefix('driver')->group(function () {
         Route::get('owner/drivers/{id}', [DriverOwnerController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::put('owner/drivers/{id}', [DriverOwnerController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::post('owner/drivers/{id}/image', [DriverOwnerController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
+    });
+});
+
+Route::prefix('vendor')->group(function () {
+    Route::post('register', [VendorAuthController::class, 'register']);
+    Route::post('login', [VendorAuthController::class, 'login']);
+    Route::post('auth/google', [VendorAuthController::class, 'loginWithGoogle']);
+    Route::post('auth/apple', [VendorAuthController::class, 'loginWithApple']);
+    Route::post('auth/phone', [VendorAuthController::class, 'loginWithPhone']);
+    Route::post('password/forgot', [VendorAuthController::class, 'forgotPassword']);
+    Route::post('password/reset', [VendorAuthController::class, 'resetPassword']);
+    Route::get('home', [VendorDashboardController::class, 'home']);
+    Route::get('terms', [VendorMiscController::class, 'terms']);
+    Route::get('privacy', [VendorMiscController::class, 'privacy']);
+    Route::get('catalog', [VendorMiscController::class, 'catalog']);
+    Route::get('subscriptions/plans', [VendorSubscriptionController::class, 'plans']);
+
+    Route::middleware(['auth:sanctum', 'app.role:vendor'])->group(function () {
+        Route::post('logout', [VendorAuthController::class, 'logout']);
+        Route::delete('account', [VendorAuthController::class, 'deleteAccount']);
+
+        Route::get('profile', [VendorProfileController::class, 'show']);
+        Route::put('profile', [VendorProfileController::class, 'update']);
+        Route::post('profile/image', [VendorProfileController::class, 'uploadImage']);
+        Route::put('bank-details', [VendorProfileController::class, 'updateBankDetails']);
+
+        Route::get('store', [VendorProfileController::class, 'showStore']);
+        Route::post('store', [VendorProfileController::class, 'createStore']);
+        Route::put('store', [VendorProfileController::class, 'updateStore']);
+        Route::post('store/image', [VendorProfileController::class, 'uploadStoreImage']);
+
+        Route::get('dashboard', [VendorDashboardController::class, 'dashboard']);
+
+        Route::get('orders', [VendorOrderController::class, 'index']);
+        Route::get('orders/{id}', [VendorOrderController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/accept', [VendorOrderController::class, 'accept'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/reject', [VendorOrderController::class, 'reject'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/cancel', [VendorOrderController::class, 'cancel'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/complete', [VendorOrderController::class, 'complete'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/assign-driver', [VendorOrderController::class, 'assignDriver'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('orders/{id}/ship', [VendorOrderController::class, 'ship'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::patch('orders/{id}', [VendorOrderController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('products', [VendorProductController::class, 'index']);
+        Route::post('products', [VendorProductController::class, 'store']);
+        Route::get('products/{id}', [VendorProductController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('products/{id}', [VendorProductController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('products/{id}', [VendorProductController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('products/{id}/images', [VendorProductController::class, 'uploadImages'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('coupons', [VendorCouponController::class, 'index']);
+        Route::post('coupons', [VendorCouponController::class, 'store']);
+        Route::get('coupons/{id}', [VendorCouponController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('coupons/{id}', [VendorCouponController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('coupons/{id}', [VendorCouponController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('coupons/{id}/image', [VendorCouponController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('wallet', [VendorWalletController::class, 'balance']);
+        Route::get('wallet/transactions', [VendorWalletController::class, 'transactions']);
+        Route::get('earnings', [VendorWalletController::class, 'earnings']);
+        Route::post('wallet/withdraw', [VendorWalletController::class, 'withdraw']);
+        Route::get('wallet/payouts', [VendorWalletController::class, 'payoutHistory']);
+        Route::get('withdraw-method', [VendorWalletController::class, 'getWithdrawMethod']);
+        Route::put('withdraw-method', [VendorWalletController::class, 'saveWithdrawMethod']);
+
+        Route::get('chat/inbox', [VendorChatController::class, 'inbox']);
+        Route::get('chat/{orderId}/messages', [VendorChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/send', [VendorChatController::class, 'send']);
+        Route::post('chat/upload', [VendorChatController::class, 'upload']);
+
+        Route::get('reviews', [VendorReviewController::class, 'index']);
+        Route::get('reviews/order/{orderId}', [VendorReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('ratings', [VendorReviewController::class, 'ratings']);
+
+        Route::get('drivers', [VendorDriverController::class, 'index']);
+        Route::post('drivers', [VendorDriverController::class, 'store']);
+        Route::get('drivers/{id}', [VendorDriverController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('drivers/{id}', [VendorDriverController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('drivers/{id}/image', [VendorDriverController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('dine-in/bookings', [VendorDineInController::class, 'bookings']);
+        Route::get('dine-in/bookings/{id}', [VendorDineInController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('dine-in/bookings/{id}/accept', [VendorDineInController::class, 'accept'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('dine-in/bookings/{id}/reject', [VendorDineInController::class, 'reject'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('dine-in/config', [VendorDineInController::class, 'updateConfig']);
+
+        Route::get('subscriptions/history', [VendorSubscriptionController::class, 'history']);
+        Route::post('subscriptions', [VendorSubscriptionController::class, 'subscribe']);
+
+        Route::get('advertisements', [VendorAdvertisementController::class, 'index']);
+        Route::post('advertisements', [VendorAdvertisementController::class, 'store']);
+        Route::get('advertisements/{id}', [VendorAdvertisementController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::put('advertisements/{id}', [VendorAdvertisementController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('advertisements/{id}', [VendorAdvertisementController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::post('advertisements/{id}/media', [VendorAdvertisementController::class, 'uploadMedia'])->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::get('story', [VendorStoryController::class, 'show']);
+        Route::post('story', [VendorStoryController::class, 'store']);
+        Route::delete('story', [VendorStoryController::class, 'destroy']);
+        Route::post('story/upload', [VendorStoryController::class, 'uploadMedia']);
+
+        Route::get('notifications', [VendorMiscController::class, 'notifications']);
+        Route::get('documents', [VendorMiscController::class, 'documents']);
+        Route::get('documents/status', [VendorMiscController::class, 'documentStatus']);
+        Route::post('documents', [VendorMiscController::class, 'submitDocuments']);
+        Route::post('documents/upload', [VendorMiscController::class, 'uploadDocument']);
     });
 });
 

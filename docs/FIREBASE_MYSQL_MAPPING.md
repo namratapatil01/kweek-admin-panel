@@ -119,6 +119,34 @@ Flutter project: `emart_customer` (`/Users/sujiyan/Downloads/emart_customer`)
 
 No new tables created for Driver APIs. See `docs/DRIVER_API_DOCUMENTATION.md`.
 
+## Vendor App (`emart_vendor`)
+
+| Firebase Collection | MySQL Table | Laravel Model | Vendor API |
+|---|---|---|---|
+| `users` (role=vendor) | `app_users` | `AppUser` | `POST /api/vendor/register`, `POST /api/vendor/login`, `/profile` |
+| `vendors` | `vendors` | `Vendor` | `GET/POST/PUT /api/vendor/store` |
+| `vendor_orders` | `vendor_orders` | `VendorOrder` | `/api/vendor/orders` |
+| `vendor_products` | `vendor_products` | `VendorProduct` | `/api/vendor/products` |
+| `vendor_categories` | `vendor_categories` | `VendorCategory` | `/api/vendor/catalog` |
+| `coupons` | `coupons` | `Coupon` | `/api/vendor/coupons` |
+| `wallet` | `wallet` | `Wallet` | `/api/vendor/wallet` |
+| `payouts` | `payouts` | `Payout` | `/api/vendor/wallet/payouts`, `/api/vendor/wallet/withdraw` |
+| `withdraw_method` | `withdraw_methods` | `WithdrawMethod` | `/api/vendor/withdraw-method` |
+| `items_review` | `items_reviews` | `ItemReview` | `/api/vendor/reviews` |
+| `booked_table` | `booked_tables` | `BookedTable` | `/api/vendor/dine-in/bookings` |
+| `chat_store` + `thread` | `chat_store` + `chat_threads` | `ChatStore` / `ChatThread` | `/api/vendor/chat` |
+| `chat_admin` + `thread` | `chat_admin` + `chat_threads` | `ChatAdmin` / `ChatThread` | `/api/vendor/chat?type=admin` |
+| `users` (self-delivery driver) | `app_users` | `AppUser` | `/api/vendor/drivers` |
+| `subscription_plans` | `subscription_plans` | `SubscriptionPlan` | `/api/vendor/subscriptions/plans` |
+| `subscription_history` | `subscription_histories` | `SubscriptionHistory` | `/api/vendor/subscriptions` |
+| `advertisements` | `advertisements` | `Advertisement` | `/api/vendor/advertisements` |
+| `story` | `stories` | `Story` | `/api/vendor/story` |
+| `documents` / `documents_verify` | same | `Document` / `DocumentVerify` | `/api/vendor/documents` |
+| `settings` | `settings` | `Setting` | `/api/vendor/home`, `/api/vendor/dashboard` |
+| `on_boarding` (type=store) | `on_boarding` | `OnBoarding` | `/api/vendor/home` |
+
+No new tables created for Vendor APIs. See `docs/VENDOR_API_DOCUMENTATION.md`.
+
 ## Other
 
 | Firebase Collection | MySQL Table | Laravel Model | Customer API |
