@@ -194,7 +194,23 @@
         $('#userTable').DataTable().ajax.reload();
     });
 
-    var placeholderImage = '';
+    var placeholderImage = @json($placeholderImage ?? '');
+
+    function escapeHtmlAttr(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;');
+    }
+
+    function getOwnerProfilePhoto(val) {
+        const url = val.profilePictureURL;
+        if (url && url !== '' && url !== 'null') {
+            return url;
+        }
+        return placeholderImage;
+    }
 
 $(document).ready(function () {
 
@@ -205,11 +221,12 @@ $(document).ready(function () {
 
     jQuery("#data-table_processing").show();
 
-    var placeholder = database.collection('settings').doc('placeHolderImage');
-    placeholder.get().then(async function (snapshotsimage) {
+    database.collection('settings').doc('placeHolderImage').get().then(function (snapshotsimage) {
         var placeholderImageData = snapshotsimage.data();
-        placeholderImage = placeholderImageData.image;
-    })
+        if (placeholderImageData && placeholderImageData.image) {
+            placeholderImage = placeholderImageData.image;
+        }
+    });
 
     $(document).on('click', '.dt-button-collection .dt-button', function () {
         $('.dt-button-collection').hide();
@@ -485,17 +502,15 @@ function buildHTML(val) {
     if(val.isDocumentVerify === true){
         verified = '<i class="mdi mdi-verified verified-icon" data-toggle="tooltip" data-bs-original-title="Verified"></i>';
     }
-    if (val.profilePictureURL == '') {
 
-        html.push('<img class="rounded" style="width:50px" src="' + placeholderImage + '" alt="image">  <a id="userName_' + id + '"  href="'+ownerView+'" class="redirecttopage left_space">' + val.firstName + ' ' + val.lastName + '</a>' + verified);
-    } else {
-        if(val.profilePictureURL){
-            photo=val.profilePictureURL;
-        }else{
-            photo=placeholderImage;
-        }
-        html.push('<img class="rounded" style="width:50px" src="' + photo + '" alt="image" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'">  <a id="userName_' + id + '"  href="'+ownerView+'" class="redirecttopage left_space">' + val.firstName + ' ' + val.lastName + '</a>' + verified);
-    }
+    const profileSrc = escapeHtmlAttr(getOwnerProfilePhoto(val));
+    const fallbackSrc = escapeHtmlAttr(placeholderImage);
+    const ownerName = ((val.firstName || '') + ' ' + (val.lastName || '')).trim();
+
+    html.push(
+        '<img class="rounded" style="width:50px" src="' + profileSrc + '" alt="image" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'">' +
+        '  <a id="userName_' + id + '" href="' + ownerView + '" class="redirecttopage left_space">' + ownerName + '</a>' + verified
+    );
 
 // Contact Info column (email and phone combined)
         var contactInfo = shortEmail(val.email) + '<br>' + (val.phoneNumber.includes('+') ? '+' + EditPhoneNumber(val.phoneNumber.slice(1)) : EditPhoneNumber(val.phoneNumber));

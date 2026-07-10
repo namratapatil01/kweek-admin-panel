@@ -93,6 +93,7 @@ trait ProvidesMySqlCrud
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate(StoreModuleRequest::buildRules($this->moduleSlug(), true));
+        $validated = $this->applyDefaultSectionId($validated);
 
         try {
             $this->crudService()->store($validated);
@@ -198,7 +199,13 @@ trait ProvidesMySqlCrud
                 'status' => $request->input('status'),
             ]);
 
-            if ($this->moduleSlug() !== 'users') {
+            // Skip section filtering for global modules that are not section-scoped.
+            $sectionScopedModules = ['users'];
+            $config = $this->moduleConfig();
+            $skipSection = in_array($this->moduleSlug(), $sectionScopedModules, true)
+                || ($config['section_scoped'] ?? null) === false;
+
+            if (! $skipSection) {
                 if ($request->filled('section_id')) {
                     $filters['section_id'] = $request->input('section_id');
                 }
@@ -330,6 +337,42 @@ trait ProvidesMySqlCrud
         if (substr($permissionKey, -1) === 's') {
             $singular = substr($permissionKey, 0, -1);
             if (in_array($singular . '.delete', $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Prefer the active admin section cookie when the form leaves section blank.
+     */
+    protected function applyDefaultSectionId(array $data): array
+    {
+        $sectionId = $data['section_id'] ?? $data['sectionId'] ?? null;
+        if ($sectionId !== null && $sectionId !== '') {
+            return $data;
+        }
+
+        $cookieSection = request()->cookie('section_id') ?: request()->input('sectionId');
+        if (! $cookieSection) {
+            return $data;
+        }
+
+        if (array_key_exists('section_id', $data) || $this->formHasField('section_id')) {
+            $data['section_id'] = $cookieSection;
+        }
+        if (array_key_exists('sectionId', $data) || $this->formHasField('sectionId')) {
+            $data['sectionId'] = $cookieSection;
+        }
+
+        return $data;
+    }
+
+    protected function formHasField(string $name): bool
+    {
+        foreach ($this->moduleConfig()['form'] ?? [] as $field) {
+            if (($field['name'] ?? null) === $name) {
                 return true;
             }
         }

@@ -455,52 +455,67 @@
 
 
         async function loadDashboardLists(filterType = null, year = null, month = null, startDate = null, endDate = null, active_id, active_type) {
-            let ref, snapshots, html;
-
-            let startTS = null, endTS = null;
-            if (filterType === 'year' && year) {
-                startTS = kweekDb.Timestamp.fromDate(new Date(year, 0, 1));
-                endTS = kweekDb.Timestamp.fromDate(new Date(year, 11, 31, 23, 59, 59));
-            } else if (filterType === 'month' && year && month) {
-                startTS = kweekDb.Timestamp.fromDate(new Date(year, month - 1, 1));
-                endTS = kweekDb.Timestamp.fromDate(new Date(year, month, 0, 23, 59, 59));
-            } else if (filterType === 'custom' && startDate && endDate) {
-                startTS = kweekDb.Timestamp.fromDate(toStartOfDay(startDate));
-                endTS = kweekDb.Timestamp.fromDate(toEndOfDay(endDate));
-            }
-
+            const noRecordRow = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
             const append_list_services = document.getElementById('append_list_services');
-            append_list_services.innerHTML = '';
-            ref = db.collection('providers_services')
-                .where('sectionId', '==', active_id);
-          
-            ref = ref.orderBy('reviewsCount', 'desc'); 
-
-            snapshots = await ref.limit(10).get();
-            html = buildServicesHTML(snapshots);
-            append_list_services.innerHTML = html;
-
             const append_list_recent_order = document.getElementById('append_list_recent_order');
-            append_list_recent_order.innerHTML = '';
-            ref = db.collection('provider_orders')
-                .where('sectionId', '==', active_id)
-                .where('status', 'in', ["Order Placed", "Order Accepted", "Order Assigned", "Order Ongoing", "Order Completed", "Order Cancelled"]);
-            ref = ref.orderBy('createdAt', 'desc');
-            snapshots = await ref.limit(10).get();
-            html = buildOrderHTML(snapshots);
-            append_list_recent_order.innerHTML = html;
-
-
             const append_list_top_providers = document.getElementById('append_list_top_providers');
+
+            append_list_services.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
             append_list_top_providers.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+            append_list_recent_order.innerHTML = '';
 
-            ref = db.collection('users').where('role', '==', 'provider').where('section_id', '==', active_id);
-           
-            snapshots = await ref.get();
+            try {
+                // Services: prefer current section, then fall back to all on-demand services
+                let serviceSnap = await db.collection('providers_services')
+                    .where('sectionId', '==', active_id)
+                    .limit(50)
+                    .get();
+                if (serviceSnap.empty) {
+                    serviceSnap = await db.collection('providers_services').limit(50).get();
+                }
+                const serviceDocs = serviceSnap.docs
+                    .map((doc) => {
+                        const val = doc.data() || {};
+                        val.id = doc.id;
+                        val.reviewsCount = parseInt(val.reviewsCount || 0, 10) || 0;
+                        return val;
+                    })
+                    .sort((a, b) => b.reviewsCount - a.reviewsCount)
+                    .slice(0, 10);
+                append_list_services.innerHTML = buildServicesHTMLFromList(serviceDocs) || noRecordRow;
 
+                // Recent bookings for this section
+                let orderSnap = await db.collection('provider_orders')
+                    .where('sectionId', '==', active_id)
+                    .where('status', 'in', ["Order Placed", "Order Accepted", "Order Assigned", "Order Ongoing", "Order Completed", "Order Cancelled"])
+                    .orderBy('createdAt', 'desc')
+                    .limit(10)
+                    .get();
+                if (orderSnap.empty) {
+                    orderSnap = await db.collection('provider_orders')
+                        .orderBy('createdAt', 'desc')
+                        .limit(10)
+                        .get();
+                }
+                append_list_recent_order.innerHTML = buildOrderHTML(orderSnap) || noRecordRow;
 
-            html = await buildProvidersHTML(snapshots);
-            append_list_top_providers.innerHTML = html;
+                // Providers: prefer section match, then fall back to all providers
+                let providerSnap = await db.collection('users')
+                    .where('role', '==', 'provider')
+                    .where('sectionId', '==', active_id)
+                    .get();
+                if (providerSnap.empty) {
+                    providerSnap = await db.collection('users')
+                        .where('role', '==', 'provider')
+                        .get();
+                }
+                append_list_top_providers.innerHTML = (await buildProvidersHTML(providerSnap)) || noRecordRow;
+            } catch (error) {
+                console.error('loadDashboardLists failed:', error);
+                append_list_services.innerHTML = noRecordRow;
+                append_list_top_providers.innerHTML = noRecordRow;
+                append_list_recent_order.innerHTML = noRecordRow;
+            }
             
             ['#servicesTable', '#orderTable', '#providersTable'].forEach(selector => {
 
@@ -1000,28 +1015,33 @@
 
 
         function buildServicesHTML(snapshots) {
+            const list = (snapshots && snapshots.docs ? snapshots.docs : []).map((doc) => {
+                const val = doc.data() || {};
+                val.id = doc.id;
+                return val;
+            });
+            return buildServicesHTMLFromList(list);
+        }
+
+        function buildServicesHTMLFromList(list) {
             var html = '';
-            var count = 1;
             var rating = 0;
-            snapshots.docs.forEach((listval) => {
-                val = listval.data();
-
-                val.id = listval.id;
-
+            (list || []).forEach((val) => {
                 var route = '<?php echo url("ondemand-services/edit/{id}");?>';
                 route = route.replace('{id}', val.id);
 
                 html = html + '<tr>';
-                let profileSrc = val.photos ? val.photos[0] : placeholderImage;
+                let profileSrc = escapeHtmlAttr(getProfileImageSrc(val, placeholderImage));
+                let fallbackSrc = escapeHtmlAttr(resolveMediaUrl(placeholderImage) || placeholderImage);
+                const title = val.title || val.name || 'Service';
 
                 html += '<td class="redirecttopage"><div class="top-driver-name">' +
-                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" alt="image">' +
-                    '<a href="' + route + '">' + val.title + '</a>' +
+                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image">' +
+                    '<a href="' + route + '">' + title + '</a>' +
                     '</div></td>';
 
-
-                if (val.hasOwnProperty('reviewsCount') && val.reviewsCount != 0) {
-                    rating = Math.round(parseFloat(val.reviewsSum) / parseInt(val.reviewsCount));
+                if (val.reviewsCount && val.reviewsCount != 0) {
+                    rating = Math.round(parseFloat(val.reviewsSum || 0) / parseInt(val.reviewsCount, 10));
                 } else {
                     rating = 0;
                 }
@@ -1035,27 +1055,28 @@
                 html = html + '</ul></td>';
                 html = html + '<td><span class="action-btn"><a href="' + route + '" > <i class="mdi mdi-lead-pencil"></i></a></span></td>';
                 html = html + '</tr>';
-
                 rating = 0;
-                count++;
             });
             return html;
         }
 
         async function getProviderServices(providerId) {
             var total = 0;
-            await database.collection('providers_services').where('author', '==', providerId).get().then(async function (snapshots) {
-
+            try {
+                const snapshots = await database.collection('providers_services').where('author', '==', providerId).get();
                 total = snapshots.docs.length;
-            });
+            } catch (e) {
+                console.error('getProviderServices failed', e);
+            }
             return total;
         }
         
         async function buildProvidersHTML(snapshots) {          
-
+            const docs = (snapshots && snapshots.docs) ? snapshots.docs : [];
             const providerList = await Promise.all(
-                snapshots.docs.map(async (doc) => {
-                    const val = doc.data();
+                docs.map(async (doc) => {
+                    const val = doc.data() || {};
+                    val.id = doc.id;
                     const serviceTotal = await getProviderServices(doc.id);
                     return { val, serviceTotal };
                 })
@@ -1077,15 +1098,17 @@
             let html = '';
 
             const provider_route = '<?php echo url("providers/edit/{id}");?>'.replace('{id}', val.id);
-            const profileSrc = val.profilePic ? val.profilePic : placeholderImage;
+            const profileSrc = escapeHtmlAttr(getProfileImageSrc(val, placeholderImage));
+            const fallbackSrc = escapeHtmlAttr(resolveMediaUrl(placeholderImage) || placeholderImage);
+            const fullName = ((val.firstName || '') + ' ' + (val.lastName || '')).trim();
 
             html += `
                 <tr>
                     <td class="redirecttopage">
                         <div class="top-driver-name">
                             <img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" 
-                                src="${profileSrc}" alt="image">
-                            <a href="${provider_route}">${val.firstName} ${val.lastName}</a>
+                                src="${profileSrc}" onerror="this.onerror=null;this.src='${fallbackSrc}'" alt="image">
+                            <a href="${provider_route}">${fullName}</a>
                         </div>
                     </td>
                     <td data-url="${provider_route}" class="total_services_${val.id} redirecttopage">${serviceTotal}</td>

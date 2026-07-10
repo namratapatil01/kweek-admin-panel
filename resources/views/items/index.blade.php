@@ -202,6 +202,7 @@
         $('.sectionDiv').hide();
         getStoreNameFunction(vendorID);
         var ref = database.collection('vendor_products').where('vendorID', '==', vendorID);
+        var baseItemsRef = ref;
     
     <?php } else { ?>            
 
@@ -219,8 +220,40 @@
             
             var ref = database.collection('vendor_products').where('section_id', '==', section_id);
         }
+        var baseItemsRef = ref;
 
     <?php } ?>
+
+    var itemsSectionFallback = null;
+    async function resolveItemsQuery() {
+        <?php if ($id != '') { ?>
+            return ref;
+        <?php } else { ?>
+            if (itemsSectionFallback !== null) {
+                return itemsSectionFallback;
+            }
+            try {
+                var probe = await baseItemsRef.limit(1).get();
+                if (!probe.empty) {
+                    itemsSectionFallback = baseItemsRef;
+                    return baseItemsRef;
+                }
+                // Migrated products use legacy Firebase section IDs; active admin section may not match
+                if (brandID != '' && brandID != undefined) {
+                    itemsSectionFallback = database.collection('vendor_products').where('brandID', '==', brandID);
+                } else if (categoryID != '' && categoryID != undefined) {
+                    itemsSectionFallback = database.collection('vendor_products').where('categoryID', '==', categoryID);
+                } else {
+                    itemsSectionFallback = database.collection('vendor_products');
+                }
+                return itemsSectionFallback;
+            } catch (e) {
+                console.warn('Items section fallback failed', e);
+                itemsSectionFallback = database.collection('vendor_products');
+                return itemsSectionFallback;
+            }
+        <?php } ?>
+    }
 
     async function getStoreNameFunction(vendorId) {
         var vendorName = '';
@@ -257,6 +290,9 @@
     })
 
     database.collection('vendor_categories').where('section_id','==',section_id).get().then(async function(snapshots) {
+        if (!snapshots.docs || snapshots.docs.length === 0) {
+            snapshots = await database.collection('vendor_categories').get();
+        }
         snapshots.docs.forEach((listval) => {
             var data=listval.data();
             $('.category_selector').append($("<option></option>")
@@ -265,11 +301,10 @@
         })
     });
 
-    var initialRef=ref;
     $('select').change(async function() {
         var itemType = $('.item_type_selector').val();
         var category = $('.category_selector').val();
-        refData = initialRef;
+        refData = await resolveItemsQuery();
       
         if (itemType) {
            refData= (itemType=="veg") ? refData.where('nonveg', '==', false) : refData.where('nonveg', '==', true)          
@@ -284,7 +319,7 @@
     $(document).ready(async function () {
 
         let sectionSnap = await database.collection('sections').doc(section_id).get();
-        let sectionData = sectionSnap.data();
+        let sectionData = sectionSnap.data() || {};
         if (sectionData.dine_in_active === true) {
             $(".dine_in_future").show();
         }
@@ -437,8 +472,9 @@
                     $('#data-table_processing').show();
                 }
 
-
-                await ref.get().then(async function (querySnapshot) {
+                var hasClientFilter = !!( $('.item_type_selector').val() || $('.category_selector').val() );
+                const itemsQuery = hasClientFilter ? ref : await resolveItemsQuery();
+                await itemsQuery.get().then(async function (querySnapshot) {
                     if (querySnapshot.empty) {
                         $('.total_count').text(0);
 

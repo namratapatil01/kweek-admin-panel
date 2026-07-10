@@ -211,11 +211,9 @@
                     html += '<tr><td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
                         'for="is_open_' + id + '" ></label></td>';
                 }
-                if (val.image == '') {
-                    html += '<td><img class="rounded" style="width:50px" src="' + placeholderImage + '" alt="image"><a class="left_space" href="' + route1 + '">' + val.title + '</a></td>';
-                } else {
-                    html += '<td><img class="rounded" style="width:50px" src="' + val.image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="image"><a class="left_space" href="' + route1 + '">' + val.title + '</a></td>';
-                }
+                var categorySrc = escapeHtmlAttr(getProfileImageSrc(val, placeholderImage));
+                var fallbackSrc = escapeHtmlAttr(resolveMediaUrl(placeholderImage) || placeholderImage);
+                html += '<td><img class="rounded" style="width:50px" src="' + categorySrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image"><a class="left_space" href="' + route1 + '">' + (val.title || '') + '</a></td>';
                 if (val.publish) {
                     html += '<td><label class="switch"><input type="checkbox" checked id="' + val.id + '" name="isSwitch"><span class="slider round"></span></label></td>';
                 } else {

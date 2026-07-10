@@ -19,6 +19,7 @@ class AdvertisementsController extends Controller
     {
         return view('advertisements.index', [
             'vendorId' => $id,
+            'totalAds' => DB::table('advertisements')->when($id, fn ($q) => $q->where('vendorId', $id))->count(),
         ]);
     }
 
@@ -83,16 +84,16 @@ class AdvertisementsController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
-        $draw = (int) $request->input('draw', 1);
+        try {
+            $draw = (int) $request->input('draw', 1);
         $start = (int) $request->input('start', 0);
         $length = (int) $request->input('length', 10);
         $search = trim($request->input('search.value', ''));
-        $vendorId = $request->input('vendor_id', '');
-        $sectionId = $request->input('section_id') ?: $request->cookie('section_id');
+        $vendorId = $request->input('vendor_id');
 
         $query = DB::table('advertisements');
 
-        if ($vendorId !== '') {
+        if ($vendorId) {
             $query->where('vendorId', $vendorId);
         }
 
@@ -219,6 +220,17 @@ class AdvertisementsController extends Controller
             'recordsFiltered' => $total,
             'data' => $rows,
         ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AdvertisementsController@datatable', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'draw' => (int) $request->input('draw', 1),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function store(Request $request)

@@ -115,7 +115,11 @@
                             <div class="form-group row width-100" id="attributes_div" style="display:none">
                                 <label class="col-3 control-label">{{ trans('lang.item_attribute_id') }}</label>
                                 <div class="col-7">
-                                    <select id='item_attribute' class="form-control chosen-select" required multiple="multiple" style="display: none;"></select>
+                                    <select id="item_attribute" class="form-control chosen-select"
+                                        multiple="multiple" style="display: none;"></select>
+                                    <div class="form-text text-muted">
+                                        Select attributes from Item Attributes List (Size, Color, Type, etc.)
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group row width-100">
@@ -318,8 +322,8 @@
         var sectionData = '';
         var sectionRef = database.collection('sections').doc(section_id);
         sectionRef.get().then(async function(snapshots) {
-            sectionData = snapshots.data();
-            if (sectionData.adminCommision.enable == true) {
+            sectionData = snapshots.data() || {};
+            if (sectionData.adminCommision && sectionData.adminCommision.enable == true) {
                 commissionModel = true;
             }
             if(sectionData.serviceTypeFlag == "ecommerce-service"){
@@ -344,10 +348,8 @@
 
             if (sectionData.serviceTypeFlag == "ecommerce-service" || sectionData.serviceTypeFlag == "delivery-service") {
                 $("#attributes_div").show();
-                $("#item_attribute_chosen").css({
-                    'width': '100%'
-                });
-            }else{
+                $("#item_attribute_chosen").css({ 'width': '100%' });
+            } else {
                 $("#item_attribute").val('').trigger("chosen:updated");
                 $("#attributes_div").hide();
                 $("#item_attributes").html('');
@@ -437,34 +439,53 @@
                 })
             })
             
-            database.collection('vendors').where('section_id', '==', section_id).orderBy('title').where('title', '!=', '').get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
+            database.collection('vendors').where('section_id', '==', section_id).get().then(async function(snapshots) {
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('vendors').get();
+                }
+                var vendorsSorted = (snapshots.docs || [])
+                    .map(function (listval) {
+                        var data = listval.data() || {};
+                        data.id = listval.id;
+                        return data;
+                    })
+                    .filter(function (data) { return !!(data.title && String(data.title).trim()); })
+                    .sort(function (a, b) { return String(a.title).localeCompare(String(b.title)); });
+
+                vendorsSorted.forEach(function (data) {
                     vendor_list.push(data);
                     vendors.push(data);
                     $('#item_vendor').append($("<option></option>")
                         .attr("value", data.id)
-                        .attr("data-section-id", data.section_id)
+                        .attr("data-section-id", data.section_id || '')
                         .text(data.title));
-                })
+                });
             });
             
             database.collection('vendor_categories').where('publish', '==', true).get().then(async function(snapshots) {
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('vendor_categories').get();
+                }
                 snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
+                    var data = listval.data() || {};
+                    data.id = listval.id;
                     categories_list.push(data);
-                })
+                });
             });
 
             var brandRef = database.collection('brands').where('sectionId', '==', section_id);
             brandRef.get().then(async function(snapshots) {
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('brands').get();
+                }
                 snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
+                    var data = listval.data() || {};
+                    data.id = listval.id;
                     brand_list.push(data);
                     $('#brand').append($("<option></option>")
                         .attr("value", data.id)
-                        .text(data.title));
-                })
+                        .text(data.title || data.name || data.id));
+                });
             });
 
             jQuery("#data-table_processing").show();
@@ -483,33 +504,38 @@
                 var selected_attributes = [];
                 if (product.item_attribute != null) {
                     $("#attributes_div").show();
-                    $.each(product.item_attribute.attributes, function(index, attribute) {
+                    $.each(product.item_attribute.attributes || [], function(index, attribute) {
                         selected_attributes.push(attribute.attribute_id);
                     });
-                    $('#attributes').val(JSON.stringify(product.item_attribute.attributes));
-                    $('#variants').val(JSON.stringify(product.item_attribute.variants));
+                    $('#attributes').val(JSON.stringify(product.item_attribute.attributes || []));
+                    $('#variants').val(JSON.stringify(product.item_attribute.variants || []));
                 }
                 
                 var attributes = database.collection('vendor_attributes');
                 attributes.get().then(async function(snapshots) {
                     snapshots.docs.forEach((listval) => {
-                        var data = listval.data();
+                        var data = listval.data() || {};
+                        data.id = listval.id;
                         attributes_list.push(data);
                         var selected = '';
                         if ($.inArray(data.id, selected_attributes) !== -1) {
-                            var selected = 'selected="selected"';
+                            selected = 'selected="selected"';
                         }
-                        var option = '<option value="' + data.id + '" ' + selected + '>' + data.title + '</option>';
+                        var option = '<option value="' + data.id + '" ' + selected + '>' + (data.title || data.name || data.id) + '</option>';
                         $('#item_attribute').append(option);
                     });
                     $("#item_attribute").show().chosen({
-                        "placeholder_text": "{{ trans('lang.select_attribute') }}"
+                        "placeholder_text": "{{ trans('lang.select_attribute') }}",
+                        "allow_single_deselect": true
+                    }).off('change.itemAttrChosen').on('change.itemAttrChosen', function () {
+                        selectAttribute(window._savedItemAttributeEncoded || '');
                     });
                     if (product.item_attribute) {
-                        $("#item_attribute").attr("onChange", "selectAttribute('" + btoa(JSON.stringify(product.item_attribute)) + "')");
-                        selectAttribute(btoa(JSON.stringify(product.item_attribute)));
+                        window._savedItemAttributeEncoded = btoa(JSON.stringify(product.item_attribute));
+                        selectAttribute(window._savedItemAttributeEncoded);
+                        variants_update(window._savedItemAttributeEncoded);
                     } else {
-                        $("#item_attribute").attr("onChange", "selectAttribute()");
+                        window._savedItemAttributeEncoded = '';
                         selectAttribute();
                     }
                 });
@@ -1169,86 +1195,164 @@
 
         async function change_categories(selected_vendor, selected_category = null) {
             await database.collection('vendors').doc(selected_vendor).get().then(async function(snapshot) {
-                if (snapshot.exists) {
-                    var data = snapshot.data();
-                    var categoryIDs = [];
-                    categoryIDs = data.categoryID;
-                    $('#item_category').empty();
-                    categories_list.forEach((val) => {
-                        if (categoryIDs.includes(val.id)) {
-                            $('#item_category').append($("<option></option>")
-                                .attr("value", val.id)
-                                .attr("section_id", val.section_id)
-                                .text(val.title));
-                        }
-                    })
-                    if (selected_category) {
-                        $('#item_category').val(selected_category);
-                    }
+                if (!snapshot.exists) {
+                    return;
                 }
-            })
-        }
+                var data = snapshot.data() || {};
+                var categoryIDs = data.categoryID || [];
+                if (typeof categoryIDs === 'string') {
+                    try { categoryIDs = JSON.parse(categoryIDs); } catch (e) { categoryIDs = []; }
+                }
+                if (!Array.isArray(categoryIDs)) {
+                    categoryIDs = [];
+                }
 
-        function selectAttribute(item_attribute = '') {
-            if (item_attribute) {
-                var item_attribute = $.parseJSON(atob(item_attribute));
-            }
-            var html = '';
-            $("#item_attribute").find('option:selected').each(function() {
-                var $this = $(this);
-                var selected_options = [];
-                if (item_attribute) {
-                    $.each(item_attribute.attributes, function(index, attribute) {
-                        if ($this.val() == attribute.attribute_id) {
-                            selected_options.push(attribute.attribute_options);
+                $('#item_category').empty();
+                $('#item_category').append($("<option></option>")
+                    .attr("value", "").text("{{ trans('lang.select_category') }}"));
+
+                var matched = 0;
+                var vendorSection = data.section_id || '';
+
+                function appendCategory(val) {
+                    $('#item_category').append($("<option></option>")
+                        .attr("value", val.id)
+                        .attr("section_id", val.section_id || '')
+                        .text(val.title || val.name || val.id));
+                    matched++;
+                }
+
+                categories_list.forEach(function (val) {
+                    if (categoryIDs.length && categoryIDs.includes(val.id)) {
+                        appendCategory(val);
+                    }
+                });
+                if (matched === 0 && vendorSection) {
+                    categories_list.forEach(function (val) {
+                        if (val.section_id == vendorSection) {
+                            appendCategory(val);
                         }
                     });
                 }
-                html += '<div class="row" id="attr_' + $this.val() + '">';
+                if (matched === 0) {
+                    categories_list.forEach(function (val) {
+                        appendCategory(val);
+                    });
+                }
+                if (selected_category) {
+                    $('#item_category').val(selected_category);
+                }
+            });
+        }
+
+        function selectAttribute(item_attribute = '') {
+            var savedAttribute = null;
+            if (item_attribute) {
+                try {
+                    savedAttribute = $.parseJSON(atob(item_attribute));
+                } catch (e) {
+                    savedAttribute = null;
+                }
+            }
+
+            var previousValues = {};
+            $("#item_attributes input[data-role=tagsinput]").each(function () {
+                previousValues[this.id] = $(this).val() || '';
+                try { $(this).tagsinput('destroy'); } catch (e) {}
+            });
+
+            var html = '';
+            var selected = $("#item_attribute").val() || [];
+            if (!Array.isArray(selected)) {
+                selected = selected ? [selected] : [];
+            }
+
+            $("#item_attribute").find('option:selected').each(function () {
+                var $this = $(this);
+                var attrId = $this.val();
+                var inputId = 'attribute_options_' + attrId;
+                var selected_options = previousValues[inputId] || '';
+
+                if (!selected_options && savedAttribute && savedAttribute.attributes) {
+                    $.each(savedAttribute.attributes, function (index, attribute) {
+                        if ($this.val() == attribute.attribute_id) {
+                            selected_options = (attribute.attribute_options || []).join(',');
+                        }
+                    });
+                }
+
+                html += '<div class="row mb-2" id="attr_' + attrId + '">';
                 html += '<div class="col-md-3">';
                 html += '<label>' + $this.text() + '</label>';
                 html += '</div>';
                 html += '<div class="col-lg-9">';
-                html += '<input type="text" class="form-control" id="attribute_options_' + $this.val() + '" value="' + selected_options + '" placeholder="Add attribute values" data-role="tagsinput" onchange="variants_update(\'' + btoa(JSON.stringify(item_attribute)) + '\')">';
+                html += '<input type="text" class="form-control" id="' + inputId + '" value="' + String(selected_options).replace(/"/g, '&quot;') + '" placeholder="Add attribute values" data-role="tagsinput">';
                 html += '</div>';
                 html += '</div>';
             });
+
             $("#item_attributes").html(html);
-            $("#item_attributes input[data-role=tagsinput]").tagsinput();
-            if ($("#item_attribute").val().length == 0) {
+            bindAttributeTagsInputs(item_attribute);
+
+            if (selected.length === 0) {
                 $("#attributes").val('');
                 $("#variants").val('');
                 $("#item_variants").html('');
+                return;
             }
+
+            variants_update(item_attribute);
         }
-        
+
+        function bindAttributeTagsInputs(item_attribute) {
+            $("#item_attributes input[data-role=tagsinput]").each(function () {
+                var $input = $(this);
+                try { $input.tagsinput('destroy'); } catch (e) {}
+                $input.tagsinput();
+                $input.off('itemAdded.itemAttr itemRemoved.itemAttr change.itemAttr')
+                    .on('itemAdded.itemAttr itemRemoved.itemAttr change.itemAttr', function () {
+                        variants_update(item_attribute || window._savedItemAttributeEncoded || '');
+                    });
+            });
+        }
+
         function variants_update(item_attributeX = '') {
+            var savedVariants = null;
             if (item_attributeX) {
-                var item_attributeX = $.parseJSON(atob(item_attributeX));
+                try {
+                    savedVariants = $.parseJSON(atob(item_attributeX));
+                } catch (e) {
+                    savedVariants = null;
+                }
             }
             var html = '';
-            var item_attribute = $("#item_attribute").map(function(idx, ele) {
-                return $(ele).val();
-            }).get();
+            var item_attribute = $("#item_attribute").val() || [];
+            if (!Array.isArray(item_attribute)) {
+                item_attribute = item_attribute ? [item_attribute] : [];
+            }
             if (item_attribute.length > 0) {
                 var attributes = [];
                 var attributeSet = [];
-                $.each(item_attribute, function(index, attribute) {
-                    var attribute_options = $("#attribute_options_" + attribute).val();
+                $.each(item_attribute, function (index, attribute) {
+                    var $opt = $("#attribute_options_" + attribute);
+                    var attribute_options = $opt.length ? ($opt.val() || '') : '';
                     if (attribute_options) {
-                        var attribute_options = attribute_options.split(',');
-                        attribute_options = $.map(attribute_options, function(value) {
-                            return value.replace(/[^a-zA-Z0-9]/g, '');
+                        attribute_options = attribute_options.split(',').map(function (value) {
+                            return String(value || '').replace(/[^a-zA-Z0-9]/g, '');
+                        }).filter(function (value) {
+                            return value.length > 0;
                         });
-                        attributeSet.push(attribute_options);
-                        attributes.push({
-                            'attribute_id': attribute,
-                            'attribute_options': attribute_options
-                        });
+                        if (attribute_options.length) {
+                            attributeSet.push(attribute_options);
+                            attributes.push({
+                                'attribute_id': attribute,
+                                'attribute_options': attribute_options
+                            });
+                        }
                     }
                 });
                 $('#attributes').val(JSON.stringify(attributes));
-                var variants = getCombinations(attributeSet);
+                var variants = getCombinations(attributeSet) || [];
                 $('#variants').val(JSON.stringify(variants));
                 if (attributeSet.length > 0) {
                     html += '<table class="table table-bordered">';
@@ -1261,24 +1365,32 @@
                     html += '</tr>';
                     html += '</thead>';
                     html += '<tbody>';
-                    $.each(variants, function(index, variant) {
-                        var variant_price = 1;
-                        var variant_qty = 1;
-                        var variant_image = variant_image_url = '';
-                        if (item_attributeX) {
-                            var variant_info = $.map(item_attributeX.variants, function(v, i) {
+                    $.each(variants, function (index, variant) {
+                        var variant_price = $('#price_' + variant).val() || 1;
+                        var variant_qty = $('#qty_' + variant).length ? ($('#qty_' + variant).val() || -1) : -1;
+                        var variant_image = '';
+                        var variant_image_url = $('#variant_' + variant + '_url').val() || '';
+                        if (savedVariants && savedVariants.variants) {
+                            var variant_info = $.map(savedVariants.variants, function (v) {
                                 if (v.variant_sku == variant) {
                                     return v;
                                 }
                             });
                             if (variant_info[0]) {
-                                variant_price = variant_info[0].variant_price;
-                                variant_qty = variant_info[0].variant_quantity;
-                                if (variant_info[0].variant_image) {
+                                if (!$('#price_' + variant).length) {
+                                    variant_price = variant_info[0].variant_price;
+                                }
+                                if (!$('#qty_' + variant).length) {
+                                    variant_qty = variant_info[0].variant_quantity;
+                                }
+                                if (variant_info[0].variant_image && !variant_image_url) {
                                     variant_image = '<img class="rounded" style="width:50px" src="' + variant_info[0].variant_image + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="image"><i class="mdi mdi-delete" data-variant="' + variant + '"></i>';
                                     variant_image_url = variant_info[0].variant_image;
                                 }
                             }
+                        }
+                        if (variant_image_url && !variant_image) {
+                            variant_image = '<img class="rounded" style="width:50px" src="' + variant_image_url + '" onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="image"><i class="mdi mdi-delete" data-variant="' + variant + '"></i>';
                         }
                         html += '<tr>';
                         html += '<td><label for="" class="control-label">' + variant + '</label></td>';
@@ -1305,7 +1417,13 @@
                     });
                     html += '</tbody>';
                     html += '</table>';
+                } else {
+                    $('#attributes').val('');
+                    $('#variants').val('');
                 }
+            } else {
+                $('#attributes').val('');
+                $('#variants').val('');
             }
             $("#item_variants").html(html);
         }
