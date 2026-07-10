@@ -95,4 +95,24 @@ class DriverWalletController extends Controller
             'Withdraw method saved'
         );
     }
+
+    public function topUp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1'],
+            'paymentMethod' => ['nullable', 'string', 'max:64'],
+            'paymentStatus' => ['nullable', 'string', 'max:32'],
+            'transactionId' => ['nullable', 'string', 'max:128'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->walletService->topUp($user, $data),
+            'Wallet topped up',
+            201
+        );
+    }
 }

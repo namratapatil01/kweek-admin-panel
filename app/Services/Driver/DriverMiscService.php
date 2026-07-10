@@ -9,8 +9,14 @@ use App\Models\CarModel;
 use App\Models\CmsPage;
 use App\Models\Document;
 use App\Models\DocumentVerify;
+use App\Models\DynamicNotification;
+use App\Models\ParcelCategory;
+use App\Models\ParcelWeight;
+use App\Models\RentalPackage;
+use App\Models\RentalVehicleType;
 use App\Models\Section;
 use App\Models\VehicleType;
+use App\Models\Vendor;
 use App\Models\Zone;
 use App\Services\SettingsService;
 use App\Services\Storage\FileStorageService;
@@ -62,10 +68,49 @@ class DriverMiscService
         return [
             'sections' => $sectionsQuery->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
             'zones' => Zone::query()->where('publish', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
-            'vehicle_types' => VehicleType::query()->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
-            'car_makes' => CarMake::query()->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
-            'car_models' => CarModel::query()->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'vehicle_types' => VehicleType::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'rental_vehicle_types' => RentalVehicleType::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'car_makes' => CarMake::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'car_models' => CarModel::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'parcel_categories' => ParcelCategory::query()->where('publish', true)->orderBy('set_order')->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'parcel_weights' => ParcelWeight::query()->where('publish', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'rental_packages' => RentalPackage::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
         ];
+    }
+
+    public function vendor(string $vendorId): ?array
+    {
+        return Vendor::query()->find($vendorId)?->toDocumentArray();
+    }
+
+    public function notificationContent(string $type): array
+    {
+        $notification = DynamicNotification::query()->where('type', $type)->first();
+
+        if ($notification) {
+            return $notification->toDocumentArray();
+        }
+
+        return [
+            'id' => '',
+            'type' => $type,
+            'subject' => 'setup notification',
+            'message' => 'Notification setup is pending',
+        ];
+    }
+
+    public function markNotificationRead(string $notificationId): ?array
+    {
+        $notification = AppNotification::query()->find($notificationId);
+
+        if (! $notification) {
+            return null;
+        }
+
+        $notification->mergePayload(['isRead' => true]);
+        $notification->save();
+
+        return $notification->fresh()->toDocumentArray();
     }
 
     public function documents(?string $serviceType = null): array

@@ -94,4 +94,29 @@ class DriverOwnerController extends Controller
 
         return ApiResponse::success(new DriverResource($driver), 'Fleet driver image uploaded');
     }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+        $this->ownerService->deleteDriver($user, $id);
+
+        return ApiResponse::success(null, 'Fleet driver deleted');
+    }
+
+    public function locations(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success($this->ownerService->driverLocations($user));
+    }
+
+    public function dashboard(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success($this->ownerService->dashboard($user));
+    }
 }

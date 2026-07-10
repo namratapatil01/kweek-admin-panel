@@ -141,7 +141,35 @@
           }
         },
         { "name": "Logout", "request": { "method": "POST", "url": "{{base_url}}/api/driver/logout" } },
-        { "name": "Delete Account", "request": { "method": "DELETE", "url": "{{base_url}}/api/driver/account" } }
+        { "name": "Delete Account", "request": { "method": "DELETE", "url": "{{base_url}}/api/driver/account" } },
+        {
+          "name": "Send Phone OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9999999999\",\n  \"countryCode\": \"+91\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/auth/phone/send-otp"
+          }
+        },
+        {
+          "name": "Verify Phone OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationId\": \"VERIFICATION_UUID\",\n  \"otp\": \"123456\",\n  \"phoneNumber\": \"9999999999\",\n  \"countryCode\": \"+91\",\n  \"fcmToken\": \"\",\n  \"serviceType\": \"delivery-service\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/auth/phone/verify-otp"
+          }
+        }
       ]
     },
     {
@@ -233,6 +261,17 @@
       ]
     },
     {
+      "name": "Settings",
+      "item": [
+        { "name": "All Settings (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/settings" } },
+        { "name": "Payment Settings (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/settings/payment" } },
+        { "name": "Languages (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/settings/languages" } },
+        { "name": "Taxes (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/settings/taxes?country=India" } },
+        { "name": "Setting By Key (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/settings/DriverNearBy" } },
+        { "name": "Vendor By ID (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/catalog/vendor/VENDOR_ID" } }
+      ]
+    },
+    {
       "name": "Orders",
       "item": [
         {
@@ -296,18 +335,48 @@
           }
         },
         {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Transit\",\n  \"otp\": \"1234\",\n  \"reason\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/orders/{{order_type}}/{{order_id}}/status"
+          }
+        },
+        {
           "name": "Complete Order",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"otp\": \"1234\"\n}",
+              "raw": "{\n  \"otp\": \"1234\",\n  \"endKilometerReading\": 12150\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{base_url}}/api/driver/orders/{{order_type}}/{{order_id}}/complete"
           }
-        }
+        },
+        {
+          "name": "Start Order (Rental KM)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"otp\": \"1234\",\n  \"startKilometerReading\": 12000\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/orders/rental/{{order_id}}/start"
+          }
+        },
+        { "name": "Order Stream", "request": { "method": "GET", "url": "{{base_url}}/api/driver/orders/stream?type={{order_type}}&since=2026-01-01T00:00:00Z" } },
+        { "name": "Search Parcel Orders", "request": { "method": "GET", "url": "{{base_url}}/api/driver/orders/parcel/search?latitude=12.9716&longitude=77.5946&radius=10" } },
+        { "name": "Search Rental Orders", "request": { "method": "GET", "url": "{{base_url}}/api/driver/orders/rental/search?latitude=12.9716&longitude=77.5946&radius=10&sectionId={{section_id}}" } },
+        { "name": "Track Order", "request": { "method": "GET", "url": "{{base_url}}/api/driver/tracking/orders/{{order_type}}/{{order_id}}" } }
       ]
     },
     {
@@ -330,6 +399,19 @@
           }
         },
         { "name": "Payout History", "request": { "method": "GET", "url": "{{base_url}}/api/driver/wallet/payouts" } },
+        {
+          "name": "Wallet Top-Up",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500,\n  \"paymentMethod\": \"stripe\",\n  \"paymentStatus\": \"success\",\n  \"transactionId\": \"txn_xxx\",\n  \"note\": \"Wallet top-up\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/wallet/topup"
+          }
+        },
         { "name": "Get Withdraw Method", "request": { "method": "GET", "url": "{{base_url}}/api/driver/withdraw-method" } },
         {
           "name": "Save Withdraw Method",
@@ -377,6 +459,21 @@
             },
             "url": "{{base_url}}/api/driver/chat/upload"
           }
+        },
+        { "name": "Restaurant Inbox", "request": { "method": "GET", "url": "{{base_url}}/api/driver/chat/restaurant/inbox" } },
+        { "name": "Restaurant Messages", "request": { "method": "GET", "url": "{{base_url}}/api/driver/chat/restaurant/{{order_id}}/messages" } },
+        {
+          "name": "Send Restaurant Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"restaurantId\": \"\",\n  \"message\": \"Order picked up\",\n  \"messageType\": \"text\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/chat/restaurant/send"
+          }
         }
       ]
     },
@@ -386,7 +483,36 @@
         { "name": "List Reviews", "request": { "method": "GET", "url": "{{base_url}}/api/driver/reviews" } },
         { "name": "Review By Order", "request": { "method": "GET", "url": "{{base_url}}/api/driver/reviews/order/{{order_id}}" } },
         { "name": "Ratings", "request": { "method": "GET", "url": "{{base_url}}/api/driver/ratings" } },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"customerId\": \"CUSTOMER_ID\",\n  \"rating\": 4.5,\n  \"comment\": \"Good passenger\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/driver/reviews"
+          }
+        },
         { "name": "Notifications", "request": { "method": "GET", "url": "{{base_url}}/api/driver/notifications" } },
+        { "name": "Notification Content", "request": { "method": "GET", "url": "{{base_url}}/api/driver/notifications/content/driver_completed" } },
+        { "name": "Mark Notification Read", "request": { "method": "PATCH", "url": "{{base_url}}/api/driver/notifications/NOTIFICATION_ID/read" } },
+        {
+          "name": "File Upload",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "directory", "type": "text", "value": "uploads/driver" }
+              ]
+            },
+            "url": "{{base_url}}/api/driver/uploads"
+          }
+        },
         { "name": "Terms", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/terms" } },
         { "name": "Privacy", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/driver/privacy" } },
         { "name": "Document Templates", "request": { "method": "GET", "url": "{{base_url}}/api/driver/documents" } },
@@ -403,6 +529,20 @@
             },
             "url": "{{base_url}}/api/driver/documents"
           }
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "side", "type": "text", "value": "front", "description": "front or back" }
+              ]
+            },
+            "url": "{{base_url}}/api/driver/documents/upload"
+          }
         }
       ]
     },
@@ -410,6 +550,8 @@
       "name": "Fleet Owner",
       "item": [
         { "name": "List Fleet Drivers", "request": { "method": "GET", "url": "{{base_url}}/api/driver/owner/drivers" } },
+        { "name": "Owner Dashboard", "request": { "method": "GET", "url": "{{base_url}}/api/driver/owner/dashboard" } },
+        { "name": "Fleet Driver Locations", "request": { "method": "GET", "url": "{{base_url}}/api/driver/owner/drivers/locations" } },
         {
           "name": "Create Fleet Driver",
           "request": {
@@ -447,7 +589,21 @@
             },
             "url": "{{base_url}}/api/driver/owner/drivers/{{fleet_driver_id}}"
           }
-        }
+        },
+        {
+          "name": "Upload Fleet Driver Image",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/api/driver/owner/drivers/{{fleet_driver_id}}/image"
+          }
+        },
+        { "name": "Delete Fleet Driver", "request": { "method": "DELETE", "url": "{{base_url}}/api/driver/owner/drivers/{{fleet_driver_id}}" } }
       ]
     }
   ]

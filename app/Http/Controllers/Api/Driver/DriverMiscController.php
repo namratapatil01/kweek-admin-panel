@@ -81,4 +81,31 @@ class DriverMiscController extends Controller
             'Document uploaded'
         );
     }
+
+    public function vendor(string $vendorId): JsonResponse
+    {
+        $vendor = $this->miscService->vendor($vendorId);
+
+        if (! $vendor) {
+            return ApiResponse::error('Vendor not found', 404);
+        }
+
+        return ApiResponse::success($vendor);
+    }
+
+    public function notificationContent(string $type): JsonResponse
+    {
+        return ApiResponse::success($this->miscService->notificationContent($type));
+    }
+
+    public function markNotificationRead(string $id): JsonResponse
+    {
+        $notification = $this->miscService->markNotificationRead($id);
+
+        if (! $notification) {
+            return ApiResponse::error('Notification not found', 404);
+        }
+
+        return ApiResponse::success($notification, 'Notification marked as read');
+    }
 }

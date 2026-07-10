@@ -42,6 +42,9 @@ use App\Http\Controllers\Api\Driver\DriverOrderController;
 use App\Http\Controllers\Api\Driver\DriverOwnerController;
 use App\Http\Controllers\Api\Driver\DriverProfileController;
 use App\Http\Controllers\Api\Driver\DriverReviewController;
+use App\Http\Controllers\Api\Driver\DriverSettingsController;
+use App\Http\Controllers\Api\Driver\DriverTrackingController;
+use App\Http\Controllers\Api\Driver\DriverUploadController;
 use App\Http\Controllers\Api\Driver\DriverWalletController;
 use App\Http\Controllers\Api\Vendor\VendorAdvertisementController;
 use App\Http\Controllers\Api\Vendor\VendorAuthController;
@@ -330,12 +333,20 @@ Route::prefix('driver')->group(function () {
     Route::post('auth/google', [DriverAuthController::class, 'loginWithGoogle']);
     Route::post('auth/apple', [DriverAuthController::class, 'loginWithApple']);
     Route::post('auth/phone', [DriverAuthController::class, 'loginWithPhone']);
+    Route::post('auth/phone/send-otp', [DriverAuthController::class, 'sendPhoneOtp']);
+    Route::post('auth/phone/verify-otp', [DriverAuthController::class, 'verifyPhoneOtp']);
     Route::post('password/forgot', [DriverAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [DriverAuthController::class, 'resetPassword']);
     Route::get('home', [DriverDashboardController::class, 'home']);
     Route::get('terms', [DriverMiscController::class, 'terms']);
     Route::get('privacy', [DriverMiscController::class, 'privacy']);
     Route::get('catalog', [DriverMiscController::class, 'catalog']);
+    Route::get('settings', [DriverSettingsController::class, 'index']);
+    Route::get('settings/payment', [DriverSettingsController::class, 'payment']);
+    Route::get('settings/languages', [DriverSettingsController::class, 'languages']);
+    Route::get('settings/taxes', [DriverSettingsController::class, 'taxes']);
+    Route::get('settings/{key}', [DriverSettingsController::class, 'show']);
+    Route::get('catalog/vendor/{vendorId}', [DriverMiscController::class, 'vendor'])->where('vendorId', '[a-zA-Z0-9\-_]+');
 
     Route::middleware(['auth:sanctum', 'app.role:driver'])->group(function () {
         Route::post('logout', [DriverAuthController::class, 'logout']);
@@ -351,6 +362,9 @@ Route::prefix('driver')->group(function () {
         Route::get('dashboard', [DriverDashboardController::class, 'dashboard']);
 
         Route::get('orders', [DriverOrderController::class, 'index']);
+        Route::get('orders/stream', [DriverOrderController::class, 'stream']);
+        Route::get('orders/parcel/search', [DriverOrderController::class, 'searchParcel']);
+        Route::get('orders/rental/search', [DriverOrderController::class, 'searchRental']);
         Route::get('orders/{type}/{id}', [DriverOrderController::class, 'show'])
             ->where('type', 'vendor|ride|parcel|rental')
             ->where('id', '[a-zA-Z0-9\-_]+');
@@ -372,6 +386,7 @@ Route::prefix('driver')->group(function () {
 
         Route::get('wallet', [DriverWalletController::class, 'balance']);
         Route::get('wallet/transactions', [DriverWalletController::class, 'transactions']);
+        Route::post('wallet/topup', [DriverWalletController::class, 'topUp']);
         Route::get('earnings', [DriverWalletController::class, 'earnings']);
         Route::post('wallet/withdraw', [DriverWalletController::class, 'withdraw']);
         Route::get('wallet/payouts', [DriverWalletController::class, 'payoutHistory']);
@@ -379,24 +394,39 @@ Route::prefix('driver')->group(function () {
         Route::put('withdraw-method', [DriverWalletController::class, 'saveWithdrawMethod']);
 
         Route::get('chat/inbox', [DriverChatController::class, 'inbox']);
+        Route::get('chat/restaurant/inbox', [DriverChatController::class, 'restaurantInbox']);
         Route::get('chat/{orderId}/messages', [DriverChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('chat/restaurant/{orderId}/messages', [DriverChatController::class, 'restaurantMessages'])->where('orderId', '[a-zA-Z0-9\-_]+');
         Route::post('chat/send', [DriverChatController::class, 'send']);
+        Route::post('chat/restaurant/send', [DriverChatController::class, 'sendRestaurant']);
         Route::post('chat/upload', [DriverChatController::class, 'upload']);
 
+        Route::get('tracking/orders/{type}/{id}', [DriverTrackingController::class, 'order'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::post('uploads', [DriverUploadController::class, 'store']);
+
         Route::get('reviews', [DriverReviewController::class, 'index']);
+        Route::post('reviews', [DriverReviewController::class, 'store']);
         Route::get('reviews/order/{orderId}', [DriverReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
         Route::get('ratings', [DriverReviewController::class, 'ratings']);
 
         Route::get('notifications', [DriverMiscController::class, 'notifications']);
+        Route::get('notifications/content/{type}', [DriverMiscController::class, 'notificationContent']);
+        Route::patch('notifications/{id}/read', [DriverMiscController::class, 'markNotificationRead']);
         Route::get('documents', [DriverMiscController::class, 'documents']);
         Route::get('documents/status', [DriverMiscController::class, 'documentStatus']);
         Route::post('documents', [DriverMiscController::class, 'submitDocuments']);
         Route::post('documents/upload', [DriverMiscController::class, 'uploadDocument']);
 
         Route::get('owner/drivers', [DriverOwnerController::class, 'index']);
+        Route::get('owner/dashboard', [DriverOwnerController::class, 'dashboard']);
+        Route::get('owner/drivers/locations', [DriverOwnerController::class, 'locations']);
         Route::post('owner/drivers', [DriverOwnerController::class, 'store']);
         Route::get('owner/drivers/{id}', [DriverOwnerController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::put('owner/drivers/{id}', [DriverOwnerController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('owner/drivers/{id}', [DriverOwnerController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::post('owner/drivers/{id}/image', [DriverOwnerController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
     });
 });

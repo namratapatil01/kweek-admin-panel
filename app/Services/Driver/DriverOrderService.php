@@ -7,15 +7,25 @@ use App\Models\ParcelOrder;
 use App\Models\RentalOrder;
 use App\Models\Ride;
 use App\Models\VendorOrder;
-use App\Models\Wallet;
+use App\Services\Notifications\FcmNotificationService;
+use App\Services\SettingsService;
+use App\Support\GeoQuery;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator as PaginatorInstance;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class DriverOrderService
 {
+    public function __construct(
+        protected DriverOrderCompletionService $completionService,
+        protected FcmNotificationService $fcmService,
+        protected SettingsService $settingsService
+    ) {
+    }
     public const STATUS_PLACED = 'Order Placed';
     public const STATUS_ACCEPTED = 'Order Accepted';
     public const STATUS_REJECTED = 'Order Rejected';
@@ -85,6 +95,13 @@ class DriverOrderService
 
         $this->trackDriverOrder($driver, $id, accept: true);
 
+        $this->fcmService->send(
+            data_get($order->fresh()->toDocumentArray(), 'author.fcmToken'),
+            'Driver accepted',
+            'A driver accepted your order',
+            ['type' => $type . '_order', 'orderId' => $id]
+        );
+
         return $order->fresh()->toDocumentArray();
     }
 
@@ -117,7 +134,7 @@ class DriverOrderService
         return $order->fresh()->toDocumentArray();
     }
 
-    public function start(AppUser $driver, string $type, string $id, ?string $otp = null): array
+    public function start(AppUser $driver, string $type, string $id, ?string $otp = null, array $extra = []): array
     {
         $order = $this->requireOrder($driver, $type, $id);
 
@@ -126,26 +143,33 @@ class DriverOrderService
         }
 
         $payload = $order->payload ?? [];
-        $orderOtp = (string) ($payload['otpCode'] ?? $payload['otp'] ?? '');
-        if ($orderOtp !== '' && $type === 'ride' && (string) $otp !== $orderOtp) {
-            throw ValidationException::withMessages(['otp' => ['Invalid OTP.']]);
-        }
-
-        if ($type === 'rental' && $orderOtp !== '' && (string) $otp !== $orderOtp) {
+        $orderOtp = (string) ($payload['otpCode'] ?? $payload['otp'] ?? $order->otpCode ?? '');
+        if ($orderOtp !== '' && in_array($type, ['ride', 'rental'], true) && (string) $otp !== $orderOtp) {
             throw ValidationException::withMessages(['otp' => ['Invalid OTP.']]);
         }
 
         $payload['startTime'] = $payload['startTime'] ?? now()->toIso8601String();
+
+        if ($type === 'rental' && isset($extra['startKilometerReading'])) {
+            $payload['startKitoMetersReading'] = $extra['startKilometerReading'];
+        }
 
         $order->update([
             'status' => self::STATUS_IN_TRANSIT,
             'payload' => $payload,
         ]);
 
+        $this->fcmService->send(
+            data_get($order->fresh()->toDocumentArray(), 'author.fcmToken'),
+            'Trip started',
+            'Your driver has started the trip',
+            ['type' => $type . '_order', 'orderId' => $id]
+        );
+
         return $order->fresh()->toDocumentArray();
     }
 
-    public function complete(AppUser $driver, string $type, string $id, ?string $otp = null): array
+    public function complete(AppUser $driver, string $type, string $id, ?string $otp = null, array $extra = []): array
     {
         $order = $this->requireOrder($driver, $type, $id);
 
@@ -156,6 +180,10 @@ class DriverOrderService
         $payload = $order->payload ?? [];
         $payload['endTime'] = now()->toIso8601String();
 
+        if ($type === 'rental' && isset($extra['endKilometerReading'])) {
+            $payload['endKitoMetersReading'] = $extra['endKilometerReading'];
+        }
+
         $order->update([
             'status' => self::STATUS_COMPLETED,
             'paymentStatus' => $order->paymentStatus ?: 'success',
@@ -163,7 +191,7 @@ class DriverOrderService
         ]);
 
         $order = $order->fresh();
-        $this->creditDriverWallet($driver, $order, $type);
+        $this->completionService->afterComplete($driver, $order, $type, $extra);
         $this->trackDriverOrder($driver, $id, complete: true);
 
         return $order->toDocumentArray();
@@ -174,8 +202,8 @@ class DriverOrderService
         return match ($status) {
             self::STATUS_DRIVER_ACCEPTED => $this->accept($driver, $type, $id, $extra),
             self::STATUS_DRIVER_REJECTED => $this->reject($driver, $type, $id, $extra),
-            self::STATUS_IN_TRANSIT => $this->start($driver, $type, $id, $extra['otp'] ?? null),
-            self::STATUS_COMPLETED => $this->complete($driver, $type, $id, $extra['otp'] ?? null),
+            self::STATUS_IN_TRANSIT => $this->start($driver, $type, $id, $extra['otp'] ?? null, $extra),
+            self::STATUS_COMPLETED => $this->complete($driver, $type, $id, $extra['otp'] ?? null, $extra),
             default => throw ValidationException::withMessages(['status' => ['Unsupported status transition.']]),
         };
     }
@@ -288,9 +316,104 @@ class DriverOrderService
         }
     }
 
+    public function searchParcel(AppUser $driver, array $filters): LengthAwarePaginator
+    {
+        $statuses = $this->statusesForTab('available', 'parcel');
+        $query = $this->availableQuery($driver, 'parcel', $statuses)->orderByDesc('createdAt');
+
+        if (! empty($filters['zoneId'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('payload->senderZoneId', $filters['zoneId'])
+                    ->orWhere('payload->receiverZoneId', $filters['zoneId']);
+            });
+        }
+
+        $items = $query->get()->map(fn ($item) => $item->toDocumentArray());
+
+        if (isset($filters['latitude'], $filters['longitude'])) {
+            $radius = (float) ($filters['radius'] ?? $this->settingsService->get('DriverNearBy', [])['parcelRadius'] ?? 50);
+            $items = GeoQuery::filterByRadius($items, (float) $filters['latitude'], (float) $filters['longitude'], $radius);
+        }
+
+        return $this->paginateCollection($items, (int) ($filters['per_page'] ?? 20), (int) ($filters['page'] ?? 1));
+    }
+
+    public function searchRental(AppUser $driver, array $filters): LengthAwarePaginator
+    {
+        $statuses = $this->statusesForTab('available', 'rental');
+        $query = $this->availableQuery($driver, 'rental', $statuses)->orderByDesc('createdAt');
+
+        if (! empty($filters['sectionId'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('sectionId', $filters['sectionId'])
+                    ->orWhere('section_id', $filters['sectionId']);
+            });
+        }
+
+        if (! empty($filters['vehicleType'])) {
+            $query->where('vehicleId', $filters['vehicleType']);
+        }
+
+        if (! empty($filters['zoneId'])) {
+            $query->where('payload->zoneId', $filters['zoneId']);
+        }
+
+        $items = $query->get()->map(fn ($item) => $item->toDocumentArray());
+
+        if (isset($filters['latitude'], $filters['longitude'])) {
+            $radius = (float) ($filters['radius'] ?? $this->settingsService->get('DriverNearBy', [])['rentalRadius'] ?? 50);
+            $items = GeoQuery::filterByRadius($items, (float) $filters['latitude'], (float) $filters['longitude'], $radius);
+        }
+
+        return $this->paginateCollection($items, (int) ($filters['per_page'] ?? 20), (int) ($filters['page'] ?? 1));
+    }
+
+    public function stream(AppUser $driver, array $filters): array
+    {
+        $type = $filters['type'] ?? $this->resolveOrderType($driver);
+        $since = ! empty($filters['since']) ? Carbon::parse($filters['since']) : null;
+        $ids = ! empty($filters['ids']) ? array_filter(explode(',', (string) $filters['ids'])) : [];
+
+        $orders = collect();
+
+        if ($ids !== []) {
+            $model = $this->models[$type];
+            $orders = $model::query()->whereIn('id', $ids)->get()->map(fn ($item) => $item->toDocumentArray());
+        } else {
+            $active = $this->list($driver, $type, 'active', 50);
+            $available = $this->list($driver, $type, 'available', 50);
+            $orders = collect($active->items())->merge($available->items());
+        }
+
+        if ($since) {
+            $orders = $orders->filter(function (array $order) use ($since) {
+                $updated = $order['updated_at'] ?? $order['createdAt'] ?? null;
+
+                return $updated && Carbon::parse($updated)->greaterThan($since);
+            })->values();
+        }
+
+        return [
+            'driver' => $driver->fresh()->toDocumentArray(),
+            'orders' => $orders->values()->all(),
+            'serverTime' => now()->toIso8601String(),
+        ];
+    }
+
+    protected function paginateCollection(Collection $items, int $perPage, int $page): LengthAwarePaginator
+    {
+        $total = $items->count();
+        $results = $items->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new PaginatorInstance($results, $total, $perPage, $page, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+    }
+
     protected function assertWalletMinimum(AppUser $driver): void
     {
-        $settings = app(\App\Services\SettingsService::class)->get('DriverNearBy', []);
+        $settings = $this->settingsService->get('DriverNearBy', []);
         $minimum = (float) ($driver->isOwner
             ? ($settings['ownerMinimumDepositToRideAccept'] ?? 0)
             : ($settings['minimumDepositToRideAccept'] ?? 0));
@@ -300,50 +423,6 @@ class DriverOrderService
                 'wallet_amount' => ['Insufficient wallet balance to accept this order.'],
             ]);
         }
-    }
-
-    protected function creditDriverWallet(AppUser $driver, Model $order, string $type): void
-    {
-        $amount = (float) ($order->subTotal ?? 0);
-        if ($type === 'vendor') {
-            $amount = (float) ($order->payload['deliveryCharge'] ?? $order->delivery_charge ?? $amount);
-        }
-
-        $commission = (float) ($order->adminCommission ?? 0);
-        $commissionType = $order->adminCommissionType ?? 'percentage';
-        if ($commission > 0) {
-            $amount -= strtolower((string) $commissionType) === 'percentage'
-                ? ($amount * $commission / 100)
-                : $commission;
-        }
-
-        if ($amount <= 0) {
-            return;
-        }
-
-        $walletUser = $driver;
-        if ($driver->ownerId && ! $driver->isOwner) {
-            $owner = AppUser::query()->find($driver->ownerId);
-            if ($owner) {
-                $walletUser = $owner;
-            }
-        }
-
-        $walletUser->increment('wallet_amount', $amount);
-
-        Wallet::query()->create([
-            'id' => (string) Str::uuid(),
-            'user_id' => $walletUser->id,
-            'amount' => $amount,
-            'isTopUp' => true,
-            'payment_method' => $order->payment_method ?? $order->paymentMethod ?? 'order',
-            'payment_status' => 'success',
-            'note' => 'Order completed',
-            'order_id' => $order->id,
-            'serviceType' => $driver->serviceType,
-            'transactionUser' => 'driver',
-            'date' => now(),
-        ]);
     }
 
     protected function trackDriverOrder(AppUser $driver, string $orderId, bool $accept = false, bool $complete = false): void

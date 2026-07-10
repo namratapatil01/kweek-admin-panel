@@ -20,8 +20,24 @@ class DriverAuthService
         protected AppAuthService $authService,
         protected GoogleTokenVerifier $googleTokenVerifier,
         protected AppleTokenVerifier $appleTokenVerifier,
-        protected SettingsService $settingsService
+        protected SettingsService $settingsService,
+        protected DriverPhoneOtpService $phoneOtpService
     ) {
+    }
+
+    public function sendPhoneOtp(string $phoneNumber, ?string $countryCode = null): array
+    {
+        return $this->phoneOtpService->sendOtp($phoneNumber, $countryCode);
+    }
+
+    public function verifyPhoneOtpAndLogin(array $data): array
+    {
+        $this->phoneOtpService->verifyOtp(
+            $data['verificationId'],
+            $data['otp']
+        );
+
+        return $this->loginWithPhone($data);
     }
 
     public function register(array $data): array

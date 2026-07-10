@@ -49,4 +49,23 @@ class DriverReviewController extends Controller
             'Ratings retrieved'
         );
     }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'orderId' => ['required', 'string', 'max:64'],
+            'customerId' => ['required', 'string', 'max:64'],
+            'rating' => ['required', 'numeric', 'min:1', 'max:5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->reviewService->store($user, $data),
+            'Review submitted',
+            201
+        );
+    }
 }
