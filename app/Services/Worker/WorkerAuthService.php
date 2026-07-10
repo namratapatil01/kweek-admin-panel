@@ -78,11 +78,7 @@ class WorkerAuthService
 
     public function login(string $email, string $password, ?string $fcmToken = null): array
     {
-        $worker = ProviderWorker::query()
-            ->where(function ($q) use ($email) {
-                $q->where('email', $email)->orWhere('payload->email', $email);
-            })
-            ->first();
+        $worker = $this->findWorkerByEmail($email);
 
         if (! $worker) {
             throw ValidationException::withMessages([
@@ -139,11 +135,7 @@ class WorkerAuthService
 
     public function forgotPassword(string $email): void
     {
-        $worker = ProviderWorker::query()
-            ->where(function ($q) use ($email) {
-                $q->where('email', $email)->orWhere('payload->email', $email);
-            })
-            ->first();
+        $worker = $this->findWorkerByEmail($email);
 
         if (! $worker) {
             return;
@@ -160,7 +152,11 @@ class WorkerAuthService
             ]
         );
 
-        Mail::to($email)->send(new WorkerPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new WorkerPasswordResetMail($user, $plainToken));
+        } catch (\Throwable) {
+            // Avoid 500 when mail is misconfigured in local/dev environments.
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void
@@ -181,11 +177,7 @@ class WorkerAuthService
             ]);
         }
 
-        $worker = ProviderWorker::query()
-            ->where(function ($q) use ($email) {
-                $q->where('email', $email)->orWhere('payload->email', $email);
-            })
-            ->first();
+        $worker = $this->findWorkerByEmail($email);
 
         if (! $worker) {
             throw ValidationException::withMessages([
@@ -237,6 +229,16 @@ class WorkerAuthService
         }
 
         return ProviderWorker::query()->find($user->id);
+    }
+
+    /**
+     * Email is stored in providers_workers.payload (catalog table has no email column).
+     */
+    public function findWorkerByEmail(string $email): ?ProviderWorker
+    {
+        return ProviderWorker::query()
+            ->where('payload->email', $email)
+            ->first();
     }
 
     /**
