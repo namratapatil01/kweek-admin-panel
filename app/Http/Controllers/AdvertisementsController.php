@@ -90,6 +90,7 @@ class AdvertisementsController extends Controller
         $length = (int) $request->input('length', 10);
         $search = trim($request->input('search.value', ''));
         $vendorId = $request->input('vendor_id');
+        $sectionId = $request->cookie('section_id') ?: $request->input('section_id');
 
         $query = DB::table('advertisements');
 
