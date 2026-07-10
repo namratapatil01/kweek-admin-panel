@@ -425,6 +425,7 @@ class DocumentStoreService
             'driver.id' => 'driverID',
             'driverId' => 'driverID',
             'section_id' => 'sectionId',
+            'author' => 'author',
         ];
 
         if (isset($aliases[$field]) && in_array($aliases[$field], $columns, true)) {
@@ -432,6 +433,11 @@ class DocumentStoreService
         }
 
         if (str_contains($field, '.')) {
+            return 'json:$.' . $field;
+        }
+
+        // Fields stored only in JSON payload (e.g. providers_services.author)
+        if (in_array('payload', $columns, true)) {
             return 'json:$.' . $field;
         }
 

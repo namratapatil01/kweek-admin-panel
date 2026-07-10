@@ -90,6 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
     Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
     Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+    Route::get('/vendors/api/stores-list', [App\Http\Controllers\VendorController::class, 'getStoresList'])->name('vendors.stores-list');
     Route::get('/vendors/api/get-documents/{id}', [App\Http\Controllers\VendorController::class, 'getDocuments'])->name('vendors.get-documents');
     Route::post('/vendors/api/verify-document', [App\Http\Controllers\VendorController::class, 'verifyDocument'])->name('vendors.verify-document');
     Route::get('/vendors/api/get-document-upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'getDocumentUploadDetails'])->name('vendors.get-document-upload');
@@ -375,6 +376,7 @@ Route::post('order-status-notification', [App\Http\Controllers\OrderController::
 
 Route::middleware(['permission:god-eye,map'])->group(function () {
     Route::get('/map/multivendor', [App\Http\Controllers\MapController::class, 'multivendor'])->name('map.multivendor');
+    Route::get('/map/multivendor/data', [App\Http\Controllers\MapController::class, 'getMultivendorData'])->name('map.multivendor.data');
 });
 Route::middleware(['permission:parcel-service-god-eye,parcel-service-map'])->group(function () {
     Route::get('/map/parcel', [App\Http\Controllers\MapController::class, 'parcel'])->name('map.parcel');
@@ -384,6 +386,7 @@ Route::middleware(['permission:rental-plural-god-eye,rental-plural-map'])->group
 });
 Route::middleware(['permission:cab-service-god-eye,cab-service-map'])->group(function () {
     Route::get('/map/cab', [App\Http\Controllers\MapController::class, 'cab'])->name('map.cab');
+    Route::get('/map/cab/data', [App\Http\Controllers\MapController::class, 'getCabData'])->name('map.cab.data');
 });
 
 Route::prefix('settings')->group(function () {
@@ -504,12 +507,17 @@ Route::middleware(['permission:model,model.delete'])->group(function () {
 
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type'])->group(function () {
     Route::get('vehicleType', [App\Http\Controllers\VehicleController::class, 'vehicleType'])->name('vehicleType');
+    Route::get('vehicleType/datatable', [App\Http\Controllers\VehicleController::class, 'vehicleTypeDatatable'])->name('vehicleType.datatable');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.create'])->group(function () {
     Route::get('vehicleType/create', [App\Http\Controllers\VehicleController::class, 'vehicleTypeCreate'])->name('vehicleType.create');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.edit'])->group(function () {
     Route::get('vehicleType/edit/{id}', [App\Http\Controllers\VehicleController::class, 'vehicleTypeEdit'])->name('vehicleType.edit');
+    Route::post('vehicleType/update/{id}', [App\Http\Controllers\VehicleController::class, 'updateVehicleType'])->name('vehicleType.update');
+});
+Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.delete'])->group(function () {
+    Route::post('vehicleType/delete', [App\Http\Controllers\VehicleController::class, 'destroyVehicleType'])->name('vehicleType.delete');
 });
 
 Route::middleware(['permission:terms,termsAndConditions'])->group(function () {
@@ -602,10 +610,18 @@ Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->g
 });
 
 Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->group(function () {
-    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');   
+    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/vendor/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableVendorDisbursement'])->name('payoutRequests.vendor.disbursement.datatable');
+    Route::post('/disbursements/vendor/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyVendorPayout'])->name('payoutRequests.vendor.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-driver,payout-request.driver'])->group(function () {
-    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');   
+    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/drivers/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableDriverDisbursement'])->name('payoutRequests.driver.disbursement.datatable');
+    Route::post('/disbursements/drivers/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyDriverPayout'])->name('payoutRequests.driver.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-owner,payout-request.owner'])->group(function () {
     Route::get('/disbursements/owners', [App\Http\Controllers\PayoutRequestController::class, 'ownerDisbursements'])->name('payoutRequests.owner.disbursement');   
@@ -778,6 +794,13 @@ Route::middleware(['permission:ondemand-categories,ondemand.categories.edit'])->
 
 Route::middleware(['permission:providers,providers'])->group(function () {
     Route::get('/providers', [App\Http\Controllers\ProvidersController::class, 'index'])->name('providers');
+    Route::get('/providers/datatable', [App\Http\Controllers\ProvidersController::class, 'datatable'])->name('providers.datatable');
+    Route::post('/providers/toggle-status', [App\Http\Controllers\ProvidersController::class, 'toggleStatus'])->name('providers.toggle-status');
+    Route::post('/providers/destroy', [App\Http\Controllers\ProvidersController::class, 'destroy'])->name('providers.destroy');
+    Route::post('/providers/bulk-destroy', [App\Http\Controllers\ProvidersController::class, 'bulkDestroy'])->name('providers.bulk-destroy');
+    Route::get('/providers/api/meta', [App\Http\Controllers\ProvidersController::class, 'getMeta'])->name('providers.meta');
+    Route::get('/providers/api/subscription-plans', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlans'])->name('providers.subscription-plans');
+    Route::get('/providers/api/subscription-plan/{id}', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlan'])->name('providers.subscription-plan');
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
@@ -793,7 +816,6 @@ Route::middleware(['permission:providers,providers.view'])->group(function () {
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons'])->group(function () {
     Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
     Route::get('/ondemand-coupons-data', [App\Http\Controllers\OnDemandServiceController::class, 'couponsDatatable'])->name('ondemand.coupons.datatable');
-    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
     Route::post('/ondemand-coupons/toggle/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponToggle'])->name('ondemand.coupons.toggle');
     Route::post('/ondemand-coupons/delete', [App\Http\Controllers\OnDemandServiceController::class, 'couponDestroy'])->name('ondemand.coupons.destroy');
 });
@@ -824,13 +846,20 @@ Route::middleware(['permission:ondemand-bookings,ondemand.bookings.print'])->gro
     Route::get('/ondemand-bookings/print/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'BookingsPrint'])->name('ondemand.bookings.print');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.index'])->group(function () {
+    Route::get('/ondemand-workers-data', [App\Http\Controllers\OnDemandServiceController::class, 'workersDatatable'])->name('ondemand.workers.datatable');
+    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
+    Route::post('/ondemand-workers/toggle-status', [App\Http\Controllers\OnDemandServiceController::class, 'workersToggleStatus'])->name('ondemand.workers.toggle-status');
+    Route::post('/ondemand-workers/delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersDestroy'])->name('ondemand.workers.destroy');
+    Route::post('/ondemand-workers/bulk-delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersBulkDestroy'])->name('ondemand.workers.bulk-destroy');
     Route::get('/ondemand-workers/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Workers'])->name('ondemand.workers.index');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.create'])->group(function () {
     Route::get('/ondemand-worker/create', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersCreate'])->name('ondemand.workers.create');
+    Route::post('/ondemand-workers/store', [App\Http\Controllers\OnDemandServiceController::class, 'workersStore'])->name('ondemand.workers.store');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.edit'])->group(function () {
     Route::get('/ondemand-worker/edit/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersEdit'])->name('ondemand.workers.edit');
+    Route::post('/ondemand-workers/update/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'workersUpdate'])->name('ondemand.workers.update');
 });
 
 Route::middleware(['permission:on-board,onboard.list'])->group(function () {
@@ -896,6 +925,8 @@ Route::middleware(['permission:subscription-history,subscription.history'])->gro
 
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {
     Route::get('advertisements', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('advertisements');
+});
+Route::middleware(['auth'])->group(function () {
     Route::get('/advertisements/datatable', [App\Http\Controllers\AdvertisementsController::class, 'datatable'])->name('advertisements.datatable');
     Route::post('/advertisements/delete', [App\Http\Controllers\AdvertisementsController::class, 'destroy'])->name('advertisements.destroy');
 });

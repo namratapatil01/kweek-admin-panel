@@ -7,6 +7,9 @@
         z-index: 99;
         position: absolute;
         background-color: white;
+        width: 100%;
+        max-height: 220px;
+        overflow-y: auto;
         cursor: pointer;
     }
     .autocomplete-item {
@@ -15,6 +18,32 @@
     }
     .autocomplete-item:hover {
         background-color: #e9e9e9;
+    }
+    .provider-field .select2-container {
+        width: 100% !important;
+        display: block;
+    }
+    .provider-field .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+    }
+    .provider-field .select2-container .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        padding-left: 12px;
+        padding-right: 28px;
+        color: #495057;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .provider-field .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+        right: 6px;
     }
 </style>
 <div class="page-wrapper">
@@ -108,10 +137,10 @@
                         </div>
                     </div>
                     @if(!isset($_GET['id']))
-                        <div class="form-group row width-50">
-                            <label class="col-3 control-label">{{trans('lang.provider')}}</label>
+                        <div class="form-group row provider-field" style="width:100%">
+                            <label class="col-3 control-label" for="provider_select">{{trans('lang.provider')}}</label>
                             <div class="col-7">
-                                <select id="provider_select" class="form-control">
+                                <select id="provider_select" class="form-control" style="width:100%">
                                     <option value="">{{trans('lang.select_provider')}}</option>
                                 </select>
                                 <div class="form-text text-muted">
@@ -237,41 +266,31 @@
 
             $(".uploaded_image_owner").show();
 
-            if (section_id) {
-                database.collection('users').where('role', '==', 'provider').where('section_id','==',section_id).get().then(async function (snapshots) {
-                    snapshots.docs.forEach((listval) => {
-                        var data = listval.data();
-                        if (workerData.providerId == data.id) {
-                            $('#provider_select').append($("<option selected></option>")
-                                .attr("value", data.id)
-                                .text(data.firstName + ' ' + data.lastName));
-                        } else {
-                            $('#provider_select').append($("<option></option>")
-                                .attr("value", data.id)
-                                .text(data.firstName + ' ' + data.lastName));
+            $.get("{{ route('ondemand.providers.list') }}", { section_id: section_id || '' })
+                .done(function (res) {
+                    (res.data || []).forEach(function (provider) {
+                        var $opt = $('<option></option>').attr('value', provider.id).text(provider.name);
+                        if (workerData.providerId == provider.id) {
+                            $opt.attr('selected', true);
                         }
-                    })
-                }).catch(function(error) {
-                    console.error('Error loading providers:', error);
-                });
-            } else {
-                database.collection('users').where('role', '==', 'provider').get().then(async function (snapshots) {
-                    snapshots.docs.forEach((listval) => {
-                        var data = listval.data();
-                        if (workerData.providerId == data.id) {
-                            $('#provider_select').append($("<option selected></option>")
-                                .attr("value", data.id)
-                                .text(data.firstName + ' ' + data.lastName));
-                        } else {
-                            $('#provider_select').append($("<option></option>")
-                                .attr("value", data.id)
-                                .text(data.firstName + ' ' + data.lastName));
+                        $('#provider_select').append($opt);
+                    });
+                    if ($.fn.select2 && $('#provider_select').length) {
+                        if ($('#provider_select').hasClass('select2-hidden-accessible')) {
+                            $('#provider_select').select2('destroy');
                         }
-                    })
-                }).catch(function(error) {
-                    console.error('Error loading providers:', error);
+                        $('#provider_select').select2({
+                            placeholder: "{{trans('lang.select_provider')}}",
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#provider_select').closest('.col-7')
+                        });
+                        $('#provider_select').next('.select2-container').css('width', '100%');
+                    }
+                })
+                .fail(function () {
+                    console.error('Failed to load providers');
                 });
-            }
         });
 
         $(".edit-form-btn").click(async function () {

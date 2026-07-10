@@ -276,6 +276,13 @@ foreach ($countries as $keycountry => $valuecountry) {
     // Dropdowns will be populated from MySQL
     $(document).ready(async function () {
 
+        jQuery("#country_selector").select2({
+            templateResult: formatState,
+            templateSelection: formatState2,
+            placeholder: "Select Country",
+            allowClear: true
+        });
+
         jQuery("#data-table_processing").show();
 
         // Section rideType from MySQL
@@ -520,6 +527,21 @@ foreach ($countries as $keycountry => $valuecountry) {
                 $(".error_top").html("");
                 $(".error_top").append("<p>" + err + "</p>");
                 window.scrollTo(0, 0);
+            });
+        }
+    });
+
+    $('#vehicle_section_id').on('change', function () {
+        var selected_section_id = $(this).val();
+        var selected_service_type = $('#service_type').val() || service_type;
+        
+        $('.vehicle_type').html('<option value="">{{trans("lang.select")}} {{trans("lang.vehicle_type")}}</option>');
+        
+        if (selected_service_type == "cab-service" || selected_service_type == "rental-service") {
+            $.get("{{ route('drivers.vehicle-types') }}", { service_type: selected_service_type, sectionId: selected_section_id }, function(vRes) {
+                vRes.vehicleTypes && vRes.vehicleTypes.forEach(function(data) {
+                    $('.vehicle_type').append($('<option></option>').attr("value", data.name).attr("data-id", data.id).text(data.name));
+                });
             });
         }
     });

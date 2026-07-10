@@ -63,9 +63,10 @@
                             <div class="col-7">
 
                                 <select id="select_vendor" class="form-control">
-
                                     <option value="">{{ trans('lang.select_vendor') }}</option>
-
+                                    @foreach($vendors ?? [] as $vendor)
+                                        <option value="{{ $vendor->id }}">{{ $vendor->title }}</option>
+                                    @endforeach
                                 </select>
 
                                 <div class="form-text text-muted">
@@ -282,8 +283,6 @@
 
     $(document).ready(function () {
 
-        $("#data-table_processing").show();
-
         email_templates.get().then(async function (snapshots) {
             emailTemplatesData = snapshots.docs[0].data();
 
@@ -295,24 +294,6 @@
 
             adminEmail = emailSettingData.userName;
         });
-
-        database.collection('vendors').where('section_id', '==', section_id).get().then(async function (snapshots) {
-
-            snapshots.docs.forEach((listval) => {
-
-                var data = listval.data();
-                vendors.push(data);
-                $('#select_vendor').append($("<option></option>")
-
-                    .attr("value", data.id)
-
-                    .text(data.title));
-
-            })
-
-        });
-
-        $("#data-table_processing").hide();
 
         var payoutId = "<?php echo uniqid(); ?>";
 

@@ -29,7 +29,7 @@
                         <div class="d-flex top-title-left align-self-center">
                             <span class="icon mr-3"><img src="{{ asset('images/coupon.png') }}" onerror="this.src='{{ asset('images/order.png') }}'"></span>
                             <h3 class="mb-0">{{ trans('lang.advertisement_plural') }}</h3>
-                            <span class="counter ml-3 total_ad_count badge badge-warning" style="font-size:14px;padding:6px 12px;border-radius:50px;"></span>
+                            <span class="counter ml-3 total_ad_count badge badge-warning" style="font-size:14px;padding:6px 12px;border-radius:50px;">{{ $totalAds ?? 0 }}</span>
                         </div>
                     </div>
                 </div>
@@ -97,28 +97,37 @@
 </style>
 <script>
 $(document).ready(function () {
-    var vendorId = '{{ $vendorId ?? "" }}';
+    var vendorId = @json($vendorId ?? '');
 
     var table = $('#adTable').DataTable({
+        pageLength: 10,
         processing: true,
         serverSide: true,
         responsive: true,
         ajax: {
-            url: '{{ route("advertisements.datatable") }}',
+            url: @json(route('advertisements.datatable')),
             type: 'GET',
             data: function (d) {
-                d.vendor_id = vendorId;
-                d.section_id = (typeof getCookie === 'function' ? getCookie('section_id') : '') || '';
+                d._token = '{{ csrf_token() }}';
+                if (vendorId) {
+                    d.vendor_id = vendorId;
+                }
             },
             dataSrc: function (json) {
-                $('.total_ad_count').text(json.recordsTotal || 0);
+                if (json.error) {
+                    console.error('Advertisements datatable error', json.error);
+                }
+                if (typeof json.recordsTotal !== 'undefined') {
+                    $('.total_ad_count').text(json.recordsTotal);
+                }
                 return json.data || [];
             },
             error: function (xhr) {
-                console.error('Advertisements datatable error', xhr.responseText);
+                console.error('Advertisements datatable error', xhr.status, xhr.responseText);
                 alert('Failed to load advertisements. Please refresh and try again.');
             }
         },
+        order: [[1, 'desc']],
         columnDefs: [{ orderable: false, targets: [0, 7] }],
         language: {
             zeroRecords: '{{ trans("lang.no_record_found") }}',

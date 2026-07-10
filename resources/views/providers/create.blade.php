@@ -199,358 +199,192 @@ foreach ($countries as $keycountry => $valuecountry) {
         
 
 
-        @endsection
+@endsection
 
-        @section('scripts')
+@section('scripts')
+<script type="text/javascript">
+    var section_id = getCookie('section_id') || '';
+    var ownerphoto = '';
+    var businessModelData = { subscription_model: false };
+    var newcountriesjs = JSON.parse(@json($newcountriesjs));
 
-        <script type="text/javascript">
+    function showError(msg) {
+        $(".error_top").show().html("<p>" + msg + "</p>");
+        window.scrollTo(0, 0);
+    }
 
-            var section_id = getCookie('section_id') || '';
+    function handleFileSelectowner(evt) {
+        var f = evt.target.files[0];
+        if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            ownerphoto = e.target.result;
+            $("#uploaded_image_owner").attr('src', ownerphoto);
+            $(".uploaded_image_owner").show();
+        };
+        reader.readAsDataURL(f);
+    }
+    window.handleFileSelectowner = handleFileSelectowner;
 
-            var database = kweekDb();
-            var geoQuery = new KweekGeoQuery(database);
-            var autoAprroveVendor = database.collection('settings').doc("vendor");
-            var photo = "";
-            var vendorOwnerId = "";
-            var vendorOwnerOnline = false;
-            var photocount = 0;
-            var restaurnt_photos = [];
-            var ownerphoto = '';
-            var photo = "";
-            var fileName = "";
-            var storageRef = kweekFileStore().ref('images');
+    function formatState(state) {
+        if (!state.id) return state.text;
+        var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
+        return $('<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>');
+    }
+    function formatState2(state) {
+        if (!state.id) return state.text;
+        var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
+        var $state = $('<span><img class="img-flag" /><span></span></span>');
+        $state.find('span').text(state.text);
+        $state.find('img').attr('src', baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg');
+        return $state;
+    }
 
-            var createdAt = kweekDb.FieldValue.serverTimestamp();
-            var adminCommission = '';
-            var businessModelData = {};
-            
-            $(document).ready(async function () {
+    function chkAlphabets(event, msg) {
+        if (!(event.which >= 97 && event.which <= 122) && !(event.which >= 65 && event.which <= 90)) {
+            document.getElementById(msg).innerHTML = "Accept only Alphabets";
+            return false;
+        }
+        document.getElementById(msg).innerHTML = "";
+        return true;
+    }
 
-                let businessModelRef = await database.collection('settings').doc("vendor").get();
-                businessModelData = businessModelRef.data();
-                if(businessModelData.subscription_model){
-                    $(".subscription-plans-wrapper").removeClass('d-none');
-                    database.collection('subscription_plans').where('isEnable','==',true).where('sectionId','==',section_id).get().then(async function(snapshots) {
-                        snapshots.docs.forEach((listval) => {
-                            var data=listval.data();
-                            $('#subscription_plan').append($("<option></option>")
-                                .attr("value",data.id)
-                                .text(data.name));
-                        });
+    function chkAlphabets2(event, msg) {
+        if (!(event.which >= 48 && event.which <= 57)) {
+            document.getElementById(msg).innerHTML = "Accept only Number";
+            return false;
+        }
+        document.getElementById(msg).innerHTML = "";
+        return true;
+    }
+
+    $(document).ready(function () {
+        $.get("{{ route('providers.meta') }}", function (meta) {
+            businessModelData.subscription_model = meta.subscription_model;
+            if (meta.subscription_model) {
+                $(".subscription-plans-wrapper").removeClass('d-none');
+                $.get("{{ route('providers.subscription-plans') }}", { section_id: section_id }, function (res) {
+                    (res.plans || []).forEach(function (plan) {
+                        $('#subscription_plan').append($('<option></option>').attr('value', plan.id).text(plan.name));
                     });
-                }
-                
-                jQuery("#country_selector").select2({
-                    templateResult: formatState,
-                    templateSelection: formatState2,
-                    placeholder: "Select Country",
-                    allowClear: true
                 });
-
-                // --- ADD THIS BLOCK TO SET DEFAULT COUNTRY CODE ---
-                var globalSettingsRef = database.collection('settings').doc('globalSettings');
-                globalSettingsRef.get().then(async function (snapshot) {
-                    var globalSettings = snapshot.data();
-                    if (globalSettings && globalSettings.defaultCountryCode) {
-                        var defaultPhoneCode = globalSettings.defaultCountryCode.replace('+', '').trim();
-
-                        // Find the option with matching phoneCode
-                        var $option = $("#country_selector option").filter(function() {
-                            return $(this).val() === defaultPhoneCode;
-                        });
-
-                        if ($option.length > 0) {
-                            $("#country_selector").val(defaultPhoneCode).trigger('change');
-                        } else {
-                            console.warn("Default country code not found in list:", defaultPhoneCode);
-                        }
-                    }
-                }).catch(function (error) {
-                    console.error("Error fetching global settings: ", error);
+            }
+            if (meta.defaultCountryCode) {
+                var defaultPhoneCode = String(meta.defaultCountryCode).replace('+', '').trim();
+                var $option = $("#country_selector option").filter(function () {
+                    return $(this).val() === defaultPhoneCode;
                 });
-                // --- END OF DEFAULT COUNTRY LOGIC ---
-
-                var adminCommissionData = await database.collection('sections').where('serviceTypeFlag', '==', "ondemand-service").get();
-
-                if (!adminCommissionData.empty) {
-                    var commissionData = adminCommissionData.docs[0].data(); 
-                    adminCommission = commissionData.adminCommision; 
+                if ($option.length) {
+                    $("#country_selector").val(defaultPhoneCode).trigger('change');
                 }
-                else
-                {
-                    adminCommission = '';
-                }
-            });
+            }
+        });
 
-            $(".save-form-btn").click(async function () {
+        jQuery("#country_selector").select2({
+            templateResult: formatState,
+            templateSelection: formatState2,
+            placeholder: "Select Country",
+            allowClear: true
+        });
+    });
 
-                $(".error_top").hide();
-                var latitude = parseFloat(0.01);
-                var longitude = parseFloat(0.01);
+    $(".save-form-btn").click(async function () {
+        $(".error_top").hide();
 
-                var userFirstName = $(".user_first_name").val();
-                var userLastName = $(".user_last_name").val();
-                var email = $(".user_email").val();
-                var password = $(".user_password").val();
-                var country_code = '+' + jQuery("#country_selector").val();
-                var ccode = jQuery("#country_selector").val();
-                var userPhone = $(".user_phone").val();
-                var active = $(".user_active").is(":checked");
-                var location = { 'latitude': latitude, 'longitude': longitude };
-                var user_name = userFirstName + " " + userLastName;
-                var user_id = "<?php echo uniqid(); ?>";
-                var subscriptionPlanId=$('#subscription_plan').val();
+        var userFirstName = $(".user_first_name").val();
+        var userLastName = $(".user_last_name").val();
+        var email = $(".user_email").val();
+        var password = $(".user_password").val();
+        var country_code = '+' + jQuery("#country_selector").val();
+        var ccode = jQuery("#country_selector").val();
+        var userPhone = $(".user_phone").val();
+        var active = $(".user_active").is(":checked");
+        var subscriptionPlanId = $('#subscription_plan').val();
+        var user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('provider_' + Date.now());
 
-                if (userFirstName == '') {
-                    showError("{{trans('lang.enter_owners_name_error')}}");
-                } else if (email == '') {
-                    showError("{{trans('lang.enter_owners_email')}}");
-                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showError("{{ trans('validation.email', ['attribute' => trans('lang.email')]) }}");
-                } else if (password == '') {
-                    showError("{{trans('lang.enter_owners_password_error')}}");
-                } else if (password.length < 6) {
-                    showError("Password must be at least 6 characters.");
-                } else if(!ccode) {
-                    showError("{{trans('lang.select_country_code')}}");
-                } else if (userPhone == '') {
-                    showError("{{trans('lang.enter_owners_phone')}}");
-                } else if (subscriptionPlanId == '' && businessModelData.subscription_model) {
-                    showError("{{trans('lang.select_subscription_plan')}}");
-                } else {
+        if (!userFirstName) {
+            return showError("{{trans('lang.enter_owners_name_error')}}");
+        }
+        if (!email) {
+            return showError("{{trans('lang.enter_owners_email')}}");
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return showError("{{ trans('validation.email', ['attribute' => trans('lang.email')]) }}");
+        }
+        if (!password) {
+            return showError("{{trans('lang.enter_owners_password_error')}}");
+        }
+        if (password.length < 6) {
+            return showError("Password must be at least 6 characters.");
+        }
+        if (!ccode) {
+            return showError("{{trans('lang.select_country_code')}}");
+        }
+        if (!userPhone) {
+            return showError("{{trans('lang.enter_owners_phone')}}");
+        }
+        if (!subscriptionPlanId && businessModelData.subscription_model) {
+            return showError("{{trans('lang.select_subscription_plan')}}");
+        }
 
-                    var bankName = $("#bankName").val();
-                    var branchName = $("#branchName").val();
-                    var holderName = $("#holderName").val();
-                    var accountNumber = $("#accountNumber").val();
-                    var otherDetails = $("#otherDetails").val();
-                    var userBankDetails = {
-                        'bankName': bankName,
-                        'branchName': branchName,
-                        'holderName': holderName,
-                        'accountNumber': accountNumber,
-                        'accountNumber': accountNumber,
-                        'otherDetails': otherDetails,
-                    };
+        jQuery("#data-table_processing").show();
+        var subscriptionData = null;
+        var subscriptionExpiryDate = null;
 
-                    jQuery("#data-table_processing").show();
+        try {
+            if (subscriptionPlanId) {
+                var planRes = await $.get("{{ route('providers.subscription-plan', ':id') }}".replace(':id', subscriptionPlanId));
+                subscriptionData = planRes.data;
+                subscriptionExpiryDate = planRes.data.expiryDate;
+            }
 
-                    if(subscriptionPlanId && subscriptionPlanId !='') {
-                        var subscriptionData=await getSubscriptionDetails(subscriptionPlanId);
+            var userBankDetails = {
+                bankName: $("#bankName").val(),
+                branchName: $("#branchName").val(),
+                holderName: $("#holderName").val(),
+                accountNumber: $("#accountNumber").val(),
+                otherDetails: $("#otherDetails").val()
+            };
+
+            $.ajax({
+                url: "{{ route('providers.store-provider') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: user_id,
+                    section_id: section_id,
+                    sectionId: section_id,
+                    firstName: userFirstName,
+                    lastName: userLastName,
+                    email: email,
+                    phoneNumber: country_code + userPhone,
+                    password: password,
+                    profilePictureURL: ownerphoto || '',
+                    location: { latitude: 0.01, longitude: 0.01 },
+                    active: active,
+                    userBankDetails: userBankDetails,
+                    subscription_plan: subscriptionData,
+                    subscriptionPlanId: subscriptionPlanId || null,
+                    subscriptionExpiryDate: subscriptionExpiryDate
+                },
+                success: function (response) {
+                    if (response.success) {
+                        window.location.href = "{{ route('providers') }}";
                     } else {
-                        var subscriptionData=null;
-                    }
-
-                    user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
-                    storeImageData().then(IMG => {
-                        var payload = {
-                            _token: "{{ csrf_token() }}",
-                            id: user_id,
-                            section_id: section_id,
-                            firstName: userFirstName,
-                            lastName: userLastName,
-                            email: email,
-                            phoneNumber: country_code + userPhone,
-                            password: password,
-                            profilePictureURL: IMG,
-                            location: location,
-                            active: active,
-                            userBankDetails: userBankDetails,
-                            adminCommission: adminCommission,
-                            subscription_plan: subscriptionData != null ? subscriptionData : null,
-                            subscriptionPlanId: subscriptionData != null ? subscriptionData.id : null,
-                            subscriptionExpiryDate: subscriptionData != null ? subscriptionData.expiryDate : null
-                        };
-
-                        $.ajax({
-                            url: "{{ route('providers.store-provider') }}",
-                            type: "POST",
-                            data: payload,
-                            success: async function(response) {
-                                if (response.success) {
-                                    if(subscriptionData != null) {
-                                        historyData = {
-                                            'subscriptionData': subscriptionData,
-                                            'userId': user_id,
-                                            'expire_date': subscriptionData.expiryDate
-                                        };
-                                        await addSubscriptionHistory(historyData);
-                                    }
-                                    window.location.href = "{{ route('providers') }}";
-                                } else {
-                                    jQuery("#data-table_processing").hide();
-                                    showError(response.error || "Failed to create provider.");
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                jQuery("#data-table_processing").hide();
-                                var errMsg = error;
-                                if (xhr.responseJSON && xhr.responseJSON.error) {
-                                    errMsg = xhr.responseJSON.error;
-                                }
-                                showError(getProviderErrorMessage({message: errMsg}));
-                            }
-                        });
-                    }).catch(function (error) {
                         jQuery("#data-table_processing").hide();
-                        showError(getProviderErrorMessage(error));
-                    });
-
+                        showError(response.error || "Failed to create provider.");
+                    }
+                },
+                error: function (xhr) {
+                    jQuery("#data-table_processing").hide();
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Save failed';
+                    showError(errMsg);
                 }
             });
-
-
-            function handleFileSelectowner(evt) {
-                var f = evt.target.files[0];
-                var reader = new FileReader();
-                reader.onload = (function (theFile) {
-                    return function (e) {
-
-                        var filePayload = e.target.result;
-                        var hash = CryptoJS.SHA256(Math.random() + CryptoJS.SHA256(filePayload));
-                        var val = f.name;
-                        var ext = val.split('.')[1];
-                        var docName = val.split('fakepath')[1];
-                        var filename = (f.name).replace(/C:\\fakepath\\/i, '')
-
-                        var timestamp = Number(new Date());
-                        var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
-                        photo = filePayload;
-                        fileName = filename;
-                        $("#uploaded_image_owner").attr('src', photo);
-                        $(".uploaded_image_owner").show();
-                    };
-                })(f);
-                reader.readAsDataURL(f);
-            }
-
-            window.handleFileSelectowner = handleFileSelectowner;
-
-            async function storeImageData() {
-                var newPhoto = '';
-                try {
-                    if (photo != "") {
-                        photo = photo.replace(/^data:image\/[a-z]+;base64,/, "")
-                        var uploadTask = await storageRef.child(fileName).putString(photo, 'base64', { contentType: 'image/jpg' });
-                        var downloadURL = await uploadTask.ref.getDownloadURL();
-                        newPhoto = downloadURL;
-                        photo = downloadURL;
-                    }
-                } catch (error) {
-                    console.log("ERR ===", error);
-                }
-                return newPhoto;
-            }
-            function formatState(state) {
-                if (!state.id) {
-                    return state.text;
-                }
-                var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
-                var $state = $(
-                    '<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>'
-                );
-                return $state;
-            }
-            function formatState2(state) {
-                if (!state.id) {
-                    return state.text;
-                }
-                var baseUrl = "<?php echo URL::to('/');?>/scss/icons/flag-icon-css/flags";
-                var $state = $(
-                    '<span><img class="img-flag" /> <span></span></span>'
-                );
-                $state.find("span").text(state.text);
-                $state.find("img").attr("src", baseUrl + "/" + newcountriesjs[state.element.value].toLowerCase() + ".svg");
-                return $state;
-            }
-            var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
-            var newcountriesjs = JSON.parse(newcountriesjs);
-
-            function chkAlphabets(event, msg) {
-                if (!(event.which >= 97 && event.which <= 122) && !(event.which >= 65 && event.which <= 90)) {
-                    document.getElementById(msg).innerHTML = "Accept only Alphabets";
-                    return false;
-                } else {
-                    document.getElementById(msg).innerHTML = "";
-                    return true;
-                }
-            }
-
-            function chkAlphabets2(event, msg) {
-                if (!(event.which >= 48 && event.which <= 57)
-                ) {
-                    document.getElementById(msg).innerHTML = "Accept only Number";
-                    return false;
-                } else {
-                    document.getElementById(msg).innerHTML = "";
-                    return true;
-                }
-            }
-
-            function chkAlphabets3(event, msg) {
-                if (!((event.which >= 48 && event.which <= 57) || (event.which >= 97 && event.which <= 122))) {
-                    document.getElementById(msg).innerHTML = "Special characters not accepted ";
-                    return false;
-                } else {
-                    document.getElementById(msg).innerHTML = "";
-                    return true;
-                }
-            }
-
-            function getProviderErrorMessage(error) {
-                if (!error) {
-                    return 'Something went wrong. Please try again.';
-                }
-
-                var messages = {
-                    'auth/email-already-in-use': 'This email is already registered.',
-                    'auth/invalid-email': 'Please enter a valid email address.',
-                    'auth/weak-password': 'Password must be at least 6 characters.',
-                    'auth/operation-not-allowed': 'Email/password sign-in is not enabled.',
-                    'auth/network-request-failed': 'Network error. Please check your connection and try again.',
-                };
-
-                if (error.code && messages[error.code]) {
-                    return messages[error.code];
-                }
-
-                if (error.message) {
-                    return error.message;
-                }
-
-                return String(error);
-            }
-
-            async function getSubscriptionDetails(subscriptionId) {
-                var data='';
-                await database.collection('subscription_plans').where('id','==',subscriptionId).get().then(async function(
-                    snapshot) {
-                    data=snapshot.docs[0].data();
-                    var currentDate=new Date();
-                    if(data.expiryDay!='-1') {
-                        currentDate.setDate(currentDate.getDate()+parseInt(data.expiryDay));
-                        data.expiryDate=kweekDb.Timestamp.fromDate(currentDate);
-                    } else {
-                        data.expiryDate=null;
-                    }
-
-                })
-                return data;
-            }
-            async function addSubscriptionHistory(historyData) {
-                var id_order=database.collection('tmp').doc().id;
-                var createdAt=kweekDb.FieldValue.serverTimestamp();
-
-                var userId=historyData.userId;
-                await database.collection('subscription_history').doc(id_order).set({
-                    'id': id_order,
-                    'user_id': historyData.userId,
-                    'expiry_date': historyData.expire_date,
-                    'createdAt': createdAt,
-                    'subscription_plan': historyData.subscriptionData,
-                    'payment_type': 'cod'
-                })
-            }
-
-        </script>
-        @endsection
+        } catch (err) {
+            jQuery("#data-table_processing").hide();
+            showError(String(err));
+        }
+    });
+</script>
+@endsection

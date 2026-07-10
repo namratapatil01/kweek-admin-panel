@@ -68,3 +68,38 @@
     </div>
 </div>
 @endsection
+
+@section('scripts')
+
+<script type="text/javascript">
+
+  var id = "<?php echo $id; ?>";
+  var database = kweekDb();
+
+  $(document).ready(function () {
+    jQuery("#data-table_processing").show();
+    database.collection('review_attributes').doc(id).get().then(async function (snapshot) {
+      var reviewattribute = snapshot.exists ? (snapshot.data() || {}) : {};
+      $(".reviewattribute-name").val(reviewattribute.title || reviewattribute.name || '');
+      jQuery("#data-table_processing").hide();
+    }).catch(function () {
+      jQuery("#data-table_processing").hide();
+    });
+
+    $(".edit-form-btn").click(function () {
+      var title = $(".reviewattribute-name").val();
+      if (title == '') {
+        $(".error_top").show();
+        $(".error_top").html("");
+        $(".error_top").append("<p>{{trans('lang.enter_cat_title_error')}}</p>");
+        window.scrollTo(0, 0);
+      } else {
+        database.collection('review_attributes').doc(id).update({ 'title': title }).then(function () {
+          window.location.href = '{{ url("reviewattributes") }}';
+        });
+      }
+    });
+  });
+
+</script>
+@endsection

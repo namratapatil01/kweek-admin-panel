@@ -322,7 +322,12 @@
                 }
 
 
-                await database.collection('users').where('role', '==', 'driver').orderBy('firstName').where('serviceType', '==', serviceType).get().then(function (snapShots) {
+                var driverServiceType = serviceType;
+                if (serviceType == 'ecommerce-service') {
+                    driverServiceType = 'delivery-service';
+                }
+
+                await database.collection('users').where('role', '==', 'driver').orderBy('firstName').where('serviceType', '==', driverServiceType).get().then(function (snapShots) {
                     $('.driver').empty();
                     $('.driver').html('<option value="">{{trans("lang.all")}}</option>');
 

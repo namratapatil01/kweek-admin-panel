@@ -244,67 +244,26 @@
             });
 
             var orders = [];
-
-            var orders_drivers = [];
-
-            database.collection('rides').where('sectionId','==', section_id).where('status', '==', 'In Transit').get().then(async function (snapshots) {
-
-                if (snapshots.docs.length > 0) {
-
-                    snapshots.docs.forEach((doc) => {
-
-                        var data = doc.data();
-
-                        data.flag = 'in_transit';
-
-                        orders.push(data);
-
-                        if(data.hasOwnProperty('driver')){
-
-                            orders_drivers.push(data.driver.id);
-
-                        }
-
-                    });
-
-                }
-
-            });
-
-
-
             var drivers = [];
+            var globalDrivers = {};
 
-            database.collection('users').where('role', '==', 'driver').where('sectionId','==',section_id)/* .where('serviceType', '==', 'cab-service') */.where('location', '!=', null).get().then(async function (snapshots) {
-
-                if (snapshots.docs.length > 0) {
-
-                    snapshots.docs.forEach((doc) => {
-
-                        var data = doc.data();
-
-                        data.flag = 'available';
-
-                        if(isNaN(data.location.latitude)!=true && isNaN(data.location.longitude)!=true && data.location.latitude!=null && data.location.latitude!=null){
-
-                            if ($.inArray(data.id, orders_drivers) === -1) {
-
-                                drivers.push(data);
-
-                            }
-
-                        }
-
-                    });
-
-                }
-
-
-
-                let mapdata = $.merge(orders, drivers)
-
+            $.get("{{ route('map.cab.data') }}", { section_id: section_id }, function(res) {
+                res.drivers && res.drivers.forEach(function(d) {
+                    d.flag = 'available';
+                    d.location = { latitude: d.latitude, longitude: d.longitude };
+                    drivers.push(d);
+                    globalDrivers[d.id] = d;
+                });
+                res.rides && res.rides.forEach(function(r) {
+                    r.flag = 'in_transit';
+                    orders.push(r);
+                });
+                let mapdata = $.merge(orders, drivers);
+                
+                // Expose globally for getDriverDetail mock if needed
+                window.globalDrivers = globalDrivers; 
+                
                 loadData(mapdata);
-
             });
 
 
@@ -762,27 +721,7 @@
 
 
             async function locationUpdate(marker, driver) {
-
-                database.collection("users").doc(driver.id).get().then((doc) => {
-
-                    let data = doc.data();
-
-                    if(data && data.location && data.location.latitude && data.location.longitude ){
-
-                        if (mapType == "OFFLINE" ){
-
-                            marker.setLatLng([data.location.latitude, data.location.longitude]);
-
-                        } else{
-
-                            marker.setPosition(new google.maps.LatLng(data.location.latitude, data.location.longitude));
-
-                        }
-
-                    }
-
-                });
-
+                // Feature currently disabled. When MySQL live location updates are required, poll the new api.
             }
 
 
@@ -810,17 +749,9 @@
 
 
         async function getDriverDetail(driverId) {
-
             if(driverId!=''){
-
-                return database.collection("users").doc(driverId).get().then((doc) => {
-
-                    return doc.data();
-
-                });
-
+                return window.globalDrivers ? window.globalDrivers[driverId] : null;
             }
-
         }
 
 

@@ -78,6 +78,9 @@
                                             <small class="text-muted d-block mt-1">{{ $value }}</small>
                                         </div>
                                     @endif
+                                @elseif(in_array($name, ['section_id', 'sectionId'], true))
+                                    <input type="{{ $type }}" name="{{ $name }}" id="field_{{ $name }}" class="form-control" value="{{ $value }}">
+                                    <small class="text-muted">Leave blank to use the active section (Food, etc.).</small>
                                 @else
                                     <input type="{{ $type }}" name="{{ $name }}" class="form-control" value="{{ $value }}">
                                 @endif
@@ -94,4 +97,19 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    (function () {
+        var section = (typeof getCookie === 'function' ? getCookie('section_id') : '') || '';
+        if (!section) return;
+        ['field_section_id', 'field_sectionId'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && !el.value) {
+                el.value = section;
+            }
+        });
+    })();
+</script>
 @endsection

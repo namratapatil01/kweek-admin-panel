@@ -560,14 +560,27 @@ class DriverController extends Controller
                 'active', 'profilePictureURL', 'carNumber', 'carMakes',
                 'carName', 'vehicleId', 'sectionId', 'rideType',
                 'serviceType', 'vehicleType', 'userBankDetails', 'zoneId', 'ownerId',
-                'password'
+                'password', 'vendorID', 'countryCode', 'isDocumentVerify', 'isActive',
             ]);
 
             $data['role'] = 'driver';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             $data['isOwner'] = false;
-            $data['ownerId'] = null;    // Ensure non-fleet drivers have null ownerId
-            $data['isDocumentVerify'] = false;
+            // Keep ownerId if provided (for fleet drivers), otherwise set to null
+            if (!$request->has('ownerId')) {
+                $data['ownerId'] = null;
+            }
+            if ($request->has('isDocumentVerify')) {
+                $data['isDocumentVerify'] = filter_var($request->input('isDocumentVerify'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            } else {
+                $data['isDocumentVerify'] = false;
+            }
+            if ($request->has('isActive')) {
+                $data['isActive'] = filter_var($request->input('isActive'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+            if (!$request->filled('createdAt')) {
+                $data['createdAt'] = now();
+            }
             $data['wallet_amount'] = 0;
             $data['orderCompleted'] = 0;
 
@@ -722,7 +735,7 @@ class DriverController extends Controller
             }
             
             if ($sectionId) {
-                $query->where('sectionId', $sectionId);
+                $query->where('payload->sectionId', $sectionId);
             }
             
             $types = $query->orderBy('name')->get(['id', 'name']);
