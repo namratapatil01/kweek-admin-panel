@@ -985,6 +985,7 @@ Route::middleware(['permission:zone,zone.edit'])->group(function () {
 
 Route::middleware(['permission:documents,documents.list'])->group(function () {
     Route::get('documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents');
+    Route::post('documents/status/{id}', [App\Http\Controllers\DocumentController::class, 'updateStatus'])->name('documents.update_status');
 });
 Route::middleware(['permission:documents,documents.create'])->group(function () {
     Route::get('/documents/create', [App\Http\Controllers\DocumentController::class, 'create'])->name('documents.create');
