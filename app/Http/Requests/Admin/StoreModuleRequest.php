@@ -33,17 +33,27 @@ class StoreModuleRequest extends FormRequest
             }
 
             $typeRules = match ($field['type'] ?? 'text') {
-                'email' => 'email',
-                'number' => 'numeric',
-                'checkbox' => 'boolean',
-                'json' => 'json',
-                'password' => 'string|min:6',
-                default => 'string',
+                'email' => ['string', 'email'],
+                'number' => ['numeric'],
+                'checkbox' => ['nullable', 'in:0,1,true,false,on,off'],
+                'json' => ['json'],
+                'password' => ['string', 'min:6'],
+                'image' => ['file', 'image', 'max:10240'],
+                'file' => ['file', 'max:10240'],
+                default => ['string'],
             };
+
             $fieldRules = array_merge($fieldRules, $typeRules);
 
-            foreach (explode('|', $typeRules) as $r) {
-                $fieldRules[] = $r;
+            // Image/file fields may be omitted on update when keeping the existing value.
+            if (in_array($field['type'] ?? '', ['image', 'file'], true) && ! $isCreate) {
+                $fieldRules = array_values(array_filter(
+                    $fieldRules,
+                    static fn ($rule) => $rule !== 'required'
+                ));
+                if (! in_array('nullable', $fieldRules, true)) {
+                    array_unshift($fieldRules, 'nullable');
+                }
             }
 
             $rules[$name] = $fieldRules;

@@ -71,6 +71,8 @@ trait ProvidesMySqlCrud
             'formFields' => $config['form'] ?? [],
             'readonly' => (bool) ($config['readonly'] ?? false),
             'permission' => $config['permission'] ?? $this->moduleSlug(),
+            'defaultSortColumnIndex' => $this->defaultSortColumnIndex($config),
+            'defaultSortDirection' => $config['default_sort_dir'] ?? 'desc',
         ], $extra);
     }
 
@@ -91,6 +93,7 @@ trait ProvidesMySqlCrud
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate(StoreModuleRequest::buildRules($this->moduleSlug(), true));
+        $validated = $this->applyDefaultSectionId($validated);
 
         try {
             $this->crudService()->store($validated);
@@ -196,7 +199,13 @@ trait ProvidesMySqlCrud
                 'status' => $request->input('status'),
             ]);
 
-            if ($this->moduleSlug() !== 'users') {
+            // Skip section filtering for global modules that are not section-scoped.
+            $sectionScopedModules = ['users'];
+            $config = $this->moduleConfig();
+            $skipSection = in_array($this->moduleSlug(), $sectionScopedModules, true)
+                || ($config['section_scoped'] ?? null) === false;
+
+            if (! $skipSection) {
                 if ($request->filled('section_id')) {
                     $filters['section_id'] = $request->input('section_id');
                 }
@@ -277,8 +286,11 @@ trait ProvidesMySqlCrud
                 $row[] = filter_var($value, FILTER_VALIDATE_BOOLEAN)
                     ? '<span class="badge badge-success">Yes</span>'
                     : '<span class="badge badge-secondary">No</span>';
-            } elseif (($column['type'] ?? null) === 'datetime' && $value) {
-                $row[] = e((string) $value);
+            } elseif (($column['type'] ?? null) === 'datetime') {
+                if (! $value && $field === 'created_at') {
+                    $value = data_get($record, 'createdAt');
+                }
+                $row[] = $value ? e((string) $value) : '';
             } elseif (
                 in_array(strtolower($field), ['photo', 'image', 'coverimage', 'profilepictureurl', 'flag'], true) || 
                 (is_string($value) && preg_match('/\.(jpg|jpeg|png|gif|webp|svg)/i', $value)) ||
@@ -297,6 +309,15 @@ trait ProvidesMySqlCrud
         return $row;
     }
 
+    protected function defaultSortColumnIndex(array $config): int
+    {
+        $dataColumns = array_column($config['columns'] ?? [], 'field');
+        $defaultSort = $config['default_sort'] ?? ($dataColumns[0] ?? 'created_at');
+        $index = array_search($defaultSort, $dataColumns, true);
+
+        return $index !== false ? $index + 2 : 2;
+    }
+
     protected function userCanDeleteModule(array $config): bool
     {
         $user = auth()->user();
@@ -305,8 +326,58 @@ trait ProvidesMySqlCrud
         }
 
         $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
+        $permissionKey = $config['permission'] ?? '';
 
-        return in_array(($config['permission'] ?? '') . '.delete', $permissions, true);
+        if (in_array($permissionKey . '.delete', $permissions, true)) {
+            return true;
+        }
+        if (in_array($permissionKey . 's.delete', $permissions, true)) {
+            return true;
+        }
+        if (substr($permissionKey, -1) === 's') {
+            $singular = substr($permissionKey, 0, -1);
+            if (in_array($singular . '.delete', $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Prefer the active admin section cookie when the form leaves section blank.
+     */
+    protected function applyDefaultSectionId(array $data): array
+    {
+        $sectionId = $data['section_id'] ?? $data['sectionId'] ?? null;
+        if ($sectionId !== null && $sectionId !== '') {
+            return $data;
+        }
+
+        $cookieSection = request()->cookie('section_id') ?: request()->input('sectionId');
+        if (! $cookieSection) {
+            return $data;
+        }
+
+        if (array_key_exists('section_id', $data) || $this->formHasField('section_id')) {
+            $data['section_id'] = $cookieSection;
+        }
+        if (array_key_exists('sectionId', $data) || $this->formHasField('sectionId')) {
+            $data['sectionId'] = $cookieSection;
+        }
+
+        return $data;
+    }
+
+    protected function formHasField(string $name): bool
+    {
+        foreach ($this->moduleConfig()['form'] ?? [] as $field) {
+            if (($field['name'] ?? null) === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Legacy route aliases used by existing web.php */

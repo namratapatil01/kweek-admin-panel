@@ -175,56 +175,21 @@
     <script>
         
         var section_id = getCookie('section_id') || '';
-        var database = kweekDb();
-        var intRegex = /^\d+$/;
-        var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
-        var refData = database.collection('subscription_history');
-        var currentCurrency = '';
-        var currencyAtRight = false;
-        var decimal_degits = 0;
         var userId = "{{ $id }}";
-        
-        var storeID = (window.location.href.indexOf("storeID=") > -1) ? window.location.href.split("storeID=")[1] : "";
-        var providerID = (window.location.href.indexOf("providerID=") > -1) ? window.location.href.split("providerID=")[1] : "";
+        var storeID = "{{ $storeID }}";
+        var providerID = "{{ $providerID }}";
         var wallet_route = "{{ route('users.walletstransaction', 'id') }}";
         var subscription_route = "{{ route('subscription.subscriptionPlanHistory', 'id') }}";
 
-        var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
-            var currencyData = snapshots.docs[0].data();
-            currentCurrency = currencyData.symbol;
-            currencyAtRight = currencyData.symbolAtRight;
-            if (currencyData.decimal_degits) {
-                decimal_degits = currencyData.decimal_degits;
-            }
-        });
-        var append_list = '';
-
-
-        $(document).ready(async function() {
-            
+        $(document).ready(function() {
             if (storeID != '') {
-
-                var ref = database.collection('vendors').where("id", "==", storeID);
-                await ref.get().then(async function(querysnapshots) {
-                    if (querysnapshots.docs.length > 0) {
-                        var vendor = querysnapshots.docs[0].data();
-                        userId = vendor.author;
-                        if (vendor.dine_in_active == true) {
-                            $(".dine_in_future").show();
-                        }
-                        if (vendor.section_id) {
-                            const sectionSnap = await database.collection('sections').doc(vendor.section_id).get();
-                            if (sectionSnap.exists) {
-                                const sectionData = sectionSnap.data();
-                                if (sectionData.dine_in_active === true) {
-                                    $(".dine_in_future").show();
-                                }
-                            }
-                        }
-                        $(".page-title").text(' - '+vendor.title);
-                    }
-                });
+                @if($dineInActive)
+                    $(".dine_in_future").show();
+                @endif
+                @if($vendorTitle)
+                    $(".page-title").text(' - ' + "{{ $vendorTitle }}");
+                @endif
+                
                 if (userId != '') {
                     $('#vendorhistorytab').removeClass('d-none');
                     var basic = "{{ route('stores.view', 'id') }}";
@@ -270,281 +235,68 @@
             }
 
             if (userId != '') {
-                refData = refData.where('user_id', '==', userId);
                 $(".subscription").attr("href", subscription_route.replace('id', "{{ $id }}"));
             }
 
-            $(document.body).on('click', '.redirecttopage', function() {
-                var url = $(this).attr('data-url');
-                window.location.href = url;
-            });
-
-            jQuery("#data-table_processing").show();
-
             const table = $('#subscriptionHistoryTable').DataTable({
                 pageLength: 10,
-                processing: false,
+                processing: true,
                 serverSide: true,
                 responsive: true,
-                ajax: async function(data, callback, settings) {
-                    const start = data.start;
-                    const length = data.length;
-                    const searchValue = data.search.value.toLowerCase();
-                    const orderColumnIndex = data.order[0].column;
-                    const orderDirection = data.order[0].dir;
-                    const orderableColumns = (userId == '') ? ['', 'user', 'plan_name', 'plan_type', 'expiry_date', 'createdAt'] : ['', 'plan_name', 'plan_type', 'expiry_date', 'createdAt'];
-                    const orderByField = orderableColumns[orderColumnIndex];
-                    if (searchValue.length >= 3 || searchValue.length === 0) {
-                        $('#data-table_processing').show();
+                ajax: {
+                    url: "{{ route('subscription.subscriptionPlanHistory.datatable', $id) }}",
+                    data: function(d) {
+                        d.section_id = section_id;
+                    },
+                    dataSrc: function(json) {
+                        $('.total_count').text(json.recordsFiltered || 0);
+                        return json.data;
                     }
-                    await refData.orderBy('createdAt', 'desc').get().then(async function(querySnapshot) {
-                        if (querySnapshot.empty) {
-                            $('.total_count').text(0);
-                            $('#data-table_processing').hide();
-                            callback({
-                                draw: data.draw,
-                                recordsTotal: 0,
-                                recordsFiltered: 0,
-                                data: []
-                            });
-                            return;
-                        }
-                        let records = [];
-                        let filteredRecords = [];
-                        await Promise.all(querySnapshot.docs.map(async (doc) => {
-                            let childData = doc.data();
-                            
-                            childData.userSectionId = '';
-                            childData.user = '';
-                            if (childData.user_id) {
-                                childData.user = await planUsedUser(childData.user_id);
-                                childData.userSectionId = await getUserSectionId(childData.user_id);
-                            }
-
-                            if(childData.userSectionId !== section_id){
-                                return;
-                            }
-
-                            childData.plan_name = childData.subscription_plan.name;
-                            childData.plan_type = childData.subscription_plan.type;
-                            childData.id = doc.id;
-                            if (searchValue) {
-                                var date = '';
-                                var time = '';
-                                if (childData.expiry_date?.toDate) {
-                                    try {
-                                        date = childData.expiry_date.toDate().toDateString();
-                                        time = childData.expiry_date.toDate().toLocaleTimeString('en-US');
-                                    } catch (err) {
-                                        console.error('Error processing expiry_date:', err);
-                                    }
-                                }
-                                childData.paidDate = date + ' ' + time;
-                                if (childData.createdAt?.toDate) {
-                                    try {
-                                        purchasedate = childData.createdAt.toDate().toDateString();
-                                        purchasetime = childData.createdAt.toDate().toLocaleTimeString('en-US');
-                                    } catch (err) {
-                                        console.error('Error processing expiry_date:', err);
-                                    }
-                                }
-                                childData.purchaseDate = purchasedate + ' ' + purchasetime;
-                                if (
-                                    (childData.user && (childData.user).toString().toLowerCase().includes(searchValue)) ||
-                                    (childData.subscription_plan.name && (childData.subscription_plan.name).toLowerCase().includes(searchValue)) ||
-                                    (childData.subscription_plan.type && (childData.subscription_plan.type).toLowerCase().includes(searchValue)) ||
-                                    (childData.paidDate && childData.paidDate.toString().toLowerCase().indexOf(searchValue) > -1) ||
-                                    (childData.purchaseDate && childData.purchaseDate.toString().toLowerCase().indexOf(searchValue) > -1)
-                                ) {
-                                    filteredRecords.push(childData);
-                                }
-                            } else {
-                                filteredRecords.push(childData);
-                            }
-                        }));
-                        filteredRecords.sort((a, b) => {
-                            let aValue = a[orderByField] ? a[orderByField].toString().toLowerCase() : '';
-                            let bValue = b[orderByField] ? b[orderByField].toString().toLowerCase() : '';
-                            if (orderByField === 'createdAt') {
-                                try {
-                                    aValue = a[orderByField] && a[orderByField].toDate ? new Date(a[orderByField].toDate()).getTime() : 0;
-                                    bValue = b[orderByField] && a[orderByField].toDate ? new Date(b[orderByField].toDate()).getTime() : 0;
-                                } catch (err) {}
-                            }
-                            if (orderDirection === 'asc') {
-                                return (aValue > bValue) ? 1 : -1;
-                            } else {
-                                return (aValue < bValue) ? 1 : -1;
-                            }
-                        });
-                        const totalRecords = filteredRecords.length;
-                        $('.total_count').text(totalRecords);
-                        const paginatedRecords = filteredRecords.slice(start, start + length);
-                        await Promise.all(paginatedRecords.map(async (childData) => {
-                            var getData = await buildHTML(childData);
-                            records.push(getData);
-                        }));
-                         $(function () {
-                                $('[data-toggle="tooltip"]').tooltip();
-                            });
-                        $('#data-table_processing').hide();
-                        callback({
-                            draw: data.draw,
-                            recordsTotal: totalRecords,
-                            recordsFiltered: totalRecords,
-                            data: records
-                        });
-                    }).catch(function(error) {
-                        console.error("Error fetching data from database:", error);
-                        $('#data-table_processing').hide();
-                        callback({
-                            draw: data.draw,
-                            recordsTotal: 0,
-                            recordsFiltered: 0,
-                            data: []
-                        });
-                    });
                 },
                 order: (userId == '') ? [5, 'desc'] : [4, 'desc'],
-                columnDefs: [{
+                columnDefs: [
+                    {
                         targets: [0],
                         orderable: false,
-                    },
-                    {
-                        targets: (userId == '') ? 3 : 2,
-                        type: 'date',
-                        render: function(data) {
-                            return data;
-                        }
-                    },
+                    }
                 ],
                 "language": {
                     "zeroRecords": "{{ trans('lang.no_record_found') }}",
                     "emptyTable": "{{ trans('lang.no_record_found') }}",
-                    "processing": ""
+                    "processing": "Processing..."
                 },
-            });
-
-            function debounce(func, wait) {
-                let timeout;
-                const context = this;
-                return function(...args) {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func.apply(context, args), wait);
-                };
-            }
-
-            $('#search-input').on('input', debounce(function() {
-                const searchValue = $(this).val();
-                if (searchValue.length >= 3) {
-                    $('#data-table_processing').show();
-                    table.search(searchValue).draw();
-                } else if (searchValue.length === 0) {
-                    $('#data-table_processing').show();
-                    table.search('').draw();
-                }
-            }, 300));
-
-        });
-
-        async function planUsedUser(id) {
-            var planUsedUser = '';
-            if (id != null && id != '' && id != undefined) {
-                await database.collection('users').doc(id).get().then(async function(snapshot) {
-                    if (snapshot && snapshot.data()) {
-                        var data = snapshot.data();
-                        planUsedUser = data.firstName + ' ' + data.lastName;
-                    }
-                });
-            }
-            return planUsedUser;
-        }
-
-        async function getUserSectionId(id) {
-            var userSectionId = '';
-            if (id != null && id != '' && id != undefined) {
-                await database.collection('users').doc(id).get().then(async function(snapshot) {
-                    if (snapshot && snapshot.data()) {
-                        var data = snapshot.data();
-                        if(data.hasOwnProperty('section_id')){
-                            userSectionId = data.section_id;
-                        }else if(data.hasOwnProperty('sectionId')){
-                            userSectionId = data.sectionId;
-                        }
-                    }
-                });
-            }
-            return userSectionId;
-        }
-
-        async function buildHTML(val) {
-            var html = [];
-            var id = val.id;
-            html.push('<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
-                'for="is_open_' + id + '" ></label></td>');
-            var route1 = '{{ route('subscription-plans.save', ':id') }}';
-            route1 = route1.replace(':id', val.subscription_plan.id);
-            if (userId == '') {
-                var route = '{{ route('vendors.edit', ':id') }}';
-                route = route.replace(':id', val.user_id);
-                
-                html.push('<a href="' + route + '" class="redirecttopage" >' + val.user + '</a>');
-            }
-            html.push('<a href="' + route1 + '" class="redirecttopage" >' + val.subscription_plan.name + '</a>');
-            if (val.subscription_plan && val.subscription_plan.type) {
-                if (val.subscription_plan.type == 'free') {
-                    html.push('<span class="badge badge-success">' + val.subscription_plan.type.toUpperCase() + '</span>');
-                } else {
-                    html.push('<span class="badge badge-danger">' + val.subscription_plan.type.toUpperCase() + '</span>');
-                }
-            } else {
-                html.push('<span class="badge">-</span>');
-            }
-            if (val.hasOwnProperty('expiry_date')) {
-                if (val.expiry_date != null && val.expiry_date != '' && val.expiry_date != '-1') {
-                    var date = val.expiry_date.toDate().toDateString();
-                    var time = val.expiry_date.toDate().toLocaleTimeString('en-US');
-                    html.push('<span class="dt-time">' + date + ' ' + time + '</span>');
-                } else {
-                    html.push("{{ trans('lang.unlimited') }}")
-                }
-            } else {
-                html.push('');
-            }
-            if (val.hasOwnProperty('createdAt')) {
-                if (val.createdAt != null && val.createdAt != '' && val.createdAt != '-1') {
-                    var date = val.createdAt.toDate().toDateString();
-                    var time = val.createdAt.toDate().toLocaleTimeString('en-US');
-                    html.push('<span class="dt-time">' + date + ' ' + time + '</span>');
-                } else {
-                    html.push("{{ trans('lang.unlimited') }}")
-                }
-            } else {
-                html.push('');
-            }
-            return html;
-        }
-        $("#is_active").click(function() {
-            $("#subscriptionHistoryTable .is_open").prop('checked', $(this).prop('checked'));
-        });
-        $("#deleteAll").click(function() {
-            if ($('#subscriptionHistoryTable .is_open:checked').length) {
-                if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
-                    jQuery("#data-table_processing").show();
-                    $('#subscriptionHistoryTable .is_open:checked').each(function() {
-                        var dataId = $(this).attr('dataId');
-                        deleteDocumentWithImage('subscription_history', dataId)
-                            .then(() => {
-                                window.location.reload();
-                            })
-                            .catch((error) => {
-                                console.error('Error deleting document or store data:', error);
-                            });
+                initComplete: function () {
+                    $(function () {
+                        $('[data-toggle="tooltip"]').tooltip();
                     });
                 }
-            } else {
-                alert("{{ trans('lang.select_delete_alert') }}");
-            }
+            });
+
+            $("#is_active").click(function() {
+                $("#subscriptionHistoryTable .is_open").prop('checked', $(this).prop('checked'));
+            });
+
+            $("#deleteAll").click(function() {
+                if ($('#subscriptionHistoryTable .is_open:checked').length) {
+                    if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
+                        jQuery("#data-table_processing").show();
+                        var ids = [];
+                        $('#subscriptionHistoryTable .is_open:checked').each(function() {
+                            ids.push($(this).attr('dataId'));
+                        });
+                        $.post("{{ route('subscription.subscriptionPlanHistory.delete') }}", {
+                            _token: "{{ csrf_token() }}",
+                            ids: ids
+                        }).done(function() {
+                            table.ajax.reload();
+                        }).always(function() {
+                            jQuery("#data-table_processing").hide();
+                        });
+                    }
+                } else {
+                    alert("{{ trans('lang.select_delete_alert') }}");
+                }
+            });
         });
     </script>
 @endsection

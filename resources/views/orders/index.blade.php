@@ -919,8 +919,7 @@
             var id = val.id;
             
             var user_id = val.authorID;
-            var route1 = '{{ route('orders.edit', ':id') }}';
-            route1 = route1.replace(':id', id);
+            var route1 = '{{ url('orders/edit') }}/' + id;
             var printRoute = '{{ route('vendors.orderprint', ':id') }}';
             printRoute = printRoute.replace(':id', id);
             

@@ -194,425 +194,179 @@
 
         <script>
 
-            var database = kweekDb();
+            var currentServiceType = '';
 
-            var restaurant = database.collection('settings').doc("vendor");
+            $(document).ready(function () {
 
-            var sections = database.collection('sections').where('serviceTypeFlag', 'in', ['delivery-service',
-
-                'ondemand-service', 'ecommerce-service'
-
-            ]);
-
-
-
-            $(document).ready(function() {
-
-                sections.get().then(async function(snapshots) {
-
-                    snapshots.docs.forEach((listval) => {
-
-                        var data = listval.data();
-
-                        var $optgroup = $('#section').find("optgroup[label='" + data.serviceType +
-
-                            "']");
-
-                        if ($optgroup.length === 0) {
-
-                            $optgroup = $("<optgroup></optgroup>").attr("label", data.serviceType);
-
-                            $('#section').append($optgroup);
-
-                        }
-
-                        $optgroup.append(
-
-                            $("<option></option>")
-
-                            .attr("value", data.id)
-
-                            .attr("servicetype", data.serviceType)
-
-                            .text(data.name)
-
-                        );
-
-
-
+                // ── 1. Load Sections from MySQL ──────────────────────────
+                fetch('{{ route("settings.sections.list") }}')
+                    .then(r => r.json())
+                    .then(sections => {
+                        sections.forEach(function (sec) {
+                            var $optgroup = $('#section').find("optgroup[label='" + sec.serviceType + "']");
+                            if ($optgroup.length === 0) {
+                                $optgroup = $("<optgroup></optgroup>").attr("label", sec.serviceType);
+                                $('#section').append($optgroup);
+                            }
+                            $optgroup.append(
+                                $("<option></option>")
+                                    .attr("value", sec.id)
+                                    .attr("servicetype", sec.serviceType)
+                                    .text(sec.name)
+                            );
+                        });
                     });
 
-                });
-
-
-
-                $('#food_restaurant_type').on('change', function() {
-
-                    if ($('#food_restaurant_type').val() === 'custom') {
-
-                        $('#food_restaurant').show();
-
-                        $('#food_restaurant').select2({
-
-                            placeholder: "{{ trans('lang.select_user') }}",
-
-                            allowClear: true,
-
-                            width: '100%',
-
-                            dropdownAutoWidth: true
-
-                        });
-
-                    } else {
-
-                        $('#food_restaurant').hide();
-
-                        $('#food_restaurant').select2('destroy');
-
-                    }
-
-                });
-
-                $('#section').on('change', async function() {
-
-
-
-                    var sectionId = $('#section').val();
-
-                    var serviceType = $('#section option:selected').attr('servicetype');
-
-
+                // ── 2. When Section changes — load users/vendors from MySQL ──
+                $('#section').on('change', function () {
+                    var sectionId   = $(this).val();
+                    currentServiceType = $(this).find('option:selected').attr('servicetype') || '';
 
                     $('#food_restaurant').empty();
 
-                    
+                    if (!sectionId) return;
 
-                    if (serviceType == "On Demand Service") {
-
-                        database.collection('users').where('role', '==', 'provider').where('section_id', '==', sectionId).orderBy('firstName',
-
-                            'asc').get().then(async function(
-
-                            snapshots) {
-
-                            snapshots.docs.forEach((listval) => {
-
-                                var data = listval.data();
-
-                                $('#food_restaurant').append($("<option></option>")
-
-                                    .attr("value", data.id)
-
-                                    .text(data.firstName + ' ' + data.lastName));
-
+                    fetch('{{ route("settings.vendors.by-section") }}?section_id=' + sectionId + '&service_type=' + encodeURIComponent(currentServiceType))
+                        .then(r => r.json())
+                        .then(function (items) {
+                            items.forEach(function (item) {
+                                $('#food_restaurant').append(
+                                    $("<option></option>").attr("value", item.id).text(item.label)
+                                );
                             });
-
+                            // Refresh select2 if open
+                            if ($('#food_restaurant').hasClass('select2-hidden-accessible')) {
+                                $('#food_restaurant').trigger('change');
+                            }
                         });
-
-                    } else {
-
-                        database.collection('vendors').where('section_id', '==', sectionId).orderBy('title',
-
-                            'asc').get().then(async function(
-
-                            snapshots) {
-
-                            snapshots.docs.forEach((listval) => {
-
-                                var data = listval.data();
-
-                                $('#food_restaurant').append($("<option></option>")
-
-                                    .attr("value", data.id)
-
-                                    .text(data.title));
-
-                            })
-
-                        });
-
-                    }
-
-
-
                 });
 
+                // ── 3. Custom / All toggle ──────────────────────────────
+                $('#food_restaurant_type').on('change', function () {
+                    if ($(this).val() === 'custom') {
+                        $('#food_restaurant').show();
+                        $('#food_restaurant').empty();
 
+                        // Load ALL vendors/providers regardless of section
+                        var sectionId = $('#section').val();
+                        var url = '{{ route("settings.vendors.by-section") }}?mode=all&service_type=' + encodeURIComponent(currentServiceType);
 
-                jQuery("#data-table_processing").show();
-
-
-
-                restaurant.get().then(async function(snapshots) {
-
-                    var restaurantdata = snapshots.data();
-
-                    if (restaurantdata == undefined) {
-
-                        database.collection('settings').doc('vendor').set({});
-
-                    }
-
-                    try {
-
-                        if (restaurantdata.subscription_model) {
-
-                            $("#subscription_model").prop('checked', true);
-
+                        fetch(url)
+                            .then(r => r.json())
+                            .then(function (items) {
+                                items.forEach(function (item) {
+                                    $('#food_restaurant').append(
+                                        $('<option></option>').attr('value', item.id).text(item.label)
+                                    );
+                                });
+                                $('#food_restaurant').select2({
+                                    placeholder: "{{ trans('lang.select_user') }}",
+                                    allowClear: true,
+                                    width: '100%',
+                                    dropdownAutoWidth: true
+                                });
+                            });
+                    } else {
+                        $('#food_restaurant').hide();
+                        if ($('#food_restaurant').hasClass('select2-hidden-accessible')) {
+                            $('#food_restaurant').select2('destroy');
                         }
-
-                    } catch (error) {}
-
-                    jQuery("#data-table_processing").hide();
-
-                })
-
-
-
-                $(document).on("click", "input[name='subscription_model']", function(e) {
-
-
-
-                    var subscription_model = $("#subscription_model").is(":checked");
-
-                    var userConfirmed = confirm(subscription_model ?
-
-                        "{{ trans('lang.enable_subscription_plan_confirm_alert') }}" :
-
-                        "{{ trans('lang.disable_subscription_plan_confirm_alert') }}");
-
-                    if (!userConfirmed) {
-
-                        $(this).prop("checked", !subscription_model);
-
-                        return;
-
                     }
-
-                    database.collection('settings').doc("vendor").update({
-
-                        'subscription_model': subscription_model,
-
-                    });
-
-                    if (subscription_model) {
-
-                        Swal.fire('Update Complete!', `Subscription model enabled.`, 'success');
-
-                    } else {
-
-                        Swal.fire('Update Complete!', `Subscription model disabled.`, 'success');
-
-                    }
-
                 });
 
+                // ── 4. Load current subscription model state from MySQL ──
+                jQuery("#data-table_processing").show();
+                fetch('{{ url("admin-data/document/settings/vendor") }}')
+                    .then(r => r.json())
+                    .then(function (res) {
+                        var data = res.data || {};
+                        if (data.subscription_model) {
+                            $("#subscription_model").prop('checked', true);
+                        }
+                        jQuery("#data-table_processing").hide();
+                    }).catch(() => jQuery("#data-table_processing").hide());
 
+                // ── 5. Subscription Model toggle ─────────────────────────
+                $(document).on("click", "input[name='subscription_model']", function (e) {
+                    var subscription_model = $("#subscription_model").is(":checked");
+                    var userConfirmed = confirm(subscription_model ?
+                        "{{ trans('lang.enable_subscription_plan_confirm_alert') }}" :
+                        "{{ trans('lang.disable_subscription_plan_confirm_alert') }}"
+                    );
+                    if (!userConfirmed) {
+                        $(this).prop("checked", !subscription_model);
+                        return;
+                    }
+                    fetch('{{ url("admin-data/upsert") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        body: JSON.stringify({ collection: 'settings', id: 'vendor', data: { subscription_model: subscription_model }, merge: true })
+                    }).then(() => {
+                        Swal.fire('Update Complete!', subscription_model ? 'Subscription model enabled.' : 'Subscription model disabled.', 'success');
+                    });
+                });
 
-
-
-                $('#bulk_update_btn').on('click', async function() {
-
-
-
+                // ── 6. Bulk Update ───────────────────────────────────────
+                $('#bulk_update_btn').on('click', async function () {
                     const commissionType = $("#bulk_commission_type").val();
-
-                    const fixCommission = parseFloat($(".bulk_commission_fix").val());
-
-                    const isEnabled = true;
-
-                    const adminCommission = {
-
-                        'commission': fixCommission,
-
-                        'enable': isEnabled,
-
-                        'type': commissionType,
-
-                    };
-
-
+                    const fixCommission  = parseFloat($(".bulk_commission_fix").val());
+                    const adminCommission = { commission: fixCommission, enable: true, type: commissionType };
 
                     const foodRestaurantType = $('#food_restaurant_type').val();
+                    const selectedIds        = $('#food_restaurant').val() || [];
+                    const sectionId          = $('#section').val();
 
-                    const selectedIds = $('#food_restaurant').val() || [];
-
-                    const sectionId = $('#section').val();
-
-                    var serviceType = $('#section option:selected').attr('servicetype');
-
-                    if (sectionId == '') {
-
+                    if (!sectionId) {
                         Swal.fire('Please select section!', '', 'warning');
-
-                        return false;
-
+                        return;
                     }
 
-                    try {
-
-                        let total = 0,
-
-                            processed = 0;
-
-
-
-                        const getVendors = async () => {
-
-                            if (foodRestaurantType === 'all' && serviceType !=
-
-                                'On Demand Service') {
-
-                                const snap = await database.collection('vendors').where('section_id',
-
-                                    '==', sectionId).get();
-                                return snap.docs || [];
-
-                            } else if (foodRestaurantType === 'all' && serviceType ==
-
-                                'On Demand Service') {
-
-                                const snap = await database.collection('users').where('role', '==',
-
-                                    'provider').where('section_id','==', sectionId).get();
-                                return snap.docs || [];
-
-                            } else {
-
-                                const chunks = [];
-
-                                for (let i = 0; i < selectedIds.length; i += 10) {
-
-                                    chunks.push(selectedIds.slice(i, i + 10));
-
-                                }
-
-                                if (serviceType == 'On Demand Service') {
-
-                                    const snapshots = await Promise.all(chunks.map(chunk =>
-
-                                        database.collection('users').where('id', 'in',
-
-                                            chunk)
-
-                                        .get()
-
-                                    ));
-
-                                    return snapshots.flatMap(snapshot => snapshot.docs);
-
-                                } else {
-
-                                    const snapshots = await Promise.all(chunks.map(chunk =>
-
-                                        database.collection('vendors').where('id', 'in',
-
-                                            chunk)
-
-                                        .get()
-
-                                    ));
-
-                                    return snapshots.flatMap(snapshot => snapshot.docs);
-
-                                }
-
-
-
-
-
-                            }
-
-                        };
-
-
-
-                        const vendorsSnapshot = await getVendors();
-
-                        total = vendorsSnapshot.length;
-
-
-
-                        if (total > 0) {
-
-                            Swal.fire({
-
-                                title: 'Processing...',
-
-                                text: '0% Complete',
-
-                                allowOutsideClick: false,
-
-                                onBeforeOpen: () => Swal.showLoading()
-
-                            });
-
-
-
-                            for (const doc of vendorsSnapshot) {
-
-                                await doc.ref.update({
-
-                                    "adminCommission": adminCommission
-
-                                });
-
-                                processed++;
-
-                                Swal.update({
-
-                                    text: `${Math.round((processed/total)*100)}% Complete`
-
-                                });
-
-                            }
-
-
-
-                            Swal.fire('Update Complete!', `${total} users updated.`, 'success');
-
-                        } else {
-
-                            Swal.fire('No vendors selected or found!', '', 'warning');
-
-                        }
-
-                    } catch (error) {
-
-                        Swal.fire('Error', 'An error occurred during the update process.', 'error');
-
-                        console.error('Error:', error);
-
+                    // Determine IDs to update
+                    var idsToUpdate = [];
+
+                    if (foodRestaurantType === 'all') {
+                        // Fetch vendors filtered by section (mode=section)
+                        const res = await fetch('{{ route("settings.vendors.by-section") }}?mode=section&section_id=' + sectionId + '&service_type=' + encodeURIComponent(currentServiceType));
+                        const items = await res.json();
+                        idsToUpdate = items.map(i => i.id);
+                    } else {
+                        idsToUpdate = selectedIds;
                     }
 
+                    if (idsToUpdate.length === 0) {
+                        Swal.fire('No vendors selected or found!', '', 'warning');
+                        return;
+                    }
+
+                    Swal.fire({ title: 'Processing...', text: '0% Complete', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                    const collection = currentServiceType.includes('On Demand') ? 'app_users' : 'vendors';
+                    let processed = 0;
+
+                    for (const id of idsToUpdate) {
+                        await fetch('{{ url("admin-data/upsert") }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            body: JSON.stringify({ collection: collection, id: id, data: { adminCommission: adminCommission }, merge: true })
+                        });
+                        processed++;
+                        Swal.update({ text: `${Math.round((processed / idsToUpdate.length) * 100)}% Complete` });
+                    }
+
+                    Swal.fire('Update Complete!', `${idsToUpdate.length} users updated.`, 'success');
                 });
 
-
-
-
-
-            })
-
-
+            });
 
             function ShowHideDiv() {
-
                 var checkboxValue = $("#enable_commission").is(":checked");
-
                 if (checkboxValue) {
-
                     $(".admin_commision_detail").show();
-
                 } else {
-
                     $(".admin_commision_detail").hide();
-
                 }
-
             }
 
         </script>
 
-    @endsection
-
+    @endsection

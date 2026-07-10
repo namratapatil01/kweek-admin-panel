@@ -548,6 +548,8 @@ foreach ($countries as $keycountry => $valuecountry) {
         reader.readAsDataURL(f);
     }
 
+    window.handleFileSelectowner = handleFileSelectowner;
+
     function chkAlphabets2(event, msg) {
         if (!(event.which >= 48 && event.which <= 57)
         ) {

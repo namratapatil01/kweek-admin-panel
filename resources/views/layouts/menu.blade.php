@@ -15,6 +15,8 @@ if (empty($service_type)) {
         $service_type = 'cab-service';
     } elseif (request()->is('parcel*')) {
         $service_type = 'parcel_delivery';
+    } elseif (request()->is('vendors*') || request()->is('stores*') || request()->is('brands*') || request()->is('gift-card*') || request()->is('categories*') || request()->is('items*') || request()->is('coupon*') || request()->is('tax*')) {
+        $service_type = 'ecommerce-service';
     }
 }
 @endphp
@@ -220,8 +222,8 @@ if (empty($service_type)) {
         @if($service_type == "delivery-service" || $service_type == "ecommerce-service")
         @if (
             in_array('categories', $role_has_permission) || 
-            in_array('items', $role_has_permission) || 
-            in_array('item-attributes', $role_has_permission) || 
+            in_array('items', $role_has_permission) ||
+            in_array('item-attributes', $role_has_permission) ||
             in_array('review-attributes', $role_has_permission)
             )
             <li class="nav-subtitle">
@@ -241,21 +243,19 @@ if (empty($service_type)) {
                     </a>
                 </li>
             @endif
-            @if (in_array('item-attributes', $role_has_permission) || in_array('review-attributes', $role_has_permission))
-                @if (in_array('item-attributes', $role_has_permission))
+            @if ($isSuperAdmin || in_array('item-attributes', $role_has_permission))
                 <li><a class="waves-effect waves-dark" href="{!! url('attributes') !!}" aria-expanded="false">
-                        <i class="ri-archive-stack-fill"></i>
+                        <i class="ri-archive-drawer-fill"></i>
                         <span class="hide-menu">{{ trans('lang.item_attribute_plural') }}</span>
                     </a>
                 </li>
-                @endif
-                @if (in_array('review-attributes', $role_has_permission))
+            @endif
+            @if (in_array('review-attributes', $role_has_permission))
                 <li><a class="waves-effect waves-dark" href="{!! url('reviewattributes') !!}" aria-expanded="false">
                         <i class="ri-shield-star-fill"></i>
                         <span class="hide-menu">{{ trans('lang.review_attribute_plural') }}</span>
                     </a>
                 </li>
-                @endif
             @endif
         @endif
         @endif
@@ -478,7 +478,7 @@ if (empty($service_type)) {
         </li>
         @endif
 
-        @if($user->role_id == 1 || $service_type == "ondemand-service")
+        @if($service_type == "ondemand-service")
         @if ($user->role_id == 1 || 
             in_array('providers', $role_has_permission) || 
             in_array('ondemand-categories', $role_has_permission) || 
@@ -507,7 +507,7 @@ if (empty($service_type)) {
         @if ($user->role_id == 1 || in_array('ondemand-coupons', $role_has_permission))
         <li><a class="waves-effect waves-dark" href="{!! url('ondemand-coupons') !!}" aria-expanded="false">
                 <i class="ri-coupon-4-fill"></i>
-                <span class="hide-menu">{{ trans('lang.coupon_plural') }}</span>
+                <span class="hide-menu">{{ trans('lang.ondemandcoupon_plural') }}</span>
             </a>
         </li>
         @endif

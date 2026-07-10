@@ -21,7 +21,15 @@ class DriversPayoutController extends Controller
 
     public function create($id = '')
     {
-        return view("drivers_payouts.create")->with('id', $id);
+        $drivers = AppUser::drivers()
+            ->orderBy('firstName')
+            ->orderBy('lastName')
+            ->get(['id', 'firstName', 'lastName', 'wallet_amount']);
+
+        return view('drivers_payouts.create', [
+            'id' => $id,
+            'drivers' => $drivers,
+        ]);
     }
 
     /**
@@ -171,8 +179,8 @@ class DriversPayoutController extends Controller
                 return response()->json(['error' => 'Driver not found'], 404);
             }
 
-            if ($driver->wallet_amount < $amount) {
-                return response()->json(['error' => 'Insufficient wallet balance'], 400);
+            if (($driver->wallet_amount ?? 0) < $amount) {
+                return response()->json(['error' => trans('lang.driver_insufficient_payment_error')], 400);
             }
 
             DB::beginTransaction();
@@ -188,6 +196,7 @@ class DriversPayoutController extends Controller
                 'amount' => $amount,
                 'note' => $note,
                 'paymentStatus' => 'Success',
+                'paidDate' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

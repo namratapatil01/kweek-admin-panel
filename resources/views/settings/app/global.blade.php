@@ -758,35 +758,73 @@
 
 @section('scripts')
     <script type="text/javascript">
+                var kweekDbMigrated = {
+            updateDoc: function(docId, data) {
+                return fetch('{{ url("admin-data/upsert") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                    body: JSON.stringify({collection: 'settings', id: String(docId), data: data, merge: true})
+                }).then(r => r.json());
+            },
+            setDoc: function(docId, data) {
+                return fetch('{{ url("admin-data/upsert") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                    body: JSON.stringify({collection: 'settings', id: String(docId), data: data, merge: false})
+                }).then(r => r.json());
+            },
+            getDoc: function(docId) {
+                return fetch('{{ url("admin-data/document/settings") }}/' + docId)
+                    .then(r => r.json())
+                    .then(res => {
+                        if(res && res.data) {
+                            return { exists: true, data: function() { return res.data; } };
+                        }
+                        return { exists: false, data: function() { return null; } };
+                    }).catch(e => { return { exists: false, data: function() { return null; } }; });
+            }
+        };
+
+        async function uploadFileToMysql(fileBlob) {
+            var formData = new FormData();
+            formData.append('file', fileBlob);
+            formData.append('directory', 'images');
+            return fetch('{{ url("admin-data/upload") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: formData
+            }).then(r => r.json()).then(res => res.url);
+        }
+
         var database = kweekDb();
 
-        var ref = database.collection('settings').doc("globalSettings");
+        var ref = { get: function() { return kweekDbMigrated.getDoc("globalSettings"); }, update: function(data) { return kweekDbMigrated.updateDoc("globalSettings", data); }, set: function(data) { return kweekDbMigrated.setDoc("globalSettings", data); } };
 
-        var mapKey = database.collection('settings').doc("googleMapKey");
+        var mapKey = { get: function() { return kweekDbMigrated.getDoc("googleMapKey"); }, update: function(data) { return kweekDbMigrated.updateDoc("googleMapKey", data); }, set: function(data) { return kweekDbMigrated.setDoc("googleMapKey", data); } };
 
-        var refPlaceholderImage = database.collection('settings').doc("placeHolderImage");
+        var refPlaceholderImage = { get: function() { return kweekDbMigrated.getDoc("placeHolderImage"); }, update: function(data) { return kweekDbMigrated.updateDoc("placeHolderImage", data); }, set: function(data) { return kweekDbMigrated.setDoc("placeHolderImage", data); } };
 
-        var contactUs = database.collection('settings').doc("ContactUs");
+        var contactUs = { get: function() { return kweekDbMigrated.getDoc("ContactUs"); }, update: function(data) { return kweekDbMigrated.updateDoc("ContactUs", data); }, set: function(data) { return kweekDbMigrated.setDoc("ContactUs", data); } };
 
-        var version = database.collection('settings').doc("Version");
+        var version = { get: function() { return kweekDbMigrated.getDoc("Version"); }, update: function(data) { return kweekDbMigrated.updateDoc("Version", data); }, set: function(data) { return kweekDbMigrated.setDoc("Version", data); } };
 
-        var story = database.collection('settings').doc("story");
+        var story = { get: function() { return kweekDbMigrated.getDoc("story"); }, update: function(data) { return kweekDbMigrated.updateDoc("story", data); }, set: function(data) { return kweekDbMigrated.setDoc("story", data); } };
 
-        var vendor = database.collection('settings').doc("vendor");
+        var vendor = { get: function() { return kweekDbMigrated.getDoc("vendor"); }, update: function(data) { return kweekDbMigrated.updateDoc("vendor", data); }, set: function(data) { return kweekDbMigrated.setDoc("vendor", data); } };
 
-        var provider = database.collection('settings').doc("provider");
+        var provider = { get: function() { return kweekDbMigrated.getDoc("provider"); }, update: function(data) { return kweekDbMigrated.updateDoc("provider", data); }, set: function(data) { return kweekDbMigrated.setDoc("provider", data); } };
 
-        var DriverNearByRef = database.collection('settings').doc("DriverNearBy");
+        var DriverNearByRef = { get: function() { return kweekDbMigrated.getDoc("DriverNearBy"); }, update: function(data) { return kweekDbMigrated.updateDoc("DriverNearBy", data); }, set: function(data) { return kweekDbMigrated.setDoc("DriverNearBy", data); } };
 
-        var digitalProductRef = database.collection('settings').doc("digitalProduct");
+        var digitalProductRef = { get: function() { return kweekDbMigrated.getDoc("digitalProduct"); }, update: function(data) { return kweekDbMigrated.updateDoc("digitalProduct", data); }, set: function(data) { return kweekDbMigrated.setDoc("digitalProduct", data); } };
 
-        var refCurrency = database.collection('currencies').where('isActive', '==', true);
+        var refCurrency = { get: function() { return fetch('{{ url("admin-data/query") }}', { method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'}, body: JSON.stringify({collection: 'currencies', filters: [['isActive', '==', true]]}) }).then(r => r.json()).then(res => { var docs = (res.data||[]).map(d => ({id: d.id, data: function(){return d;}})); return { docs: docs, forEach: function(cb){ docs.forEach(cb); } }; }); } };
 
-        var refEmailSetting = database.collection('settings').doc("emailSetting");
+        var refEmailSetting = { get: function() { return kweekDbMigrated.getDoc("emailSetting"); }, update: function(data) { return kweekDbMigrated.updateDoc("emailSetting", data); }, set: function(data) { return kweekDbMigrated.setDoc("emailSetting", data); } };
 
-        var refNotificationSetting = database.collection('settings').doc("notification_setting");
+        var refNotificationSetting = { get: function() { return kweekDbMigrated.getDoc("notification_setting"); }, update: function(data) { return kweekDbMigrated.updateDoc("notification_setting", data); }, set: function(data) { return kweekDbMigrated.setDoc("notification_setting", data); } };
 
-        var homepagethemeRef = database.collection('settings').doc("home_page_theme");
+        var homepagethemeRef = { get: function() { return kweekDbMigrated.getDoc("home_page_theme"); }, update: function(data) { return kweekDbMigrated.updateDoc("home_page_theme", data); }, set: function(data) { return kweekDbMigrated.setDoc("home_page_theme", data); } };
         var services = database.collection('sections');
   var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
 
@@ -925,7 +963,7 @@
 
                 if (globalSettings == undefined) {
 
-                    database.collection('settings').doc('globalSettings').set({});
+                    kweekDbMigrated.setDoc("globalSettings", {});
 
                 }
 
@@ -1029,7 +1067,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (contactUsData == undefined) {
 
-                    database.collection('settings').doc('ContactUs').set({});
+                    kweekDbMigrated.setDoc("ContactUs", {});
 
                 }
 
@@ -1061,7 +1099,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (vendorData == undefined) {
 
-                    database.collection('settings').doc('vendor').set({});
+                    kweekDbMigrated.setDoc("vendor", {});
 
                 }
 
@@ -1091,7 +1129,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (providerData == undefined) {
 
-                    database.collection('settings').doc('provider').set({});
+                    kweekDbMigrated.setDoc("provider", {});
 
                 }
 
@@ -1123,7 +1161,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (story_data == undefined) {
 
-                    database.collection('settings').doc('story').set({});
+                    kweekDbMigrated.setDoc("story", {});
 
                 }
 
@@ -1157,7 +1195,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (version_data == undefined) {
 
-                    database.collection('settings').doc('Version').set({});
+                    kweekDbMigrated.setDoc("Version", {});
 
                 }
 
@@ -1195,7 +1233,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (key == undefined) {
 
-                    database.collection('settings').doc('googleMapKey').set({});
+                    kweekDbMigrated.setDoc("googleMapKey", {});
 
                 }
 
@@ -1229,7 +1267,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (DriverNearData == undefined) {
 
-                    database.collection('settings').doc('DriverNearBy').set({});
+                    kweekDbMigrated.setDoc("DriverNearBy", {});
 
                 }
 
@@ -1282,7 +1320,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (digitalProductData == undefined) {
 
-                    database.collection('settings').doc('digitalProduct').set({});
+                    kweekDbMigrated.setDoc("digitalProduct", {});
 
                 }
 
@@ -1310,7 +1348,7 @@ if (globalSettings.defaultCountryCode) {
 
                 if (emailSettingData == undefined) {
 
-                    database.collection('settings').doc('emailSetting').set({});
+                    kweekDbMigrated.setDoc("emailSetting", {});
 
                 }
 
@@ -1603,7 +1641,7 @@ if (globalSettings.defaultCountryCode) {
 
 
                     await storeRingtone().then(ringtone => {
-                        database.collection('settings').doc("globalSettings").update({
+                        kweekDbMigrated.updateDoc("globalSettings", {
 
                             'website_color': website_color,
 
@@ -1646,7 +1684,7 @@ if (globalSettings.defaultCountryCode) {
                     });
 
 
-                    database.collection('settings').doc('placeHolderImage').update({
+                    kweekDbMigrated.updateDoc("placeHolderImage", {
 
                         'image': placeholderphoto
 
@@ -1654,7 +1692,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("ContactUs").update({
+                    kweekDbMigrated.updateDoc("ContactUs", {
 
                         'Address': contact_us_address,
 
@@ -1667,7 +1705,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("vendor").update({
+                    kweekDbMigrated.updateDoc("vendor", {
 
                         'auto_approve_vendor': auto_approve_vendor,
 
@@ -1675,7 +1713,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("provider").update({
+                    kweekDbMigrated.updateDoc("provider", {
 
                         'auto_approve_provider': auto_approve_provider,
 
@@ -1683,7 +1721,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("story").update({
+                    kweekDbMigrated.updateDoc("story", {
 
                         'isEnabled': restaurant_can_upload_story,
 
@@ -1693,7 +1731,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("Version").update({
+                    kweekDbMigrated.updateDoc("Version", {
 
                         'app_version': app_version,
 
@@ -1709,7 +1747,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("googleMapKey").update({
+                    kweekDbMigrated.updateDoc("googleMapKey", {
 
                         'key': googleApiKey,
 
@@ -1717,7 +1755,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("DriverNearBy").update({
+                    kweekDbMigrated.updateDoc("DriverNearBy", {
 
                         'minimumDepositToRideAccept': minimumDepositToRideAccept,
 
@@ -1737,7 +1775,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("digitalProduct").update({
+                    kweekDbMigrated.updateDoc("digitalProduct", {
 
                         'fileSize': fileSize,
 
@@ -1745,7 +1783,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("notification_setting").update({
+                    kweekDbMigrated.updateDoc("notification_setting", {
 
                         'senderId': senderId,
 
@@ -1755,7 +1793,7 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-                    database.collection('settings').doc("emailSetting").update({
+                    kweekDbMigrated.updateDoc("emailSetting", {
 
                         'fromName': fromName,
 
@@ -1799,7 +1837,68 @@ if (globalSettings.defaultCountryCode) {
 
 
 
-        var storageRef = kweekFileStore().ref('images');
+        
+        function mySqlKweekFileStore() {
+            return {
+                ref: function(path) {
+                    return {
+                        child: function(filename) {
+                            return {
+                                put: function(fileBlob) {
+                                    var formData = new FormData();
+                                    formData.append('file', fileBlob);
+                                    formData.append('directory', path || 'images');
+
+                                    var uploadTask = {
+                                        on: function(event, progressCb, errorCb, completeCb) {
+                                            if (event === 'state_changed') {
+                                                if (progressCb) progressCb({ bytesTransferred: 50, totalBytes: 100 });
+                                                
+                                                fetch('{{ url("admin-data/upload") }}', {
+                                                    method: 'POST',
+                                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                                    body: formData
+                                                }).then(r => r.json()).then(res => {
+                                                    if (progressCb) progressCb({ bytesTransferred: 100, totalBytes: 100 });
+                                                    uploadTask.snapshot = {
+                                                        ref: {
+                                                            getDownloadURL: function() { return Promise.resolve(res.url); }
+                                                        }
+                                                    };
+                                                    if (completeCb) completeCb();
+                                                }).catch(err => {
+                                                    if (errorCb) errorCb(err);
+                                                });
+                                            }
+                                        }
+                                    };
+                                    return uploadTask;
+                                }
+                            };
+                        }
+                    };
+                }
+            };
+        }
+
+        var storageRef = mySqlKweekFileStore().ref('images');
+        var storageAudioRef = mySqlKweekFileStore().ref('audio');
+        var storage = {
+            refFromURL: function(url) {
+                return {
+                    bucket: "",
+                    delete: function() {
+                        return fetch('{{ url("admin-data/delete-file") }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            body: JSON.stringify({ url: url })
+                        }).then(r => r.json());
+                    }
+                };
+            }
+        };
+        // Override kweekFileStore to return mySqlKweekFileStore globally
+        var kweekFileStore = function() { return mySqlKweekFileStore(); };
 
 
 

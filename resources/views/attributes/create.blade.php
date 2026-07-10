@@ -4,87 +4,65 @@
 <div class="page-wrapper">
     <div class="row page-titles">
         <div class="col-md-5 align-self-center">
-          <h3 class="text-themecolor">{{trans('lang.item_attribute_plural')}}</h3>
+            <h3 class="text-themecolor">{{ trans('lang.item_attribute_plural') }}</h3>
         </div>
-
         <div class="col-md-7 align-self-center">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{url('/dashboard')}}">{{trans('lang.dashboard')}}</a></li>			
-            <li class="breadcrumb-item"><a href= "{!! route('attributes') !!}" >{{trans('lang.item_attribute_plural')}}</a></li>
-            <li class="breadcrumb-item active">{{trans('lang.attribute_create')}}</li>
-          </ol>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('attributes') }}">{{ trans('lang.item_attribute_plural') }}</a></li>
+                <li class="breadcrumb-item active">{{ trans('lang.attribute_create') }}</li>
+            </ol>
         </div>
     </div>
 
-    <div class="card-body">     
-        
-        <div class="error_top" style="display:none"></div>
-        <div class="row vendor_payout_create"> 
-          <div class="vendor_payout_create-inner">
-            <fieldset>
-              <legend>{{trans('lang.attribute_create')}}</legend>
-              <div class="form-group row width-100">
-                <label class="col-3 control-label">{{trans('lang.attribute_name')}}</label>
-                <div class="col-7">
-                  <input type="text" class="form-control cat-name">
-                  <div class="form-text text-muted">{{ trans("lang.attribute_name_help") }} </div>
+    <div class="container-fluid">
+        <div class="cat-edite-page max-width-box">
+            <div class="card pb-4">
+                <div class="card-body">
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('attributes.store') }}">
+                        @csrf
+                        <div class="row vendor_payout_create">
+                            <div class="vendor_payout_create-inner">
+                                <fieldset>
+                                    <legend>{{ trans('lang.attribute_create') }}</legend>
+                                    <div class="form-group row width-100">
+                                        <label class="col-3 control-label">{{ trans('lang.attribute_name') }}</label>
+                                        <div class="col-7">
+                                            <input type="text" name="title"
+                                                class="form-control @error('title') is-invalid @enderror"
+                                                value="{{ old('title') }}" required autofocus>
+                                            <div class="form-text text-muted">{{ trans('lang.attribute_name_help') }}</div>
+                                            @error('title')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-12 text-center btm-btn">
+                            <button type="submit" class="btn btn-primary save-form-btn">
+                                <i class="fa fa-save"></i> {{ trans('lang.save') }}
+                            </button>
+                            <a href="{{ route('attributes') }}" class="btn btn-default">
+                                <i class="fa fa-undo"></i> {{ trans('lang.cancel') }}
+                            </a>
+                        </div>
+                    </form>
                 </div>
-              </div>
-
-            </fieldset>
-          </div>
-
+            </div>
         </div>
-
     </div>
-    <div class="form-group col-12 text-center btm-btn">
-      <button type="button" class="btn btn-primary save-form-btn" ><i class="fa fa-save"></i> {{trans('lang.save')}}</button>
-      <a href="{!! route('attributes') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{trans('lang.cancel')}}</a>
-    </div>
-
-	</div>
-
 </div>
-
-@endsection
-
-@section('scripts')
-
-<script type="text/javascript">
-
-var database = kweekDb();
-var ref = database.collection('vendor_attributes');
-var id_attribute = "<?php echo uniqid();?>";
-var attribute_length=1;
-
-$(document).ready(function(){
-
-    jQuery("#data-table_processing").show();
-
-    ref.get().then( async function(snapshots){
-      attribute_length = snapshots.size+1;
-      jQuery("#data-table_processing").hide();
-    })
-
-    $(".save-form-btn").click(function(){
-    
-        var title = $(".cat-name").val();
-      
-        if (title == '') {
-
-          $(".error_top").show();
-          $(".error_top").html("");
-          $(".error_top").append("<p>{{trans('lang.enter_cat_title_error')}}</p>");
-          window.scrollTo(0,0);
-        }else{
-
-          database.collection('vendor_attributes').doc(id_attribute).set({'id':id_attribute,'title':title}).then(function(result) { 
-            window.location.href = '{{ route("attributes")}}';
-          });
-
-        }
-    });
-});
-
-</script>
 @endsection

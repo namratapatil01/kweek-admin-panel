@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ProvidesMySqlCrud;
+use Illuminate\View\View;
 
 class ReviewAttributeController extends Controller
 {
@@ -10,11 +11,31 @@ class ReviewAttributeController extends Controller
 
     public function __construct()
     {
-        $this->middleware("auth");
+        $this->middleware('auth');
     }
 
     protected function moduleSlug(): string
     {
-        return "review-attributes";
+        return 'review-attributes';
+    }
+
+    /**
+     * Use the classic Review Attributes UI (icon, count badge, Name/Actions table).
+     */
+    public function index(): View
+    {
+        return view('reviewattributes.index');
+    }
+
+    public function create(): View
+    {
+        return view('reviewattributes.create');
+    }
+
+    public function edit(...$params): View
+    {
+        $id = (string) end($params);
+
+        return view('reviewattributes.edit', ['id' => $id]);
     }
 }
