@@ -171,10 +171,18 @@ class CustomerMiscService
 
     public function createSos(string $customerId, array $data): array
     {
-        $data['id'] = $data['id'] ?? (string) Str::uuid();
-        $data['customerId'] = $customerId;
+        $payload = array_filter([
+            'customerId' => $customerId,
+            'status' => $data['status'] ?? 'Initiated',
+            'latLong' => $data['latLong'] ?? null,
+        ], static fn ($value) => $value !== null);
 
-        $sos = Sos::query()->create($data);
+        $sos = Sos::query()->create([
+            'id' => $data['id'] ?? (string) Str::uuid(),
+            'orderId' => $data['orderId'],
+            'createdAt' => $data['createdAt'] ?? now(),
+            'payload' => $payload,
+        ]);
 
         return $sos->toDocumentArray();
     }
@@ -191,7 +199,10 @@ class CustomerMiscService
     public function redeemGiftCard(string $customerId, string $giftCode): array
     {
         $purchase = GiftPurchase::query()
-            ->where('giftCode', $giftCode)
+            ->where(function ($query) use ($giftCode) {
+                $query->where('payload->giftCode', $giftCode)
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.giftCode')) = ?", [$giftCode]);
+            })
             ->first();
 
         if (! $purchase) {
@@ -218,9 +229,11 @@ class CustomerMiscService
         ]);
 
         $purchase->update([
-            'isRedeem' => true,
-            'redeemBy' => $customerId,
-            'redeemAt' => now(),
+            'payload' => array_merge($purchase->payload ?? [], [
+                'isRedeem' => true,
+                'redeemBy' => $customerId,
+                'redeemAt' => now()->toIso8601String(),
+            ]),
         ]);
 
         return $purchase->fresh()->toDocumentArray();
@@ -285,7 +298,8 @@ class CustomerMiscService
             return null;
         }
 
-        $notification->update(['isRead' => true]);
+        $notification->mergePayload(['isRead' => true]);
+        $notification->save();
 
         return $notification->fresh()->toDocumentArray();
     }

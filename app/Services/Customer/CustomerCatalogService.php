@@ -260,9 +260,7 @@ class CustomerCatalogService
     {
         return $this->paginateDocuments(
             VehicleType::query()
-                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
-                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
-                }))
+                ->when($sectionId, fn ($q) => $this->filterBySectionPayload($q, $sectionId))
                 ->orderBy('name'),
             $perPage
         );
@@ -272,9 +270,7 @@ class CustomerCatalogService
     {
         return $this->paginateDocuments(
             PopularDestination::query()
-                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
-                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
-                }))
+                ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
                 ->orderBy('title'),
             $perPage
         );
@@ -284,9 +280,7 @@ class CustomerCatalogService
     {
         return $this->paginateDocuments(
             RentalVehicleType::query()
-                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
-                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
-                }))
+                ->when($sectionId, fn ($q) => $this->filterBySectionPayload($q, $sectionId))
                 ->orderBy('name'),
             $perPage
         );
@@ -307,7 +301,7 @@ class CustomerCatalogService
         return $this->paginateDocuments(
             ProviderWorker::query()
                 ->when($providerId, fn ($q) => $q->where('providerId', $providerId))
-                ->orderBy('firstName'),
+                ->orderByDesc('createdAt'),
             $perPage
         );
     }
@@ -349,6 +343,14 @@ class CustomerCatalogService
             ->whereIn('id', $categoryIds)
             ->get()
             ->map(fn ($c) => $c->toDocumentArray());
+    }
+
+    protected function filterBySectionPayload(Builder $query, string $sectionId): Builder
+    {
+        return $query->where(function ($q) use ($sectionId) {
+            $q->where('payload->sectionId', $sectionId)
+                ->orWhere('payload->section_id', $sectionId);
+        });
     }
 
     protected function sectionRadiusKm(?string $sectionId): float

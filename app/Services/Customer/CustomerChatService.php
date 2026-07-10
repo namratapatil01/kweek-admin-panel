@@ -83,7 +83,6 @@ class CustomerChatService
         $messageType = $data['messageType'] ?? 'text';
 
         $inbox = $modelClass::query()
-            ->where('customerId', $customer->id)
             ->where(function ($q) use ($orderId) {
                 $q->where('orderId', $orderId)->orWhere('id', $orderId);
             })
@@ -106,6 +105,7 @@ class CustomerChatService
             ]);
         } else {
             $inbox->update([
+                'customerId' => $customer->id,
                 'lastMessage' => $message,
                 'lastSenderId' => $customer->id,
                 'createdAt' => now(),

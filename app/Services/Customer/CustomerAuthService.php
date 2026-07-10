@@ -106,7 +106,11 @@ class CustomerAuthService
             ]
         );
 
-        Mail::to($email)->send(new CustomerPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new CustomerPasswordResetMail($user, $plainToken));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void
