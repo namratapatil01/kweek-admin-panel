@@ -72,7 +72,14 @@ class DriverMiscService
             'rental_vehicle_types' => RentalVehicleType::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
             'car_makes' => CarMake::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
             'car_models' => CarModel::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
-            'parcel_categories' => ParcelCategory::query()->where('publish', true)->orderBy('set_order')->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
+            'parcel_categories' => ParcelCategory::query()
+                ->where('publish', true)
+                ->orderByRaw("CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.set_order')), '0') AS UNSIGNED)")
+                ->orderBy('title')
+                ->get()
+                ->map(fn ($item) => $item->toDocumentArray())
+                ->values()
+                ->all(),
             'parcel_weights' => ParcelWeight::query()->where('publish', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
             'rental_packages' => RentalPackage::query()->where('isActive', true)->get()->map(fn ($item) => $item->toDocumentArray())->values()->all(),
         ];

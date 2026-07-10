@@ -57,7 +57,6 @@ class DriverChatService
         $messageType = $data['messageType'] ?? 'text';
 
         $inbox = ChatDriver::query()
-            ->where('restaurantId', $driver->id)
             ->where(function ($q) use ($orderId) {
                 $q->where('orderId', $orderId)->orWhere('id', $orderId);
             })
@@ -80,6 +79,7 @@ class DriverChatService
             ]);
         } else {
             $inbox->update([
+                'restaurantId' => $driver->id,
                 'lastMessage' => $message,
                 'lastSenderId' => $driver->id,
                 'createdAt' => now(),

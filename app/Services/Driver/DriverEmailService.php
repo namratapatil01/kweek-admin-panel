@@ -4,6 +4,7 @@ namespace App\Services\Driver;
 
 use App\Models\AppUser;
 use App\Models\EmailTemplate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class DriverEmailService
@@ -24,9 +25,13 @@ class DriverEmailService
             (string) ($doc['message'] ?? '')
         );
 
-        Mail::raw($body, function ($message) use ($driver, $doc) {
-            $message->to($driver->email)->subject((string) ($doc['subject'] ?? 'Wallet Top-up'));
-        });
+        try {
+            Mail::raw($body, function ($message) use ($driver, $doc) {
+                $message->to($driver->email)->subject((string) ($doc['subject'] ?? 'Wallet Top-up'));
+            });
+        } catch (\Throwable $e) {
+            Log::warning('Driver wallet top-up email failed', ['driver_id' => $driver->id, 'error' => $e->getMessage()]);
+        }
     }
 
     public function sendPayoutRequestEmail(AppUser $driver, float $amount, string $payoutRequestId): void
@@ -45,8 +50,12 @@ class DriverEmailService
             (string) ($doc['message'] ?? '')
         );
 
-        Mail::raw($body, function ($message) use ($driver, $doc) {
-            $message->to($driver->email)->subject((string) ($doc['subject'] ?? 'Payout Request'));
-        });
+        try {
+            Mail::raw($body, function ($message) use ($driver, $doc) {
+                $message->to($driver->email)->subject((string) ($doc['subject'] ?? 'Payout Request'));
+            });
+        } catch (\Throwable $e) {
+            Log::warning('Driver payout email failed', ['driver_id' => $driver->id, 'error' => $e->getMessage()]);
+        }
     }
 }

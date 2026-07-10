@@ -61,13 +61,16 @@ class DriverSettingsService
 
     public function taxes(?string $country = null): array
     {
-        $query = Tax::query()->where('enable', true);
+        $query = Tax::query()->published();
 
         if ($country) {
-            $query->where('country', $country);
+            $query->where(function ($q) use ($country) {
+                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.country')) = ?", [$country])
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.country')) IS NULL");
+            });
         }
 
-        return $query->get()->map(fn ($item) => $item->toDocumentArray())->values()->all();
+        return $query->orderBy('title')->get()->map(fn ($item) => $item->toDocumentArray())->values()->all();
     }
 
     public function setting(string $key): ?array

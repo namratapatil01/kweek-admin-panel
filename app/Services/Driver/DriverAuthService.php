@@ -10,6 +10,7 @@ use App\Services\Auth\GoogleTokenVerifier;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -200,7 +201,11 @@ class DriverAuthService
             ['email' => $email],
             ['token' => Hash::make($plainToken), 'created_at' => now()]
         );
-        Mail::to($email)->send(new DriverPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new DriverPasswordResetMail($user, $plainToken));
+        } catch (\Throwable $e) {
+            Log::warning('Driver password reset email failed', ['email' => $email, 'error' => $e->getMessage()]);
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void
