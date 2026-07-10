@@ -97,11 +97,22 @@ class AdvertisementsController extends Controller
             $query->where('vendorId', $vendorId);
         }
 
+        // Include ads for current section OR ads with no section assigned (legacy imports).
+        if ($sectionId) {
+            $query->where(function ($q) use ($sectionId) {
+                $q->where('sectionId', $sectionId)
+                    ->orWhereNull('sectionId')
+                    ->orWhere('sectionId', '')
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sectionId])
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_EXTRACT(payload, '$.sectionId') IS NULL");
+            });
+        }
+
         // Show approved/running ads on main list, exclude pending requests if status filter set
         $statusFilter = $request->input('status');
         if ($statusFilter) {
             $query->where(function ($q) use ($statusFilter) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.status')) = ?", [$statusFilter])
+                $q->whereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.status')) = ?", [$statusFilter])
                     ->orWhere('title', $statusFilter);
             });
         }
@@ -109,8 +120,8 @@ class AdvertisementsController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.description')) LIKE ?", ["%{$search}%"])
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.type')) LIKE ?", ["%{$search}%"]);
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.description')) LIKE ?", ["%{$search}%"])
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.type')) LIKE ?", ["%{$search}%"]);
             });
         }
 
