@@ -16,21 +16,48 @@
     </div>
 
     <div class="container-fluid">
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
-        @endif
-
-        <div class="admin-top-section">
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex top-title-section pb-4 justify-content-between">
-                        <div class="d-flex top-title-left align-self-center">
-                            <span class="icon mr-3"><img src="{{ asset('images/attribute.png') }}" alt=""></span>
-                            <h3 class="mb-0">{{ trans('lang.reviewattribute_plural') }}</h3>
-                            <span class="counter ml-3 total_count">0</span>
+       <div class="admin-top-section">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex top-title-section pb-4 justify-content-between">
+                    <div class="d-flex top-title-left align-self-center">
+                        <span class="icon mr-3"><img src="{{ asset('images/attribute.png') }}"></span>
+                        <h3 class="mb-0">{{trans('lang.reviewattribute_plural')}}</h3>
+                        <span class="counter ml-3 total_count"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+       </div>
+       <div class="table-list">
+       <div class="row">
+           <div class="col-12">
+               <div class="card border">
+                 <div class="card-header d-flex justify-content-between align-items-center border-0">
+                   <div class="card-header-title">
+                    <h3 class="text-dark-2 mb-2 h4">{{trans('lang.reviewattribute_table')}}</h3>
+                    <p class="mb-0 text-dark-2">{{trans('lang.attribute_table_text')}}</p>
+                   </div>
+                   <div class="card-header-right d-flex align-items-center">
+                    <div class="card-header-btn mr-3">
+                        <a class="btn-primary btn rounded-full" href="{{ url('reviewattributes/create') }}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.reviewattribute_create')}}</a>
+                     </div>
+                   </div>
+                 </div>
+                 <div class="card-body">
+                         <div class="table-responsive m-t-10">
+                            <table id="example24"
+                                   class="display nowrap table table-hover table-striped table-bordered"
+                                   cellspacing="0" width="100%">
+                                <thead>
+                                <tr>
+                                    <th>{{trans('lang.reviewattribute_name')}}</th>
+                                    <th>{{trans('lang.actions')}}</th>
+                                </tr>
+                                </thead>
+                                <tbody id="append_list1">
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -80,20 +107,45 @@
 
 @section('scripts')
 <script type="text/javascript">
-    var checkDeletePermission = @json($canDelete);
+    var user_permissions = [];
+    try {
+        user_permissions = JSON.parse('<?php echo @session('user_permissions') ?: '[]'; ?>' || '[]');
+    } catch (e) {
+        user_permissions = [];
+    }
+
+    var checkDeletePermission = false;
+    if ($.inArray('review.attributes.delete', user_permissions) >= 0 || {{ (int) (auth()->user()->role_id ?? 0) === 1 ? 'true' : 'false' }}) {
+        checkDeletePermission = true;
+    }
+
+    var database = kweekDb();
+    var ref = database.collection('review_attributes');
+    var append_list = '';
 
     $(document).ready(function () {
-        var table = $('#reviewAttributesTable').DataTable({
-            pageLength: 10,
-            processing: true,
-            serverSide: true,
-            responsive: true,
-            ajax: {
-                url: '{{ route('reviewattributes.datatable') }}',
-                type: 'GET',
-                dataSrc: function (json) {
-                    $('.total_count').text(json.recordsFiltered || 0);
-                    return json.data;
+        jQuery("#data-table_processing").show();
+        append_list = document.getElementById('append_list1');
+        append_list.innerHTML = '';
+
+        ref.get().then(function (snapshots) {
+            $('.total_count').text((snapshots.docs && snapshots.docs.length) || 0);
+            var html = buildHTML(snapshots);
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
+            jQuery("#data-table_processing").hide();
+            if (html != '') {
+                append_list.innerHTML = html;
+            }
+            $('#example24').DataTable({
+                order: [[0, 'asc']],
+                columnDefs: [
+                    { orderable: false, targets: [1] },
+                ],
+                language: {
+                    zeroRecords: "{{trans('lang.no_record_found')}}",
+                    emptyTable: "{{trans('lang.no_record_found')}}"
                 },
                 error: function () {
                     jQuery('#data-table_processing').hide();
@@ -141,7 +193,37 @@
                     alert(xhr.responseJSON?.error || '{{ trans('lang.error') }}');
                 }
             });
+        }).catch(function (err) {
+            console.error('Failed to load review attributes', err);
+            $('.total_count').text(0);
+            jQuery("#data-table_processing").hide();
+        });
+    });
+
+    function buildHTML(snapshots) {
+        var html = '';
+        (snapshots.docs || []).forEach(function (listval) {
+            var val = listval.data() || {};
+            val.id = listval.id;
+            var route1 = '{{ url("reviewattributes/edit") }}/' + encodeURIComponent(val.id);
+            var title = val.title || val.name || val.id;
+            html += '<tr>';
+            html += '<td>' + title + '</td>';
+            html += '<td><span class="action-btn"><a href="' + route1 + '" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
+            if (checkDeletePermission) {
+                html += '<a id="' + val.id + '" name="reviewattribute-delete" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
+            }
+            html += '</span></td></tr>';
+        });
+        return html;
+    }
+
+    $(document).on("click", "a[name='reviewattribute-delete']", function () {
+        var id = this.id;
+        database.collection('review_attributes').doc(id).delete().then(function () {
+            window.location.href = '{{ url("reviewattributes") }}';
         });
     });
 </script>
+
 @endsection

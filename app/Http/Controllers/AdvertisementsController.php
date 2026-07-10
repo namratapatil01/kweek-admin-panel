@@ -19,6 +19,7 @@ class AdvertisementsController extends Controller
     {
         return view('advertisements.index', [
             'vendorId' => $id,
+            'totalAds' => DB::table('advertisements')->when($id, fn ($q) => $q->where('vendorId', $id))->count(),
         ]);
     }
 
@@ -83,16 +84,17 @@ class AdvertisementsController extends Controller
 
     public function datatable(Request $request): JsonResponse
     {
-        $draw = (int) $request->input('draw', 1);
+        try {
+            $draw = (int) $request->input('draw', 1);
         $start = (int) $request->input('start', 0);
         $length = (int) $request->input('length', 10);
         $search = trim($request->input('search.value', ''));
-        $vendorId = $request->input('vendor_id', '');
-        $sectionId = $request->input('section_id') ?: $request->cookie('section_id');
+        $vendorId = $request->input('vendor_id');
+        $sectionId = $request->cookie('section_id') ?: $request->input('section_id');
 
         $query = DB::table('advertisements');
 
-        if ($vendorId !== '') {
+        if ($vendorId) {
             $query->where('vendorId', $vendorId);
         }
 
@@ -102,8 +104,8 @@ class AdvertisementsController extends Controller
                 $q->where('sectionId', $sectionId)
                     ->orWhereNull('sectionId')
                     ->orWhere('sectionId', '')
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sectionId])
-                    ->orWhereRaw("JSON_EXTRACT(payload, '$.sectionId') IS NULL");
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sectionId])
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_EXTRACT(payload, '$.sectionId') IS NULL");
             });
         }
 
@@ -111,7 +113,7 @@ class AdvertisementsController extends Controller
         $statusFilter = $request->input('status');
         if ($statusFilter) {
             $query->where(function ($q) use ($statusFilter) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.status')) = ?", [$statusFilter])
+                $q->whereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.status')) = ?", [$statusFilter])
                     ->orWhere('title', $statusFilter);
             });
         }
@@ -119,8 +121,8 @@ class AdvertisementsController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.description')) LIKE ?", ["%{$search}%"])
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.type')) LIKE ?", ["%{$search}%"]);
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.description')) LIKE ?", ["%{$search}%"])
+                    ->orWhereRaw("JSON_VALID(payload) = 1 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.type')) LIKE ?", ["%{$search}%"]);
             });
         }
 
@@ -219,6 +221,17 @@ class AdvertisementsController extends Controller
             'recordsFiltered' => $total,
             'data' => $rows,
         ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('AdvertisementsController@datatable', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'draw' => (int) $request->input('draw', 1),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function store(Request $request)

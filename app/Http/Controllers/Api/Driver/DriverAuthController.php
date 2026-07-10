@@ -103,6 +103,47 @@ class DriverAuthController extends Controller
         );
     }
 
+    public function sendPhoneOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'phoneNumber' => ['required', 'string', 'max:32'],
+            'countryCode' => ['nullable', 'string', 'max:8'],
+        ]);
+
+        return ApiResponse::success(
+            $this->authService->sendPhoneOtp($data['phoneNumber'], $data['countryCode'] ?? null),
+            'OTP sent'
+        );
+    }
+
+    public function verifyPhoneOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'verificationId' => ['required', 'uuid'],
+            'otp' => ['required', 'string', 'size:6'],
+            'phoneNumber' => ['required', 'string', 'max:32'],
+            'countryCode' => ['nullable', 'string', 'max:8'],
+            'fcmToken' => ['nullable', 'string'],
+            'serviceType' => ['nullable', 'string'],
+        ]);
+
+        $result = $this->authService->verifyPhoneOtpAndLogin($data);
+
+        if (! empty($result['pending_approval']) || empty($result['token'])) {
+            return ApiResponse::success([
+                'pending_approval' => true,
+                'driver' => isset($result['user']) ? new DriverResource($result['user']) : null,
+            ], 'Account pending approval');
+        }
+
+        return ApiResponse::authSuccess(
+            $result['token'],
+            new DriverResource($result['user']),
+            'Login successful',
+            'driver'
+        );
+    }
+
     public function forgotPassword(DriverForgotPasswordRequest $request): JsonResponse
     {
         $this->authService->forgotPassword($request->input('email'));

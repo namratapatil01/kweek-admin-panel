@@ -72,4 +72,46 @@ class DriverChatController extends Controller
             'Media uploaded'
         );
     }
+
+    public function restaurantInbox(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::paginated(
+            $this->chatService->restaurantInbox($user, (int) $request->input('per_page', 20)),
+            'Restaurant inbox retrieved'
+        );
+    }
+
+    public function restaurantMessages(Request $request, string $orderId): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::paginated(
+            $this->chatService->restaurantMessages($user, $orderId, (int) $request->input('per_page', 50)),
+            'Restaurant messages retrieved'
+        );
+    }
+
+    public function sendRestaurant(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'orderId' => ['required', 'string', 'max:64'],
+            'message' => ['nullable', 'string'],
+            'messageType' => ['nullable', 'string', 'max:32'],
+            'receiverId' => ['nullable', 'string', 'max:64'],
+            'restaurantId' => ['nullable', 'string', 'max:64'],
+            'restaurantName' => ['nullable', 'string', 'max:255'],
+            'restaurantProfileImage' => ['nullable', 'string'],
+            'url' => ['nullable', 'string'],
+            'videoThumbnail' => ['nullable', 'string'],
+        ]);
+
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success($this->chatService->sendRestaurantMessage($user, $data), 'Message sent');
+    }
 }

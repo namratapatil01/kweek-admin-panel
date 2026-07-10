@@ -74,13 +74,14 @@ class DriverOrderController extends Controller
     {
         $data = $request->validate([
             'otp' => ['nullable', 'string', 'max:10'],
+            'startKilometerReading' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         /** @var AppUser $user */
         $user = $request->user();
 
         return ApiResponse::success(
-            $this->orderService->start($user, $type, $id, $data['otp'] ?? null),
+            $this->orderService->start($user, $type, $id, $data['otp'] ?? null, $data),
             'Order started'
         );
     }
@@ -89,14 +90,48 @@ class DriverOrderController extends Controller
     {
         $data = $request->validate([
             'otp' => ['nullable', 'string', 'max:10'],
+            'endKilometerReading' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         /** @var AppUser $user */
         $user = $request->user();
 
         return ApiResponse::success(
-            $this->orderService->complete($user, $type, $id, $data['otp'] ?? null),
+            $this->orderService->complete($user, $type, $id, $data['otp'] ?? null, $data),
             'Order completed'
+        );
+    }
+
+    public function searchParcel(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::paginated(
+            $this->orderService->searchParcel($user, $request->all()),
+            'Parcel orders retrieved'
+        );
+    }
+
+    public function searchRental(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::paginated(
+            $this->orderService->searchRental($user, $request->all()),
+            'Rental orders retrieved'
+        );
+    }
+
+    public function stream(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->orderService->stream($user, $request->all()),
+            'Order stream retrieved'
         );
     }
 

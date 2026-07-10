@@ -474,8 +474,74 @@
         };
     };
 
+    function escapeHtmlAttr(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;');
+    }
+
+    function resolveMediaUrl(value) {
+        if (value == null) {
+            return '';
+        }
+
+        if (Array.isArray(value)) {
+            for (let i = 0; i < value.length; i++) {
+                const resolved = resolveMediaUrl(value[i]);
+                if (resolved) {
+                    return resolved;
+                }
+            }
+            return '';
+        }
+
+        if (typeof value !== 'string') {
+            return '';
+        }
+
+        const url = value.trim();
+        if (!url || url === 'null' || url === 'undefined') {
+            return '';
+        }
+
+        if (url.indexOf('data:') === 0 || url.indexOf('http://') === 0 || url.indexOf('https://') === 0 || url.indexOf('blob:') === 0) {
+            return url;
+        }
+
+        if (url.charAt(0) === '/') {
+            return window.location.origin + url;
+        }
+
+        return window.location.origin + '/storage/' + url.replace(/^storage\//, '');
+    }
+
+    function getProfileImageSrc(record, fallback) {
+        record = record || {};
+        const candidates = [
+            record.profilePictureURL,
+            record.profilePic,
+            record.photo,
+            record.image,
+            record.photos,
+        ];
+
+        for (let i = 0; i < candidates.length; i++) {
+            const resolved = resolveMediaUrl(candidates[i]);
+            if (resolved) {
+                return resolved;
+            }
+        }
+
+        return resolveMediaUrl(fallback) || '';
+    }
+
     window.kweekDb = kweekDb;
     window.kweekFileStore = kweekFileStore;
     window.kweekGeoQuery = new KweekGeoQuery(kweekDbApi);
     window.KweekGeoQuery = KweekGeoQuery;
+    window.escapeHtmlAttr = escapeHtmlAttr;
+    window.resolveMediaUrl = resolveMediaUrl;
+    window.getProfileImageSrc = getProfileImageSrc;
 })();

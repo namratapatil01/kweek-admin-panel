@@ -20,9 +20,27 @@ class CustomerReviewController extends Controller
             $this->reviewService->list(
                 $request->user()->id,
                 $request->query('order_id') ?? $request->query('orderid'),
+                $request->query('vendor_id') ?? $request->query('VendorId'),
+                $request->query('product_id') ?? $request->query('productId'),
                 (int) $request->query('per_page', 20)
             ),
             'Reviews retrieved'
+        );
+    }
+
+    public function vendorReviews(Request $request, string $vendorId): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->reviewService->vendorReviews($vendorId, (int) $request->query('per_page', 20)),
+            'Vendor reviews retrieved'
+        );
+    }
+
+    public function serviceReviews(Request $request, string $serviceId): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->reviewService->serviceReviews($serviceId, (int) $request->query('per_page', 20)),
+            'Service reviews retrieved'
         );
     }
 

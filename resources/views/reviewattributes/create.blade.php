@@ -66,3 +66,46 @@
     </div>
 </div>
 @endsection
+
+@section('scripts')
+
+<script type="text/javascript">
+
+  var database = kweekDb();
+  var ref = database.collection('review_attributes');
+  var photo = "";
+  var id_reviewattribute = "<?php echo uniqid(); ?>";
+  var reviewattribute_length = 1;
+
+
+  $(document).ready(function () {
+    jQuery("#data-table_processing").show();
+    ref.get().then(async function (snapshots) {
+      reviewattribute_length = snapshots.size + 1;
+      jQuery("#data-table_processing").hide();
+    })
+
+    $(".save-form-btn").click(function () {
+      var title = $(".cat-name").val();
+
+      if (title == '') {
+
+        $(".error_top").show();
+        $(".error_top").html("");
+        $(".error_top").append("<p>{{trans('lang.enter_cat_title_error')}}</p>");
+        window.scrollTo(0, 0);
+      } else {
+
+        database.collection('review_attributes').doc(id_reviewattribute).set({ 'id': id_reviewattribute, 'title': title }).then(function () {
+          window.location.href = '{{ url("reviewattributes") }}';
+        });
+
+      }
+
+    });
+
+
+  });
+
+</script>
+@endsection

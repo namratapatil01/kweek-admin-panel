@@ -18,7 +18,7 @@ $moduleControllers = [
     'coupons' => \App\Http\Controllers\CouponController::class,
 
     // 'coupons' is handled by explicit routes in web.php (CouponController)
-    'subscription-plans' => \App\Http\Controllers\SubscriptionPlanController::class,
+    // 'subscription-plans' => \App\Http\Controllers\SubscriptionPlanController::class,
     'vehicle-types' => \App\Http\Controllers\VehicleTypeController::class,
     'rental-vehicle-types' => \App\Http\Controllers\RentalVehicleTypeController::class,
     'rental-packages' => \App\Http\Controllers\RentalPackageController::class,

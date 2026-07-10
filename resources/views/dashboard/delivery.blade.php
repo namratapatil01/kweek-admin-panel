@@ -713,75 +713,78 @@
         }
 
 
-        function buildHTML(snapshots) {
+        function buildHTMLFromList(list) {
             var html = '';
-            var count = 1;
             var rating = 0;
-            (snapshots.docs || []).forEach((listval) => {
-                val = listval.data();
-                val.id = listval.id;
-                var route = '<?php echo route("stores.edit", ":id");?>';
-                route = route.replace(':id', val.id);
+            (list || []).forEach((val) => {
+                var route = '<?php echo url("stores/edit");?>/' + encodeURIComponent(val.id);
+                var profileSrc = escapeHtmlAttr(getProfileImageSrc(val, placeholderImage));
+                var fallbackSrc = escapeHtmlAttr(resolveMediaUrl(placeholderImage) || placeholderImage);
+                var title = val.title || val.name || 'Store';
 
-
-
-                html = html + '<tr>';
-
-                let profileSrc = val.photo ? val.photo : placeholderImage;
-
-                html = html + '<td class="redirecttopage"><div class="top-driver-name">' +
-                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" alt="image">' +
-                    '<a href="' + route + '">' + val.title + '</a>' +
+                html += '<tr>';
+                html += '<td class="redirecttopage"><div class="top-driver-name">' +
+                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image">' +
+                    '<a href="' + route + '">' + title + '</a>' +
                     '</div></td>';
-                if (val.hasOwnProperty('reviewsCount') && val.reviewsCount != 0) {
-                    rating = Math.round(parseFloat(val.reviewsSum) / parseInt(val.reviewsCount));
+
+                if (val.reviewsCount && val.reviewsCount != 0) {
+                    rating = Math.round(parseFloat(val.reviewsSum || 0) / parseInt(val.reviewsCount, 10));
                 } else {
                     rating = 0;
                 }
 
-                html = html + '<td><ul class="rating" data-rating="' + rating + '">';
-                html = html + '<li class="rating__item"></li>';
-                html = html + '<li class="rating__item"></li>';
-                html = html + '<li class="rating__item"></li>';
-                html = html + '<li class="rating__item"></li>';
-                html = html + '<li class="rating__item"></li>';
-                html = html + '</ul></td>';
-                html = html + '<td><span class="action-btn"><a href="' + route + '" > <i class="mdi mdi-lead-pencil"></i></span></a></td>';
-                html = html + '</tr>';
-
+                html += '<td><ul class="rating" data-rating="' + rating + '">';
+                html += '<li class="rating__item"></li>';
+                html += '<li class="rating__item"></li>';
+                html += '<li class="rating__item"></li>';
+                html += '<li class="rating__item"></li>';
+                html += '<li class="rating__item"></li>';
+                html += '</ul></td>';
+                html += '<td><span class="action-btn"><a href="' + route + '"><i class="mdi mdi-lead-pencil"></i></a></span></td>';
+                html += '</tr>';
                 rating = 0;
-                count++;
             });
             return html;
         }
 
-
-        function buildDriverHTML(snapshots) {
-            var html = '';
-            var count = 1;
-            (snapshots.docs || []).forEach((listval) => {
-                val = listval.data();
+        function buildHTML(snapshots) {
+            var list = (snapshots.docs || []).map(function (listval) {
+                var val = listval.data() || {};
                 val.id = listval.id;
-                var driverroute = '<?php echo route("drivers.edit", ":id");?>';
-                driverroute = driverroute.replace(':id', val.id);
+                return val;
+            });
+            return buildHTMLFromList(list);
+        }
 
-                var driverView = '{{route("drivers.view", ":id")}}';
-                driverView = driverView.replace(':id', val.id);
+        function buildDriverHTMLFromList(list) {
+            var html = '';
+            (list || []).forEach((val) => {
+                var driverroute = '<?php echo url("drivers/edit");?>/' + encodeURIComponent(val.id);
+                var driverView = '<?php echo url("drivers/view");?>/' + encodeURIComponent(val.id);
+                var profileSrc = escapeHtmlAttr(getProfileImageSrc(val, placeholderImage));
+                var fallbackSrc = escapeHtmlAttr(resolveMediaUrl(placeholderImage) || placeholderImage);
+                var name = ((val.firstName || '') + ' ' + (val.lastName || '')).trim() || 'Driver';
 
-                html = html + '<tr>';
-
-                let profileSrc = val.profilePic ? val.profilePic : placeholderImage;
-
-                html = html + '<td class="redirecttopage text-center"><div class="top-driver-name">' +
-                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" alt="image">' +
-                    '<a href="' + driverView + '">' + val.firstName + ' ' + val.lastName + '</a>' +
+                html += '<tr>';
+                html += '<td class="redirecttopage text-center"><div class="top-driver-name">' +
+                    '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image">' +
+                    '<a href="' + driverView + '">' + name + '</a>' +
                     '</div></td>';
-                html = html + '<td data-url="' + driverView + '" class="redirecttopage">' + val.orderCompleted + '</td>';
-                html = html + '<td data-url="' + driverroute + '" class="redirecttopage"><span class="action-btn"><a><i class="mdi mdi-lead-pencil"></i></a></span></td>';
-                html = html + '</tr>';
-                count++;
+                html += '<td data-url="' + driverView + '" class="redirecttopage">' + (val.orderCompleted || 0) + '</td>';
+                html += '<td data-url="' + driverroute + '" class="redirecttopage"><span class="action-btn"><a><i class="mdi mdi-lead-pencil"></i></a></span></td>';
+                html += '</tr>';
             });
             return html;
+        }
+
+        function buildDriverHTML(snapshots) {
+            var list = (snapshots.docs || []).map(function (listval) {
+                var val = listval.data() || {};
+                val.id = listval.id;
+                return val;
+            });
+            return buildDriverHTMLFromList(list);
         }
 
         function buildOrderHTML(snapshots) {
@@ -1275,74 +1278,79 @@
                 endTS = kweekDb.Timestamp.fromDate(toEndOfDay(endDate));
             }
 
+            const noRecordRow = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
             const append_listvendors = document.getElementById('append_list');
-            append_listvendors.innerHTML = '';
-
-            let refVendor = db.collection('vendors').where('section_id', '==', active_id).orderBy('reviewsCount', 'desc').limit(5);
-
-            /* if (startTS && endTS) {
-                ref = ref
-                    .where('createdAt', '>=', startTS)
-                    .where('createdAt', '<=', endTS)
-                    .orderBy('createdAt', 'desc')
-                    .orderBy('reviewsCount', 'desc');
-            } else {
-                ref = ref.orderBy('reviewsCount', 'desc');
-            } */
-            
-            let snapshotsVendor = await refVendor.get();
-            html = buildHTML(snapshotsVendor);
-            if(html == ''){
-                append_listvendors.innerHTML = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
-            }else{
-                append_listvendors.innerHTML = html;
-            }
-            
-
             const append_listrecent_order = document.getElementById('append_list_recent_order');
+            const append_listtop_drivers = document.getElementById('append_list_top_drivers');
+
+            append_listvendors.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+            append_listtop_drivers.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
             append_listrecent_order.innerHTML = '';
 
-            ref = db.collection('vendor_orders')
-                /* .where('vendor.section_id', '==', active_id) */.where('section_id','==',active_id)
-                .where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"]);
+            try {
+                // Prefer current section; fall back when migrated vendors still use legacy Firebase section ids
+                let snapshotsVendor = await db.collection('vendors')
+                    .where('section_id', '==', active_id)
+                    .limit(50)
+                    .get();
+                if (snapshotsVendor.empty) {
+                    snapshotsVendor = await db.collection('vendors').limit(50).get();
+                }
+                const vendorList = (snapshotsVendor.docs || [])
+                    .map(function (doc) {
+                        var val = doc.data() || {};
+                        val.id = doc.id;
+                        val.reviewsCount = parseInt(val.reviewsCount || 0, 10) || 0;
+                        return val;
+                    })
+                    .sort(function (a, b) { return b.reviewsCount - a.reviewsCount; })
+                    .slice(0, 5);
+                html = buildHTMLFromList(vendorList);
+                append_listvendors.innerHTML = html || noRecordRow;
 
-            /* if (startTS && endTS) {
-                ref = ref
-                    .where('createdAt', '>=', startTS)
-                    .where('createdAt', '<=', endTS)
+                ref = db.collection('vendor_orders')
+                    .where('section_id', '==', active_id)
+                    .where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"])
                     .orderBy('createdAt', 'desc');
-            } else {
-                ref = ref.orderBy('createdAt', 'desc');
-            } */
-            ref = ref.orderBy('createdAt', 'desc');
-            snapshots = await ref.limit(10).get();
-            html = buildOrderHTML(snapshots);
-            if(html == ''){
-                append_listrecent_order.innerHTML = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
+                snapshots = await ref.limit(10).get();
+                if (snapshots.empty) {
+                    snapshots = await db.collection('vendor_orders')
+                        .where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"])
+                        .orderBy('createdAt', 'desc')
+                        .limit(10)
+                        .get();
+                }
+                html = buildOrderHTML(snapshots);
+                append_listrecent_order.innerHTML = html || noRecordRow;
 
-            }else{
-                append_listrecent_order.innerHTML = html;
+                ref = db.collection('users')
+                    .where('role', '==', 'driver')
+                    .where('serviceType', '==', active_type)
+                    .limit(50);
+                snapshots = await ref.get();
+                if (snapshots.empty && active_type) {
+                    snapshots = await db.collection('users')
+                        .where('role', '==', 'driver')
+                        .limit(50)
+                        .get();
+                }
+                const driverList = (snapshots.docs || [])
+                    .map(function (doc) {
+                        var val = doc.data() || {};
+                        val.id = doc.id;
+                        val.orderCompleted = parseInt(val.orderCompleted || 0, 10) || 0;
+                        return val;
+                    })
+                    .sort(function (a, b) { return b.orderCompleted - a.orderCompleted; })
+                    .slice(0, 5);
+                html = buildDriverHTMLFromList(driverList);
+                append_listtop_drivers.innerHTML = html || noRecordRow;
+            } catch (error) {
+                console.error('loadDashboardLists failed:', error);
+                append_listvendors.innerHTML = noRecordRow;
+                append_listrecent_order.innerHTML = noRecordRow;
+                append_listtop_drivers.innerHTML = noRecordRow;
             }
-
-            const append_listtop_drivers = document.getElementById('append_list_top_drivers');
-            append_listtop_drivers.innerHTML = '';
-
-            ref = db.collection('users').where('role', '==', 'driver').where('serviceType', '==', active_type);
-
-            /* if (startTS && endTS) {
-                ref = ref
-                    .where('createdAt', '>=', startTS)
-                    .where('createdAt', '<=', endTS)
-                    .orderBy('createdAt', 'desc')
-                    .orderBy('orderCompleted', 'desc');
-            } else {
-                ref = ref.orderBy('orderCompleted', 'desc');
-            } */
-            ref = ref.orderBy('orderCompleted', 'desc');
-
-            snapshots = await ref.limit(5).get();
-            html = buildDriverHTML(snapshots);
-            append_listtop_drivers.innerHTML = html;
 
             $('#storesTable, #orderTable, #driverTable').each(function () {
                 if (!$.fn.DataTable.isDataTable(this)) {

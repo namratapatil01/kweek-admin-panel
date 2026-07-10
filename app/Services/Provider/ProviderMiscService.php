@@ -7,6 +7,8 @@ use App\Models\AppUser;
 use App\Models\CmsPage;
 use App\Models\Document;
 use App\Models\DocumentVerify;
+use App\Services\Provider\ProviderEmailService;
+use App\Services\Provider\ProviderNotificationService;
 use App\Services\SettingsService;
 use App\Services\Storage\FileStorageService;
 use App\Support\CatalogEntityWriter;
@@ -15,7 +17,9 @@ class ProviderMiscService
 {
     public function __construct(
         protected SettingsService $settingsService,
-        protected FileStorageService $storageService
+        protected FileStorageService $storageService,
+        protected ProviderEmailService $emailService,
+        protected ProviderNotificationService $notificationService
     ) {
     }
 
@@ -100,5 +104,15 @@ class ProviderMiscService
             'path' => $result['path'],
             'mime' => $result['mime_type'],
         ];
+    }
+
+    public function notificationContent(string $type): array
+    {
+        return $this->notificationService->notificationContent($type);
+    }
+
+    public function emailTemplate(string $type): ?array
+    {
+        return $this->emailService->emailTemplate($type);
     }
 }

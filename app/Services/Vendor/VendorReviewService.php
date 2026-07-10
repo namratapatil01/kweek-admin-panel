@@ -36,7 +36,7 @@ class VendorReviewService
     public function ratings(AppUser $user, int $perPage = 20): LengthAwarePaginator
     {
         return Rating::query()
-            ->where(fn ($q) => $q->where('payload->VendorId', $user->vendorID)->orWhere('VendorId', $user->vendorID))
+            ->where('payload->VendorId', $user->vendorID)
             ->orderByDesc('createdAt')
             ->paginate($perPage)
             ->through(fn ($item) => $item->toDocumentArray());

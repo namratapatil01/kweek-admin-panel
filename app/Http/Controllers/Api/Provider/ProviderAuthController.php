@@ -8,7 +8,9 @@ use App\Http\Requests\Api\Provider\ProviderLoginRequest;
 use App\Http\Requests\Api\Provider\ProviderPhoneLoginRequest;
 use App\Http\Requests\Api\Provider\ProviderRegisterRequest;
 use App\Http\Requests\Api\Provider\ProviderResetPasswordRequest;
+use App\Http\Requests\Api\Provider\ProviderSendPhoneOtpRequest;
 use App\Http\Requests\Api\Provider\ProviderSocialLoginRequest;
+use App\Http\Requests\Api\Provider\ProviderVerifyPhoneOtpRequest;
 use App\Http\Resources\Provider\ProviderResource;
 use App\Models\AppUser;
 use App\Services\Provider\ProviderAuthService;
@@ -64,6 +66,42 @@ class ProviderAuthController extends Controller
                 $request->input('id_token'),
                 $request->validated()
             )
+        );
+    }
+
+    public function sendPhoneOtp(ProviderSendPhoneOtpRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        return ApiResponse::success(
+            $this->authService->sendPhoneOtp($data['phoneNumber'], $data['countryCode'] ?? null),
+            'OTP sent successfully'
+        );
+    }
+
+    public function verifyPhoneOtp(ProviderVerifyPhoneOtpRequest $request): JsonResponse
+    {
+        $result = $this->authService->verifyPhoneOtpAndLogin($request->validated());
+
+        if (! empty($result['is_new_user']) && empty($result['token'])) {
+            return ApiResponse::success([
+                'is_new_user' => true,
+                'profile' => $result['profile'] ?? null,
+            ], 'Registration required');
+        }
+
+        if (! empty($result['pending_approval']) || empty($result['token'])) {
+            return ApiResponse::success([
+                'pending_approval' => true,
+                'provider' => isset($result['user']) ? new ProviderResource($result['user']) : null,
+            ], 'Account pending approval');
+        }
+
+        return ApiResponse::authSuccess(
+            $result['token'],
+            new ProviderResource($result['user']),
+            'Login successful',
+            'provider'
         );
     }
 

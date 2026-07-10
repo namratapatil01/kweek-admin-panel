@@ -349,6 +349,43 @@
             return d;
         }
 
+        function escapeHtmlAttr(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;');
+        }
+
+        function getProfileSrc(val) {
+            const url = val.profilePictureURL || val.profilePic || '';
+            if (url && url !== 'null') {
+                return url;
+            }
+            return placeholderImage;
+        }
+
+        async function getRideCountMaps() {
+            const ridesSnapshot = await db.collection('rides').get();
+            const customerCounts = {};
+            const driverCounts = {};
+
+            ridesSnapshot.docs.forEach((doc) => {
+                const ride = doc.data();
+                const authorId = ride.authorID || (ride.author && ride.author.id);
+                const driverId = ride.driverId || ride.driverID || (ride.driver && ride.driver.id);
+
+                if (authorId) {
+                    customerCounts[authorId] = (customerCounts[authorId] || 0) + 1;
+                }
+                if (driverId) {
+                    driverCounts[driverId] = (driverCounts[driverId] || 0) + 1;
+                }
+            });
+
+            return { customerCounts, driverCounts };
+        }
+
 
         $(document).ready(function () {
 
@@ -431,69 +468,45 @@
         });
 
         async function loadDashboardLists(filterType = null, year = null, month = null, startDate = null, endDate = null, active_id, active_type) {
-            let ref, snapshots, html;
-
-            let startTS = null;
-            let endTS = null;
-            if (filterType === 'year' && year) {
-                startTS = kweekDb.Timestamp.fromDate(new Date(year, 0, 1));
-                endTS = kweekDb.Timestamp.fromDate(new Date(year, 11, 31, 23, 59, 59));
-            } else if (filterType === 'month' && year && month) {
-                startTS = kweekDb.Timestamp.fromDate(new Date(year, month - 1, 1));
-                endTS = kweekDb.Timestamp.fromDate(new Date(year, month, 0, 23, 59, 59));
-            } else if (filterType === 'custom' && startDate && endDate) {
-                startTS = kweekDb.Timestamp.fromDate(toStartOfDay(startDate));
-                endTS = kweekDb.Timestamp.fromDate(toEndOfDay(endDate));
-            }
-
             const append_listvendors = document.getElementById('append_list_top_customers');
-            append_listvendors.innerHTML = '';
-
-            ref = db.collection('users').where('role', '==', 'customer');
-                   
-            
-            ref = ref.orderBy('createdAt', 'desc');
-
-          
-            const snapshotsPromise = ref.get();
-
-            [snapshots, html] = await Promise.all([
-                snapshotsPromise,
-                snapshotsPromise.then(buildHTML)
-            ]);
-
-            append_listvendors.innerHTML = html;
-
             const append_listrecent_order = document.getElementById('append_list_recent_rides');
+            const append_listtop_drivers = document.getElementById('append_list_top_drivers');
+            const noRecordRow = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
+
+            append_listvendors.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+            append_listtop_drivers.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
             append_listrecent_order.innerHTML = '';
 
-            ref = db.collection('rides').where('sectionId', '==', active_id).where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"]);
+            try {
+                const rideCounts = await getRideCountMaps();
 
-          
-            ref = ref.orderBy('createdAt', 'desc');
+                let ref = db.collection('users').where('role', '==', 'customer').orderBy('createdAt', 'desc');
+                const customerSnapshots = await ref.get();
+                const customerHtml = buildHTML(customerSnapshots, rideCounts.customerCounts);
+                append_listvendors.innerHTML = customerHtml || noRecordRow;
 
-            snapshots = await ref.limit(10).get();
-            html = buildRidesHTML(snapshots);
-            append_listrecent_order.innerHTML = html;
+                ref = db.collection('rides')
+                    .where('sectionId', '==', active_id)
+                    .where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"])
+                    .orderBy('createdAt', 'desc');
 
-            const append_listtop_drivers = document.getElementById('append_list_top_drivers');
-            append_listtop_drivers.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+                const rideSnapshots = await ref.limit(10).get();
+                append_listrecent_order.innerHTML = buildRidesHTML(rideSnapshots) || noRecordRow;
 
-            ref = db.collection('users').where('role', '==', 'driver').where('isOwner','==',false);
+                ref = db.collection('users').where('role', '==', 'driver').where('isOwner', '==', false);
+                if (typeof active_id !== 'undefined' && active_id) {
+                    ref = ref.where('sectionId', '==', active_id);
+                }
 
-            if (typeof active_id !== 'undefined' && active_id) {
-                ref = ref.where('sectionId', '==', active_id);
+                const driverSnapshots = await ref.get();
+                const driverHtml = buildDriverHTML(driverSnapshots, rideCounts.driverCounts);
+                append_listtop_drivers.innerHTML = driverHtml || noRecordRow;
+            } catch (error) {
+                console.error('loadDashboardLists failed:', error);
+                append_listvendors.innerHTML = noRecordRow;
+                append_listtop_drivers.innerHTML = noRecordRow;
+                append_listrecent_order.innerHTML = noRecordRow;
             }
-
-            
-            snapshots = await ref.get();
-            html = await buildDriverHTML(snapshots);
-            if(html == ''){
-                append_listtop_drivers.innerHTML = '<tr><td colspan="3">{{trans("lang.no_record_found")}}</td></tr>';
-            }else{
-                append_listtop_drivers.innerHTML = html;
-            }
-           
 
             $('#orderTable, #driverTable').each(function () {
                 if (!$.fn.DataTable.isDataTable(this)) {
@@ -872,101 +885,75 @@
             }
         }
 
-       async function buildHTML(snapshots) {           
-
-            const userList = await Promise.all(
-                snapshots.docs.map(async (doc) => {
-                    const val = doc.data();
-                    val.id = doc.id;
-                    const rideCount = await getCustomerRideCount(doc.id);
-                    return { val, rideCount };
-                })
-            );
+        function buildHTML(snapshots, rideCounts) {
+            const userList = snapshots.docs.map((doc) => {
+                const val = doc.data();
+                val.id = doc.id;
+                return { val, rideCount: rideCounts[val.id] || 0 };
+            });
 
             userList.sort((a, b) => b.rideCount - a.rideCount);
 
-            const topDrivers = userList.slice(0, 5);
-
+            const topUsers = userList.slice(0, 5);
             let html = '';
-            for (const driver of topDrivers) {
-                const val = driver.val;
+
+            for (const user of topUsers) {
+                const val = user.val;
                 const userroute = '<?php echo route("users.edit", ":id");?>'.replace(':id', val.id);
                 const userView = '<?php echo route("users.view", ":id");?>'.replace(':id', val.id);
-                const profileSrc = val.profilePic ? val.profilePic : placeholderImage;
+                const profileSrc = escapeHtmlAttr(getProfileSrc(val));
+                const fallbackSrc = escapeHtmlAttr(placeholderImage);
+                const fullName = ((val.firstName || '') + ' ' + (val.lastName || '')).trim();
 
-                html += `
-                    <tr>
-                        <td class="redirecttopage">
-                            <div class="top-driver-name">
-                                <img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="${profileSrc}" alt="image">
-                                <a href="${userView}">${val.firstName} ${val.lastName}</a>
-                            </div>
-                        </td>
-                        <td data-url="${userView}" class="redirecttopage">${driver.rideCount}</td>
-                        <td class="action-btn">
-                            <a href="${userroute}">
-                                <span class="mdi mdi-lead-pencil"></span>
-                            </a>
-                        </td>
-                    </tr>
-                `;
+                html += '<tr>' +
+                    '<td class="redirecttopage">' +
+                        '<div class="top-driver-name">' +
+                            '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image">' +
+                            '<a href="' + userView + '">' + fullName + '</a>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td data-url="' + userView + '" class="redirecttopage">' + user.rideCount + '</td>' +
+                    '<td class="action-btn">' +
+                        '<a href="' + userroute + '"><span class="mdi mdi-lead-pencil"></span></a>' +
+                    '</td>' +
+                '</tr>';
             }
 
             return html;
         }
-        async function getCustomerRideCount(customerId) {
-            const ridesSnapshot = await db.collection('rides')
-                .where('authorID', '==', customerId)
-                .get();
-            return ridesSnapshot.size;
-        }
 
-        async function getDriverRideCount(driverId) {
-            // Count all rides where driverId == this driver's id
-            const ridesSnapshot = await db.collection('rides')
-                .where('driverId', '==', driverId)
-                .get();
-            return ridesSnapshot.size;
-        }
-
-        async function buildDriverHTML(snapshots) {           
-
-            const driverList = await Promise.all(
-                snapshots.docs.map(async (doc) => {
-                    const val = doc.data();
-                    val.id = doc.id;
-                    const rideCount = await getDriverRideCount(doc.id);
-                    return { val, rideCount };
-                })
-            );
+        function buildDriverHTML(snapshots, rideCounts) {
+            const driverList = snapshots.docs.map((doc) => {
+                const val = doc.data();
+                val.id = doc.id;
+                return { val, rideCount: rideCounts[val.id] || 0 };
+            });
 
             driverList.sort((a, b) => b.rideCount - a.rideCount);
 
             const topDrivers = driverList.slice(0, 5);
-
             let html = '';
+
             for (const driver of topDrivers) {
                 const val = driver.val;
                 const driverroute = '<?php echo route("drivers.edit", ":id");?>'.replace(':id', val.id);
                 const driverView = '<?php echo route("drivers.view", ":id");?>'.replace(':id', val.id);
-                const profileSrc = val.profilePic ? val.profilePic : placeholderImage;
+                const profileSrc = escapeHtmlAttr(getProfileSrc(val));
+                const fallbackSrc = escapeHtmlAttr(placeholderImage);
+                const fullName = ((val.firstName || '') + ' ' + (val.lastName || '')).trim();
 
-                html += `
-                    <tr>
-                        <td class="redirecttopage">
-                            <div class="top-driver-name">
-                                <img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="${profileSrc}" alt="image">
-                                <a href="${driverView}">${val.firstName} ${val.lastName}</a>
-                            </div>
-                        </td>
-                        <td data-url="${driverView}" class="redirecttopage">${driver.rideCount}</td>
-                        <td class="action-btn">
-                            <a href="${driverroute}">
-                                <span class="mdi mdi-lead-pencil"></span>
-                            </a>
-                        </td>
-                    </tr>
-                `;
+                html += '<tr>' +
+                    '<td class="redirecttopage">' +
+                        '<div class="top-driver-name">' +
+                            '<img class="img-circle img-size-32" style="width:40px;height:40px; margin-right:5px;" src="' + profileSrc + '" onerror="this.onerror=null;this.src=\'' + fallbackSrc + '\'" alt="image">' +
+                            '<a href="' + driverView + '">' + fullName + '</a>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td data-url="' + driverView + '" class="redirecttopage">' + driver.rideCount + '</td>' +
+                    '<td class="action-btn">' +
+                        '<a href="' + driverroute + '"><span class="mdi mdi-lead-pencil"></span></a>' +
+                    '</td>' +
+                '</tr>';
             }
 
             return html;
@@ -982,7 +969,7 @@
                 var route = '<?php echo route("rides.edit", ":id"); ?>';
                 route = route.replace(':id', val.id);
 
-                var user_id = val.author.id;
+                var user_id = val.author && val.author.id ? val.author.id : (val.authorID || '');
                 var customer_view = '{{route("users.edit", ":id")}}';
                 customer_view = customer_view.replace(':id', user_id);
                 var user_view = '{{route("users.view", ":id")}}';
@@ -998,13 +985,13 @@
                     html = html + '<td></td>';
                 }
 
-                if (val.hasOwnProperty("author")) {
+                if (val.author && val.author.firstName) {
                     html = html + '<td data-url="' + user_view + '" class="redirecttopage">' + val.author.firstName + '</td>';
                 } else {
                     html = html + '<td></td>';
                 }
 
-                if (val.hasOwnProperty("driver")) {
+                if (val.driver && val.driver.id) {
                     var driverId = val.driver.id;
                     var diverRoute = '{{route("drivers.edit", ":id")}}';
                     diverRoute = diverRoute.replace(':id', driverId);

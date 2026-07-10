@@ -637,6 +637,53 @@ class VendorController extends Controller
         }
     }
 
+    public function getStoresList(Request $request)
+    {
+        try {
+            $sectionId = (string) $request->input('section_id', '');
+
+            $baseQuery = Vendor::query()
+                ->whereNotNull('title')
+                ->where('title', '!=', '');
+
+            $stores = collect();
+
+            if ($sectionId !== '') {
+                $stores = (clone $baseQuery)
+                    ->where('section_id', $sectionId)
+                    ->orderBy('title')
+                    ->get(['id', 'title', 'section_id', 'zoneId']);
+            }
+
+            if ($stores->isEmpty()) {
+                $legacySectionIds = DB::table('vendors')
+                    ->whereNotNull('section_id')
+                    ->where('section_id', '!=', '')
+                    ->distinct()
+                    ->pluck('section_id');
+
+                if ($legacySectionIds->isNotEmpty()) {
+                    $stores = (clone $baseQuery)
+                        ->whereIn('section_id', $legacySectionIds)
+                        ->orderBy('title')
+                        ->get(['id', 'title', 'section_id', 'zoneId']);
+                }
+            }
+
+            if ($stores->isEmpty()) {
+                $stores = $baseQuery
+                    ->orderBy('title')
+                    ->get(['id', 'title', 'section_id', 'zoneId']);
+            }
+
+            return response()->json(['stores' => $stores->values()]);
+        } catch (\Exception $e) {
+            Log::error('VendorController@getStoresList: ' . $e->getMessage());
+
+            return response()->json(['stores' => []]);
+        }
+    }
+
     private function addSubscriptionHistory(string $userId, array $requestData): void
     {
         $plan = $requestData['subscription_plan'] ?? null;

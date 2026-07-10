@@ -277,13 +277,51 @@ Accept may credit wallet for Fixed-price jobs and deduct admin commission (Flutt
 
 ---
 
+## Realtime Polling (Firebase listener replacement)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/realtime/poll?since=ISO8601&tab=` | Yes | Returns changed bookings, notifications, inbox messages, wallet balance since timestamp |
+
+Additional incremental polling on existing endpoints:
+
+| Endpoint | Query |
+|----------|-------|
+| `GET /bookings` | `?since=ISO8601` |
+| `GET /chat/{orderId}/messages` | `?since=ISO8601&type=driver\|store\|worker\|customer` |
+
+---
+
+## Auth (extended)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/phone/send-otp` | No | Send 6-digit OTP; returns `verificationId`, `expiresIn` |
+| POST | `/auth/phone/verify-otp` | No | Verify OTP then login/register; returns token + provider |
+
+---
+
+## Settings (public)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/settings` | Bootstrap settings bundle (provider, vendor, map key, FCM, languages, etc.) |
+| GET | `/settings/payment` | Payment gateway keys (Stripe, Razorpay, PayPal, etc.) |
+| GET | `/settings/languages` | Active app languages |
+| GET | `/settings/{key}` | Single setting document |
+
+`GET /home` now includes extended `settings` fields: `vendor`, `Version`, `ContactUs`, `googleMapKey`, `notification_setting`, `emailSetting`, `placeHolderImage`, `DriverNearBy`, `languages`, `walletSettings`.
+
+---
+
 ## Subscriptions
 
 | Method | Endpoint |
 |--------|----------|
-| GET | `/subscriptions/plans` |
+| GET | `/subscriptions/plans?sectionId=&isCommissionPlan=true\|false` |
 | GET | `/subscriptions/history` |
 | POST | `/subscriptions` | `{ plan_id, payment_type, amount }` |
+| POST | `/subscriptions/confirm-payment` | `{ plan_id, payment_type, payment_id, amount }` |
 
 ---
 
@@ -291,9 +329,9 @@ Accept may credit wallet for Fixed-price jobs and deduct admin commission (Flutt
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/chat/inbox?type=customer\|worker` | Inbox |
+| GET | `/chat/inbox?type=customer\|worker\|driver\|store` | Inbox |
 | GET | `/chat/{orderId}/messages?type=` | Thread |
-| POST | `/chat/send` | Send message |
+| POST | `/chat/send` | Send message (FCM to recipient) |
 | POST | `/chat/upload` | Upload image/video |
 
 Inbox uses Flutter field names: `restaurantId` = provider id.
@@ -308,6 +346,8 @@ Inbox uses Flutter field names: `restaurantId` = provider id.
 | GET | `/reviews/order/{orderId}` |
 | GET | `/ratings` |
 | GET | `/notifications` |
+| GET | `/notifications/templates/{type}` |
+| GET | `/email-templates/{type}` |
 | GET | `/documents` |
 | GET | `/documents/status` |
 | POST | `/documents` |
@@ -320,11 +360,19 @@ Inbox uses Flutter field names: `restaurantId` = provider id.
 ## Booking Lifecycle (Flutter parity)
 
 1. Customer places order → `provider_orders` status `Order Placed`
-2. Provider accepts/rejects
-3. Optional worker assignment → `Order Assigned`
-4. Start → `Order Ongoing` + `startTime`
+2. Provider accepts/rejects (reject refunds customer wallet for non-COD fixed jobs)
+3. Optional worker assignment → `Order Assigned` + FCM to worker
+4. Start → `Order Ongoing` + `startTime` + FCM to customer
 5. Optional extra charges / stop timer
-6. Complete with customer OTP → `Order Completed` + wallet credit when applicable
+6. Complete with customer OTP → `Order Completed` + wallet credit + referral reward on first order
+
+Server-side FCM is sent on: `provider_accepted`, `provider_rejected`, `worker_assigned`, `service_intransit`, `service_charges`, `service_completed`, `stop_time`.
+
+---
+
+## Account Delete (cascade)
+
+`DELETE /account` soft-deletes the provider and removes related: services, favorites, coupons, workers, and customer chat threads.
 
 ---
 
@@ -335,3 +383,5 @@ Inbox uses Flutter field names: `restaurantId` = provider id.
 - Booking ownership is resolved via `provider.author` / `payload.provider.author` / `payload.providerId`.
 - File uploads use the existing `FileStorageService` / public disk.
 - Token ability: `provider-api` with ability `provider`.
+- Payout withdraw triggers `payout_request` email template when configured.
+- Configure `FCM_SERVER_KEY` in `.env` for push notifications.

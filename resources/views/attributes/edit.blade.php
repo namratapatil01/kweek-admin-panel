@@ -68,3 +68,39 @@
     </div>
 </div>
 @endsection
+
+@section('scripts')
+
+<script type="text/javascript">
+
+var id = "<?php echo $id;?>";
+var database = kweekDb();
+  
+$(document).ready(function(){
+
+    jQuery("#data-table_processing").show();
+    database.collection('vendor_attributes').doc(id).get().then(async function(snapshot){
+        var attribute = snapshot.exists ? (snapshot.data() || {}) : {};
+        $(".attribute-name").val(attribute.title || attribute.name || '');
+        jQuery("#data-table_processing").hide();
+    }).catch(function () {
+        jQuery("#data-table_processing").hide();
+    });
+
+	  $(".edit-form-btn").click(function(){
+		  var title = $(".attribute-name").val();
+ 		  if (title == '') {
+  			$(".error_top").show();
+  			$(".error_top").html("");
+  			$(".error_top").append("<p>{{trans('lang.enter_cat_title_error')}}</p>");
+    		window.scrollTo(0,0);
+  		}else{
+    		database.collection('vendor_attributes').doc(id).update({'title':title}).then(function(result) { 
+    	  		window.location.href = '{{ url("attributes") }}';
+	    	});
+  		}
+	  });
+});
+  
+</script>
+@endsection

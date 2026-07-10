@@ -104,6 +104,8 @@
         var database = firebase.firestore();
         var ref = database.collection('subscription_plans');
 
+        var database = kweekDb();
+       
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = Object.values(JSON.parse(user_permissions));
         var checkDeletePermission = false;
@@ -128,6 +130,21 @@
 
         $(document).ready(async function () {
 
+        function resolveImageUrl(url) {
+            if (!url) {
+                return placeholderImage;
+            }
+            if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0) {
+                return url;
+            }
+            if (url.indexOf('/') === 0) {
+                return window.location.origin + url;
+            }
+            return url;
+        }
+        
+        $(document).ready(async function() {
+            
             getOverviewSection(section_id);
 
             $(document.body).on('click', '.redirecttopage', function () {
@@ -146,6 +163,12 @@
                     type: "GET",
                     data: function (d) {
                         d.section_id = section_id;
+                    },
+                    complete: function() {
+                        jQuery("#data-table_processing").hide();
+                    },
+                    error: function() {
+                        jQuery("#data-table_processing").hide();
                     }
                 },
                 columns: [
@@ -165,7 +188,7 @@
                         render: function (data, type, row) {
                             var rowId = row.id || '';
                             var rowName = row.name || '';
-                            var rowImage = row.image || placeholderImage;
+                            var rowImage = resolveImageUrl(row.image);
                             var url = "{{ url('current-subscriber') }}/" + rowId;
                             return '<img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="" style="width:70px;height:70px;" src="' + rowImage + '"> <a href="' + url + '" id="' + rowId + '">' + rowName + '</a>';
                         }
@@ -224,10 +247,16 @@
                     orderable: false,
                     targets: (checkDeletePermission) ? [0, 5, 6] : [4, 5]
                 }],
+                initComplete: function(settings, json) {
+                    jQuery("#data-table_processing").hide();
+                    if (json && typeof json.recordsFiltered !== 'undefined') {
+                        $('.total_count').text(json.recordsFiltered);
+                    }
+                },
                 "language": {
                     "zeroRecords": "{{ trans('lang.no_record_found') }}",
                     "emptyTable": "{{ trans('lang.no_record_found') }}",
-                    "processing": "" // Remove default loader
+                    "processing": ""
                 },
             });
 

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\VehicleType;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VehicleController extends Controller
 {
@@ -234,6 +237,112 @@ class VehicleController extends Controller
         if ($id) {
             \Illuminate\Support\Facades\DB::table('car_models')->where('id', $id)->delete();
         }
+        return response()->json(['success' => true]);
+    }
+
+    public function vehicleTypeDatatable(Request $request)
+    {
+        $draw = (int) $request->input('draw', 1);
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+        $search = (string) $request->input('search.value', '');
+        $sectionId = $request->input('section_id') ?: $request->cookie('section_id');
+
+        $placeholderImage = asset('images/default_user.png');
+        $placeholderRaw = DB::table('settings')->where('id', 'placeHolderImage')->value('value');
+        if ($placeholderRaw) {
+            $decoded = json_decode($placeholderRaw, true);
+            if (! empty($decoded['image'])) {
+                $placeholderImage = $decoded['image'];
+            }
+        }
+
+        $baseQuery = VehicleType::query();
+        if ($sectionId && $sectionId !== 'all') {
+            $baseQuery->where(function ($query) use ($sectionId) {
+                $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sectionId]);
+            });
+        }
+
+        $filteredQuery = clone $baseQuery;
+        if ($search !== '') {
+            $filteredQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.short_description')) LIKE ?", ['%' . $search . '%'])
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.supported_vehicle')) LIKE ?", ['%' . $search . '%']);
+            });
+        }
+
+        $totalRecords = (clone $baseQuery)->count();
+        $filteredRecords = (clone $filteredQuery)->count();
+
+        $records = $filteredQuery
+            ->orderBy('name')
+            ->skip($start)
+            ->take($length > 0 ? $length : 10)
+            ->get();
+
+        $userPermissions = json_decode(session('user_permissions', '[]'), true) ?: [];
+        $canDelete = in_array('cab-vehicle-type.delete', $userPermissions, true);
+
+        $data = [];
+        foreach ($records as $record) {
+            $doc = $record->toDocumentArray();
+            $id = $record->id;
+            $name = (string) ($doc['name'] ?? '');
+            $photo = (string) ($doc['vehicle_icon'] ?? '');
+            $isActive = filter_var($doc['isActive'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $editUrl = route('vehicleType.edit', $id);
+
+            if ($photo !== '') {
+                $vehicleInfo = '<img class="rounded" style="width:50px" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">'
+                    . '<a href="' . e($editUrl) . '" class="left_space redirecttopage">' . e($name) . '</a>';
+            } else {
+                $vehicleInfo = '<img class="rounded" style="width:50px" src="' . e($placeholderImage) . '" alt="image">'
+                    . '<a href="' . e($editUrl) . '" class="left_space redirecttopage">' . e($name) . '</a>';
+            }
+
+            $activeChecked = $isActive ? 'checked' : '';
+            $statusToggle = '<label class="switch"><input type="checkbox" ' . $activeChecked . ' id="' . e($id) . '" name="isSwtich"><span class="slider round"></span></label>';
+
+            $actions = '<span class="action-btn">';
+            $actions .= '<a href="' . e($editUrl) . '" data-toggle="tooltip" data-bs-original-title="' . e(trans('lang.edit')) . '"><i class="mdi mdi-lead-pencil"></i></a>';
+            if ($canDelete) {
+                $actions .= '<a id="' . e($id) . '" name="vehicleType-delete" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" data-bs-original-title="' . e(trans('lang.delete')) . '"><i class="mdi mdi-delete"></i></a>';
+            }
+            $actions .= '</span>';
+
+            $data[] = [$vehicleInfo, $statusToggle, $actions];
+        }
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data,
+        ]);
+    }
+
+    public function updateVehicleType(Request $request, string $id)
+    {
+        try {
+            $record = VehicleType::query()->findOrFail($id);
+            $record->isActive = filter_var($request->input('isActive'), FILTER_VALIDATE_BOOLEAN);
+            $record->save();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyVehicleType(Request $request)
+    {
+        $id = $request->input('id');
+        if ($id) {
+            VehicleType::query()->where('id', $id)->delete();
+        }
+
         return response()->json(['success' => true]);
     }
 }
