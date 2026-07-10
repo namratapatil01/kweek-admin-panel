@@ -1,176 +1,2037 @@
 {
-  "info": {
-    "name": "KWEEK Vendor API",
-    "description": "Vendor/Store APIs for emart_vendor Flutter app migration from Firebase to Laravel/MySQL",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    { "key": "base_url", "value": "http://127.0.0.1:8000" },
-    { "key": "token", "value": "" },
-    { "key": "section_id", "value": "6285dcf511651" },
-    { "key": "order_id", "value": "" },
-    { "key": "product_id", "value": "" },
-    { "key": "driver_id", "value": "" }
-  ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
-  },
-  "item": [
-    {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "Register",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Raj\",\n  \"lastName\": \"Store\",\n  \"email\": \"vendor@example.com\",\n  \"phoneNumber\": \"9999999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"sectionId\": \"{{section_id}}\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "{{base_url}}/api/vendor/register"
-          },
-          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 200 || pm.response.code === 201) { var json = pm.response.json(); if (json.token) pm.collectionVariables.set('token', json.token); }"] } }]
-        },
-        {
-          "name": "Login",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"vendor@example.com\",\n  \"password\": \"password123\",\n  \"fcmToken\": \"\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "{{base_url}}/api/vendor/login"
-          },
-          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 200) { var json = pm.response.json(); if (json.token) pm.collectionVariables.set('token', json.token); }"] } }]
-        },
-        { "name": "Logout", "request": { "method": "POST", "url": "{{base_url}}/api/vendor/logout" } }
-      ]
+    "info": {
+        "name": "KWEEK Vendor API",
+        "description": "Complete Vendor/Store APIs for emart_vendor Flutter app — all routes from routes/api.php vendor prefix.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
-    {
-      "name": "Store & Profile",
-      "item": [
-        { "name": "Get Profile", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/profile" } },
+    "variable": [
         {
-          "name": "Create Store",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"My Restaurant\",\n  \"description\": \"Best food in town\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"isSelfDelivery\": true,\n  \"dine_in_active\": false\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "{{base_url}}/api/vendor/store"
-          }
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000"
         },
-        { "name": "Get Store", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/store" } },
-        { "name": "Dashboard", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/dashboard" } },
-        { "name": "Home (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/vendor/home" } }
-      ]
-    },
-    {
-      "name": "Orders",
-      "item": [
         {
-          "name": "List New Orders",
-          "request": { "method": "GET", "url": "{{base_url}}/api/vendor/orders?tab=new" },
-          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json(); if (json.data && json.data.data && json.data.data.length) pm.collectionVariables.set('order_id', json.data.data[0].id);"] } }]
+            "key": "token",
+            "value": ""
         },
-        { "name": "Order Detail", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/orders/{{order_id}}" } },
-        { "name": "Accept Order", "request": { "method": "POST", "url": "{{base_url}}/api/vendor/orders/{{order_id}}/accept" } },
         {
-          "name": "Reject Order",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Out of stock\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/vendor/orders/{{order_id}}/reject"
-          }
+            "key": "section_id",
+            "value": "6285dcf511651"
         },
-        { "name": "Complete Order", "request": { "method": "POST", "url": "{{base_url}}/api/vendor/orders/{{order_id}}/complete" } },
         {
-          "name": "Assign Driver",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"driverId\": \"{{driver_id}}\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/vendor/orders/{{order_id}}/assign-driver"
-          }
+            "key": "order_id",
+            "value": ""
+        },
+        {
+            "key": "product_id",
+            "value": ""
+        },
+        {
+            "key": "coupon_id",
+            "value": ""
+        },
+        {
+            "key": "driver_id",
+            "value": ""
+        },
+        {
+            "key": "advertisement_id",
+            "value": ""
+        },
+        {
+            "key": "booking_id",
+            "value": ""
         }
-      ]
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
     },
-    {
-      "name": "Products",
-      "item": [
-        { "name": "List Products", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/products" } },
+    "item": [
         {
-          "name": "Create Product",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Margherita Pizza\",\n  \"description\": \"Classic pizza\",\n  \"price\": 299,\n  \"publish\": true,\n  \"veg\": true\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "{{base_url}}/api/vendor/products"
-          },
-          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json(); if (json.data && json.data.id) pm.collectionVariables.set('product_id', json.data.id);"] } }]
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/register",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Raj\",\n    \"lastName\": \"Store\",\n    \"email\": \"vendor@example.com\",\n    \"phoneNumber\": \"9999999999\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"sectionId\": \"{{section_id}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "  var json = pm.response.json();",
+                                    "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/login",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"vendor@example.com\",\n    \"password\": \"password123\",\n    \"fcmToken\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "  var json = pm.response.json();",
+                                    "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Login with Google",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/auth/google",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"id_token\": \"GOOGLE_ID_TOKEN\",\n    \"fcmToken\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Login with Apple",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/auth/apple",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"id_token\": \"APPLE_ID_TOKEN\",\n    \"fcmToken\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Login with Phone",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/auth/phone",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"phoneNumber\": \"9999999999\",\n    \"countryCode\": \"+91\",\n    \"auto_register\": true,\n    \"fcmToken\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "  var json = pm.response.json();",
+                                    "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/password/forgot",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"vendor@example.com\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/password/reset",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"vendor@example.com\",\n    \"token\": \"RESET_TOKEN_FROM_EMAIL\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/logout"
+                    }
+                },
+                {
+                    "name": "Delete Account",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/account"
+                    }
+                }
+            ]
         },
-        { "name": "Product Detail", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/products/{{product_id}}" } }
-      ]
-    },
-    {
-      "name": "Wallet",
-      "item": [
-        { "name": "Balance", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/wallet" } },
-        { "name": "Transactions", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/wallet/transactions" } },
         {
-          "name": "Withdraw",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"amount\": 100,\n  \"withdrawMethod\": \"bank\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/vendor/wallet/withdraw"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Drivers",
-      "item": [
-        { "name": "List Drivers", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/drivers" } },
+            "name": "Public Content",
+            "item": [
+                {
+                    "name": "Home",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/home",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Terms",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/terms",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Privacy",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/privacy",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Catalog",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/catalog",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Catalog by Section",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/catalog?sectionId={{section_id}}",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Subscription Plans",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/subscriptions/plans",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Subscription Plans by Section",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/subscriptions/plans?sectionId={{section_id}}",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                }
+            ]
+        },
         {
-          "name": "Create Driver",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Delivery\",\n  \"lastName\": \"Boy\",\n  \"email\": \"driver.store@example.com\",\n  \"phoneNumber\": \"8888888888\",\n  \"carNumber\": \"KA01XY9999\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "{{base_url}}/api/vendor/drivers"
-          },
-          "event": [{ "listen": "test", "script": { "exec": ["var json = pm.response.json(); if (json.data && json.data.driver && json.data.driver.id) pm.collectionVariables.set('driver_id', json.data.driver.id);"] } }]
+            "name": "Profile & Store",
+            "item": [
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/profile"
+                    }
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/profile",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Raj\",\n    \"lastName\": \"Store\",\n    \"phoneNumber\": \"9999999999\",\n    \"countryCode\": \"+91\",\n    \"fcmToken\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Profile Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/profile/image",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        },
+                        "description": "Multipart form-data with image file field."
+                    }
+                },
+                {
+                    "name": "Update Bank Details",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/bank-details",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"userBankDetails\": {\n        \"accountNumber\": \"1234567890\",\n        \"bankName\": \"Test Bank\",\n        \"holderName\": \"Raj Store\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Store",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/store"
+                    }
+                },
+                {
+                    "name": "Create Store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"My Restaurant\",\n    \"description\": \"Best food in town\",\n    \"latitude\": 12.9716000000000004632738637155853211879730224609375,\n    \"longitude\": 77.5945999999999997953636921010911464691162109375,\n    \"isSelfDelivery\": true,\n    \"dine_in_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update Store",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/store",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"description\": \"Updated description\",\n    \"workingHours\": [],\n    \"specialDiscountEnable\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Store Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/store/image",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "photo",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dashboard"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "item": [
+                {
+                    "name": "List All Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders"
+                    }
+                },
+                {
+                    "name": "List New Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders?tab=new"
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.data && json.data.data.length) pm.collectionVariables.set('order_id', json.data.data[0].id);",
+                                    "else if (json.data && json.data.length) pm.collectionVariables.set('order_id', json.data[0].id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Active Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders?tab=active"
+                    }
+                },
+                {
+                    "name": "List Completed Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders?tab=completed"
+                    }
+                },
+                {
+                    "name": "List Cancelled Orders",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders?tab=cancelled"
+                    }
+                },
+                {
+                    "name": "Order Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}"
+                    }
+                },
+                {
+                    "name": "Accept Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/accept",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"estimatedTimeToPrepare\": \"30\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Reject Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/reject",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"Out of stock\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/cancel",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"Cancelled by vendor\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Complete Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/complete"
+                    }
+                },
+                {
+                    "name": "Assign Driver",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/assign-driver",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"driverId\": \"{{driver_id}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Ship Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}/ship",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"courierCompanyName\": \"BlueDart\",\n    \"courierTrackingId\": \"BD123456789\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update Order",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/orders/{{order_id}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"notes\": \"Updated via API\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Products",
+            "item": [
+                {
+                    "name": "List Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products"
+                    }
+                },
+                {
+                    "name": "Create Product",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Margherita Pizza\",\n    \"description\": \"Classic pizza\",\n    \"price\": 299,\n    \"publish\": true,\n    \"veg\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) pm.collectionVariables.set('product_id', json.data.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Product Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products/{{product_id}}"
+                    }
+                },
+                {
+                    "name": "Update Product",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products/{{product_id}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Pizza\",\n    \"price\": 349\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Product",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products/{{product_id}}"
+                    }
+                },
+                {
+                    "name": "Upload Product Images",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/products/{{product_id}}/images",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "images[]",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Coupons",
+            "item": [
+                {
+                    "name": "List Coupons",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons"
+                    }
+                },
+                {
+                    "name": "Create Coupon",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"SAVE10\",\n    \"discount\": 10,\n    \"discountType\": \"Percentage\",\n    \"expiresAt\": \"2026-12-31\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) pm.collectionVariables.set('coupon_id', json.data.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Coupon Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons/{{coupon_id}}"
+                    }
+                },
+                {
+                    "name": "Update Coupon",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons/{{coupon_id}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"discount\": 15\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Coupon",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons/{{coupon_id}}"
+                    }
+                },
+                {
+                    "name": "Upload Coupon Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/coupons/{{coupon_id}}/image",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Wallet",
+            "item": [
+                {
+                    "name": "Balance",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/wallet"
+                    }
+                },
+                {
+                    "name": "Transactions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/wallet/transactions"
+                    }
+                },
+                {
+                    "name": "Earnings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/earnings"
+                    }
+                },
+                {
+                    "name": "Payout History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/wallet/payouts"
+                    }
+                },
+                {
+                    "name": "Withdraw",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/wallet/withdraw",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": 100,\n    \"withdrawMethod\": \"bank\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Withdraw Method",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/withdraw-method"
+                    }
+                },
+                {
+                    "name": "Save Withdraw Method",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/withdraw-method",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"flutterWave\": {\n        \"accountNumber\": \"123\",\n        \"bankCode\": \"044\"\n    },\n    \"stripe\": {\n        \"accountId\": \"acct_xxx\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Chat",
+            "item": [
+                {
+                    "name": "Customer Inbox",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/chat/inbox?type=customer"
+                    }
+                },
+                {
+                    "name": "Admin Inbox",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/chat/inbox?type=admin"
+                    }
+                },
+                {
+                    "name": "Messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/chat/{{order_id}}/messages?type=customer"
+                    }
+                },
+                {
+                    "name": "Send Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/chat/send",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"orderId\": \"{{order_id}}\",\n    \"message\": \"Hello from vendor\",\n    \"type\": \"customer\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Chat Media",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/chat/upload",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "mediaType",
+                                    "value": "image",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reviews",
+            "item": [
+                {
+                    "name": "List Reviews",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/reviews"
+                    }
+                },
+                {
+                    "name": "Review for Order",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/reviews/order/{{order_id}}"
+                    }
+                },
+                {
+                    "name": "Ratings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/ratings"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Drivers",
+            "item": [
+                {
+                    "name": "List Drivers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/drivers"
+                    }
+                },
+                {
+                    "name": "Create Driver",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/drivers",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Delivery\",\n    \"lastName\": \"Boy\",\n    \"email\": \"driver.store@example.com\",\n    \"phoneNumber\": \"8888888888\",\n    \"carNumber\": \"KA01XY9999\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.driver && json.data.driver.id) pm.collectionVariables.set('driver_id', json.data.driver.id);",
+                                    "else if (json.data && json.data.id) pm.collectionVariables.set('driver_id', json.data.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Driver Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/drivers/{{driver_id}}"
+                    }
+                },
+                {
+                    "name": "Update Driver",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/drivers/{{driver_id}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"carNumber\": \"KA01ZZ1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Driver Image",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/drivers/{{driver_id}}/image",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": ""
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dine-In",
+            "item": [
+                {
+                    "name": "List Bookings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings"
+                    }
+                },
+                {
+                    "name": "Upcoming Bookings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings?tab=upcoming"
+                    }
+                },
+                {
+                    "name": "Past Bookings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings?tab=past"
+                    }
+                },
+                {
+                    "name": "Booking Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings/{{booking_id}}"
+                    }
+                },
+                {
+                    "name": "Accept Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings/{{booking_id}}/accept"
+                    }
+                },
+                {
+                    "name": "Reject Booking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/bookings/{{booking_id}}/reject",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"Fully booked\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Update Dine-In Config",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/dine-in/config",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dine_in_active\": true,\n    \"openDineTime\": \"10:00\",\n    \"closeDineTime\": \"22:00\",\n    \"restaurantCost\": \"500\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Subscriptions",
+            "item": [
+                {
+                    "name": "Subscription History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/subscriptions/history"
+                    }
+                },
+                {
+                    "name": "Subscribe",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/subscriptions",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"plan_id\": \"PLAN_ID_HERE\",\n    \"payment_type\": \"razorpay\",\n    \"payment_status\": \"success\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Advertisements",
+            "item": [
+                {
+                    "name": "List Advertisements",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements"
+                    }
+                },
+                {
+                    "name": "Create Advertisement",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Summer Sale\",\n    \"description\": \"50% off\",\n    \"type\": \"restaurant_promotion\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) pm.collectionVariables.set('advertisement_id', json.data.id);"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Advertisement Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements/{{advertisement_id}}"
+                    }
+                },
+                {
+                    "name": "Update Advertisement",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements/{{advertisement_id}}",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Updated Sale\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Advertisement",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements/{{advertisement_id}}"
+                    }
+                },
+                {
+                    "name": "Upload Advertisement Media",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/advertisements/{{advertisement_id}}/media",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "profile",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Story",
+            "item": [
+                {
+                    "name": "Get Story",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/story"
+                    }
+                },
+                {
+                    "name": "Create/Update Story",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/story",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"videoUrl\": [\n        \"https://example.com/video.mp4\"\n    ],\n    \"thumbnailUrl\": \"https://example.com/thumb.jpg\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Story",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/story"
+                    }
+                },
+                {
+                    "name": "Upload Story Media",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/story/upload",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "mediaType",
+                                    "value": "image",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Documents & Notifications",
+            "item": [
+                {
+                    "name": "List Documents",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/documents"
+                    }
+                },
+                {
+                    "name": "Document Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/documents/status"
+                    }
+                },
+                {
+                    "name": "Submit Documents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/documents",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"documents\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Document",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/documents/upload",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": ""
+                                },
+                                {
+                                    "key": "side",
+                                    "value": "front",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Notifications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vendor/notifications"
+                    }
+                }
+            ]
         }
-      ]
-    },
-    {
-      "name": "Misc",
-      "item": [
-        { "name": "Catalog (Public)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/vendor/catalog" } },
-        { "name": "Subscription Plans", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/api/vendor/subscriptions/plans" } },
-        { "name": "Documents", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/documents" } },
-        { "name": "Notifications", "request": { "method": "GET", "url": "{{base_url}}/api/vendor/notifications" } }
-      ]
-    }
-  ]
+    ]
 }

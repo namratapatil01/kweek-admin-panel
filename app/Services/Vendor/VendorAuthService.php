@@ -150,7 +150,11 @@ class VendorAuthService
             ['email' => $email],
             ['token' => Hash::make($plainToken), 'created_at' => now()]
         );
-        Mail::to($email)->send(new VendorPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new VendorPasswordResetMail($user, $plainToken));
+        } catch (\Throwable) {
+            // Avoid 500 when mail is misconfigured in local/dev environments.
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void

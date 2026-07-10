@@ -4,6 +4,8 @@ namespace App\Services\Vendor;
 
 use App\Models\AppUser;
 use App\Models\BookedTable;
+use App\Models\Vendor;
+use App\Support\CatalogEntityWriter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
@@ -22,13 +24,17 @@ class VendorDineInService
 
         $query = BookedTable::query()->where('vendorID', $vendorId);
 
+        $nowIso = now()->toIso8601String();
         if ($tab === 'past' || $tab === 'history') {
-            $query->where('date', '<', now());
+            $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date')) < ?", [$nowIso]);
         } else {
-            $query->where('date', '>=', now());
+            $query->where(function ($q) use ($nowIso) {
+                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date')) >= ?", [$nowIso])
+                    ->orWhereRaw("JSON_EXTRACT(payload, '$.date') IS NULL");
+            });
         }
 
-        return $query->orderByDesc('date')->orderByDesc('createdAt')
+        return $query->orderByDesc('createdAt')
             ->paginate($perPage)
             ->through(fn ($item) => $item->toDocumentArray());
     }
@@ -70,7 +76,7 @@ class VendorDineInService
         ];
         $update = array_intersect_key($data, array_flip($allowed));
         if ($update !== []) {
-            $store->update($update);
+            $store = CatalogEntityWriter::write(new Vendor(), $update, $store);
         }
 
         return $store->fresh()->toDocumentArray();

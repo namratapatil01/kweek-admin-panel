@@ -37,10 +37,15 @@ class VendorChatController extends Controller
             'message' => ['nullable', 'string'],
             'messageType' => ['nullable', 'string', 'max:32'],
             'chatType' => ['nullable', 'string', 'in:customer,admin,store'],
+            'type' => ['nullable', 'string', 'in:customer,admin,store'],
             'receiverId' => ['nullable', 'string', 'max:64'],
             'customerId' => ['nullable', 'string', 'max:64'],
             'url' => ['nullable', 'string'],
         ]);
+
+        if (empty($data['chatType']) && ! empty($data['type'])) {
+            $data['chatType'] = $data['type'];
+        }
 
         return ApiResponse::success($this->chatService->send($request->user()->id, $data), 'Message sent');
     }
