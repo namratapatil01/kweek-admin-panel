@@ -14,6 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class ProviderWalletService
 {
+    public function __construct(protected ProviderEmailService $emailService)
+    {
+    }
+
     public function balance(AppUser $user): array
     {
         return [
@@ -106,6 +110,8 @@ class ProviderWalletService
             'role' => 'provider',
             'withdrawMethod' => $data['withdrawMethod'] ?? null,
         ]);
+
+        $this->emailService->sendPayoutRequestEmail($provider, $amount, $payout->id);
 
         return [
             'wallet_amount' => (float) $provider->fresh()->wallet_amount,

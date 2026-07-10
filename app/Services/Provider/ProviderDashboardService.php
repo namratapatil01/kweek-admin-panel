@@ -13,8 +13,10 @@ use Illuminate\Support\Carbon;
 
 class ProviderDashboardService
 {
-    public function __construct(protected SettingsService $settingsService)
-    {
+    public function __construct(
+        protected SettingsService $settingsService,
+        protected ProviderSettingsService $providerSettingsService
+    ) {
     }
 
     public function dashboard(AppUser $provider): array
@@ -78,6 +80,8 @@ class ProviderDashboardService
 
     public function home(): array
     {
+        $bootstrapSettings = $this->providerSettingsService->index();
+
         return [
             'on_boarding' => OnBoarding::query()
                 ->where('type', 'provider')
@@ -98,12 +102,23 @@ class ProviderDashboardService
             'currency' => Currency::query()
                 ->where('isActive', true)
                 ->first()?->toDocumentArray(),
-            'settings' => [
-                'provider' => $this->settingsService->get('provider', []),
-                'termsAndConditions' => $this->settingsService->get('termsAndConditions', []),
-                'privacyPolicy' => $this->settingsService->get('privacyPolicy', []),
-                'globalSettings' => $this->settingsService->get('globalSettings', []),
-            ],
+            'settings' => array_merge([
+                'provider' => $bootstrapSettings['provider'] ?? $this->settingsService->get('provider', []),
+                'termsAndConditions' => $bootstrapSettings['termsAndConditions'] ?? $this->settingsService->get('termsAndConditions', []),
+                'privacyPolicy' => $bootstrapSettings['privacyPolicy'] ?? $this->settingsService->get('privacyPolicy', []),
+                'globalSettings' => $bootstrapSettings['globalSettings'] ?? $this->settingsService->get('globalSettings', []),
+            ], array_filter([
+                'vendor' => $bootstrapSettings['vendor'] ?? null,
+                'Version' => $bootstrapSettings['Version'] ?? null,
+                'ContactUs' => $bootstrapSettings['ContactUs'] ?? null,
+                'googleMapKey' => $bootstrapSettings['googleMapKey'] ?? null,
+                'notification_setting' => $bootstrapSettings['notification_setting'] ?? null,
+                'emailSetting' => $bootstrapSettings['emailSetting'] ?? null,
+                'placeHolderImage' => $bootstrapSettings['placeHolderImage'] ?? null,
+                'DriverNearBy' => $bootstrapSettings['DriverNearBy'] ?? null,
+                'languages' => $bootstrapSettings['languages'] ?? null,
+                'walletSettings' => $bootstrapSettings['walletSettings'] ?? null,
+            ], static fn ($value) => $value !== null)),
         ];
     }
 

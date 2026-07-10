@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Provider;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Provider\ProviderConfirmSubscriptionPaymentRequest;
 use App\Models\AppUser;
 use App\Services\Provider\ProviderSubscriptionService;
 use App\Support\ApiResponse;
@@ -23,6 +24,9 @@ class ProviderSubscriptionController extends Controller
         return ApiResponse::paginated(
             $this->subscriptionService->plans(
                 $request->input('sectionId') ?? $user->sectionId ?? $user->section_id,
+                $request->has('isCommissionPlan')
+                    ? filter_var($request->input('isCommissionPlan'), FILTER_VALIDATE_BOOLEAN)
+                    : null,
                 (int) $request->input('per_page', 50)
             ),
             'Subscription plans retrieved'
@@ -56,6 +60,18 @@ class ProviderSubscriptionController extends Controller
         return ApiResponse::success(
             $this->subscriptionService->subscribe($user, $data),
             'Subscription activated',
+            201
+        );
+    }
+
+    public function confirmPayment(ProviderConfirmSubscriptionPaymentRequest $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->subscriptionService->confirmPayment($user, $request->validated()),
+            'Subscription payment confirmed',
             201
         );
     }
