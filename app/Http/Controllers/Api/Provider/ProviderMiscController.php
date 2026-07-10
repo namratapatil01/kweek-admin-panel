@@ -82,4 +82,23 @@ class ProviderMiscController extends Controller
             201
         );
     }
+
+    public function notificationTemplate(string $type): JsonResponse
+    {
+        return ApiResponse::success(
+            $this->miscService->notificationContent($type),
+            'Notification template retrieved'
+        );
+    }
+
+    public function emailTemplate(string $type): JsonResponse
+    {
+        $template = $this->miscService->emailTemplate($type);
+
+        if (! $template) {
+            return ApiResponse::error('Email template not found', 404);
+        }
+
+        return ApiResponse::success($template, 'Email template retrieved');
+    }
 }

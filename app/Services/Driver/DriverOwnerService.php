@@ -3,6 +3,10 @@
 namespace App\Services\Driver;
 
 use App\Models\AppUser;
+use App\Models\ParcelOrder;
+use App\Models\RentalOrder;
+use App\Models\Ride;
+use App\Models\Wallet;
 use App\Services\Storage\FileStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
@@ -125,5 +129,95 @@ class DriverOwnerService
         $driver->update(['profilePictureURL' => url($result['url'])]);
 
         return $driver->fresh();
+    }
+
+    public function deleteDriver(AppUser $owner, string $driverId): void
+    {
+        $this->assertOwner($owner);
+
+        $driver = AppUser::query()
+            ->where('id', $driverId)
+            ->where('ownerId', $owner->id)
+            ->where('role', 'driver')
+            ->first();
+
+        if (! $driver) {
+            throw ValidationException::withMessages(['id' => ['Fleet driver not found.']]);
+        }
+
+        $driver->tokens()->delete();
+        $driver->update([
+            'active' => false,
+            'isActive' => false,
+            'fcmToken' => null,
+            'email' => 'deleted_' . $driver->id . '_' . ($driver->email ?? ''),
+        ]);
+        $driver->mergePayload(['deleted_at' => now()->toIso8601String()]);
+        $driver->save();
+    }
+
+    public function driverLocations(AppUser $owner): array
+    {
+        $this->assertOwner($owner);
+
+        return AppUser::query()
+            ->where('role', 'driver')
+            ->where('ownerId', $owner->id)
+            ->where('isOwner', false)
+            ->get()
+            ->map(function (AppUser $driver) {
+                $doc = $driver->toDocumentArray();
+
+                return [
+                    'id' => $driver->id,
+                    'firstName' => $doc['firstName'] ?? null,
+                    'lastName' => $doc['lastName'] ?? null,
+                    'latitude' => $doc['latitude'] ?? null,
+                    'longitude' => $doc['longitude'] ?? null,
+                    'rotation' => $doc['rotation'] ?? data_get($doc, 'payload.rotation'),
+                    'isActive' => (bool) $driver->isActive,
+                    'lastOnlineTimestamp' => $doc['lastOnlineTimestamp'] ?? null,
+                    'carNumber' => $doc['carNumber'] ?? null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    public function dashboard(AppUser $owner): array
+    {
+        $this->assertOwner($owner);
+
+        $drivers = AppUser::query()
+            ->where('role', 'driver')
+            ->where('ownerId', $owner->id)
+            ->where('isOwner', false)
+            ->get();
+
+        $driverIds = $drivers->pluck('id')->all();
+        $completedStatus = ['Order Completed', 'Completed', 'completed'];
+
+        $rideCount = Ride::query()->whereIn('driverId', $driverIds)->whereIn('status', $completedStatus)->count();
+        $parcelCount = ParcelOrder::query()->whereIn('driverId', $driverIds)->whereIn('status', $completedStatus)->count();
+        $rentalCount = RentalOrder::query()->whereIn('driverId', $driverIds)->whereIn('status', $completedStatus)->count();
+
+        $earnings = Wallet::query()
+            ->whereIn('user_id', array_merge([$owner->id], $driverIds))
+            ->where('isTopUp', true)
+            ->sum('amount');
+
+        return [
+            'owner' => $owner->toDocumentArray(),
+            'drivers_count' => $drivers->count(),
+            'active_drivers' => $drivers->where('isActive', true)->count(),
+            'completed_orders' => [
+                'rides' => $rideCount,
+                'parcels' => $parcelCount,
+                'rentals' => $rentalCount,
+                'total' => $rideCount + $parcelCount + $rentalCount,
+            ],
+            'total_earnings' => (float) $earnings,
+            'wallet_amount' => (float) ($owner->wallet_amount ?? 0),
+        ];
     }
 }

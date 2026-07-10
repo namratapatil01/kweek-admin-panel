@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Provider;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Provider\ProviderChatSendRequest;
 use App\Models\AppUser;
 use App\Services\Provider\ProviderChatService;
 use App\Support\ApiResponse;
@@ -40,35 +41,20 @@ class ProviderChatController extends Controller
                 $user->id,
                 $orderId,
                 $request->input('type', 'customer'),
-                (int) $request->input('per_page', 50)
+                (int) $request->input('per_page', 50),
+                $request->input('since')
             ),
             'Messages retrieved'
         );
     }
 
-    public function send(Request $request): JsonResponse
+    public function send(ProviderChatSendRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'orderId' => ['required', 'string', 'max:64'],
-            'receiverId' => ['nullable', 'string', 'max:64'],
-            'customerId' => ['nullable', 'string', 'max:64'],
-            'message' => ['required_without:url', 'string'],
-            'messageType' => ['nullable', 'string', 'max:32'],
-            'chatType' => ['nullable', 'string', 'max:32'],
-            'type' => ['nullable', 'string', 'max:32'],
-            'url' => ['nullable', 'array'],
-            'videoThumbnail' => ['nullable', 'string'],
-            'customerName' => ['nullable', 'string'],
-            'customerProfileImage' => ['nullable', 'string'],
-            'restaurantName' => ['nullable', 'string'],
-            'restaurantProfileImage' => ['nullable', 'string'],
-        ]);
-
         /** @var AppUser $user */
         $user = $request->user();
 
         return ApiResponse::success(
-            $this->chatService->send($user->id, $data),
+            $this->chatService->send($user->id, $request->validated()),
             'Message sent',
             201
         );

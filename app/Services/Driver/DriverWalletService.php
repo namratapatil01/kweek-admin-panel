@@ -13,6 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class DriverWalletService
 {
+    public function __construct(protected DriverEmailService $emailService)
+    {
+    }
+
     public function balance(AppUser $driver): array
     {
         return [
@@ -95,9 +99,47 @@ class DriverWalletService
             ],
         ]);
 
+        $this->emailService->sendPayoutRequestEmail($driver->fresh(), $amount, $payout->id);
+
         return [
             'wallet_amount' => (float) $driver->fresh()->wallet_amount,
             'payout' => $payout->toDocumentArray(),
+        ];
+    }
+
+    public function topUp(AppUser $driver, array $data): array
+    {
+        $amount = (float) $data['amount'];
+
+        if ($amount <= 0) {
+            throw ValidationException::withMessages(['amount' => ['Amount must be greater than zero.']]);
+        }
+
+        $driver->increment('wallet_amount', $amount);
+
+        $transaction = Wallet::query()->create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $driver->id,
+            'amount' => $amount,
+            'isTopUp' => true,
+            'payment_method' => $data['paymentMethod'] ?? $data['payment_method'] ?? 'wallet',
+            'payment_status' => $data['paymentStatus'] ?? $data['payment_status'] ?? 'success',
+            'note' => $data['note'] ?? 'Wallet top-up',
+            'transactionUser' => 'driver',
+            'serviceType' => $driver->serviceType,
+            'date' => now(),
+        ]);
+
+        $this->emailService->sendWalletTopUpEmail(
+            $driver->fresh(),
+            $amount,
+            (string) ($data['paymentMethod'] ?? $data['payment_method'] ?? 'wallet'),
+            $transaction->id
+        );
+
+        return [
+            'wallet_amount' => (float) $driver->fresh()->wallet_amount,
+            'transaction' => $transaction->toDocumentArray(),
         ];
     }
 

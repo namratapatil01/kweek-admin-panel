@@ -10,6 +10,7 @@ use App\Services\Auth\GoogleTokenVerifier;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -20,8 +21,24 @@ class DriverAuthService
         protected AppAuthService $authService,
         protected GoogleTokenVerifier $googleTokenVerifier,
         protected AppleTokenVerifier $appleTokenVerifier,
-        protected SettingsService $settingsService
+        protected SettingsService $settingsService,
+        protected DriverPhoneOtpService $phoneOtpService
     ) {
+    }
+
+    public function sendPhoneOtp(string $phoneNumber, ?string $countryCode = null): array
+    {
+        return $this->phoneOtpService->sendOtp($phoneNumber, $countryCode);
+    }
+
+    public function verifyPhoneOtpAndLogin(array $data): array
+    {
+        $this->phoneOtpService->verifyOtp(
+            $data['verificationId'],
+            $data['otp']
+        );
+
+        return $this->loginWithPhone($data);
     }
 
     public function register(array $data): array
@@ -184,7 +201,11 @@ class DriverAuthService
             ['email' => $email],
             ['token' => Hash::make($plainToken), 'created_at' => now()]
         );
-        Mail::to($email)->send(new DriverPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new DriverPasswordResetMail($user, $plainToken));
+        } catch (\Throwable $e) {
+            Log::warning('Driver password reset email failed', ['email' => $email, 'error' => $e->getMessage()]);
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void

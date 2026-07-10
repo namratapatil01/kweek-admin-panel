@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Customer\CustomerAuthController;
+use App\Http\Controllers\Api\Customer\CustomerCashbackController;
 use App\Http\Controllers\Api\Customer\CustomerCatalogController;
+use App\Http\Controllers\Api\Customer\CustomerChatController;
 use App\Http\Controllers\Api\Customer\CustomerCouponController;
 use App\Http\Controllers\Api\Customer\CustomerDashboardController;
 use App\Http\Controllers\Api\Customer\CustomerFavoriteController;
@@ -9,6 +11,9 @@ use App\Http\Controllers\Api\Customer\CustomerMiscController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerProfileController;
 use App\Http\Controllers\Api\Customer\CustomerReviewController;
+use App\Http\Controllers\Api\Customer\CustomerSettingsController;
+use App\Http\Controllers\Api\Customer\CustomerTrackingController;
+use App\Http\Controllers\Api\Customer\CustomerUploadController;
 use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Provider\ProviderAuthController;
 use App\Http\Controllers\Api\Provider\ProviderBookingController;
@@ -17,8 +22,10 @@ use App\Http\Controllers\Api\Provider\ProviderCouponController;
 use App\Http\Controllers\Api\Provider\ProviderDashboardController;
 use App\Http\Controllers\Api\Provider\ProviderMiscController;
 use App\Http\Controllers\Api\Provider\ProviderProfileController;
+use App\Http\Controllers\Api\Provider\ProviderRealtimeController;
 use App\Http\Controllers\Api\Provider\ProviderReviewController;
 use App\Http\Controllers\Api\Provider\ProviderServiceController;
+use App\Http\Controllers\Api\Provider\ProviderSettingsController;
 use App\Http\Controllers\Api\Provider\ProviderSubscriptionController;
 use App\Http\Controllers\Api\Provider\ProviderWalletController;
 use App\Http\Controllers\Api\Provider\ProviderWorkerController;
@@ -37,6 +44,9 @@ use App\Http\Controllers\Api\Driver\DriverOrderController;
 use App\Http\Controllers\Api\Driver\DriverOwnerController;
 use App\Http\Controllers\Api\Driver\DriverProfileController;
 use App\Http\Controllers\Api\Driver\DriverReviewController;
+use App\Http\Controllers\Api\Driver\DriverSettingsController;
+use App\Http\Controllers\Api\Driver\DriverTrackingController;
+use App\Http\Controllers\Api\Driver\DriverUploadController;
 use App\Http\Controllers\Api\Driver\DriverWalletController;
 use App\Http\Controllers\Api\Vendor\VendorAdvertisementController;
 use App\Http\Controllers\Api\Vendor\VendorAuthController;
@@ -72,12 +82,15 @@ Route::prefix('customer')->group(function () {
     Route::post('login', [CustomerAuthController::class, 'login']);
     Route::post('auth/google', [CustomerAuthController::class, 'loginWithGoogle']);
     Route::post('auth/apple', [CustomerAuthController::class, 'loginWithApple']);
+    Route::post('auth/phone', [CustomerAuthController::class, 'loginWithPhone']);
     Route::post('password/forgot', [CustomerAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [CustomerAuthController::class, 'resetPassword']);
     Route::get('home', [CustomerDashboardController::class, 'home']);
+    Route::get('referral/validate', [CustomerMiscController::class, 'validateReferral']);
 
     Route::middleware(['auth:sanctum', 'app.role:customer'])->group(function () {
         Route::post('logout', [CustomerAuthController::class, 'logout']);
+        Route::delete('account', [CustomerAuthController::class, 'deleteAccount']);
 
         Route::get('profile', [CustomerProfileController::class, 'show']);
         Route::put('profile', [CustomerProfileController::class, 'update']);
@@ -85,15 +98,37 @@ Route::prefix('customer')->group(function () {
 
         Route::get('dashboard', [CustomerDashboardController::class, 'dashboard']);
 
+        Route::get('settings', [CustomerSettingsController::class, 'index']);
+        Route::get('settings/payment', [CustomerSettingsController::class, 'payment']);
+        Route::get('settings/languages', [CustomerSettingsController::class, 'languages']);
+        Route::get('settings/delivery-charge', [CustomerSettingsController::class, 'deliveryCharge']);
+        Route::get('settings/{key}', [CustomerSettingsController::class, 'show']);
+
         Route::get('sections', [CustomerCatalogController::class, 'sections']);
         Route::get('categories', [CustomerCatalogController::class, 'categories']);
         Route::get('vendors', [CustomerCatalogController::class, 'vendors']);
+        Route::get('vendors/nearest', [CustomerCatalogController::class, 'nearestVendors']);
         Route::get('products', [CustomerCatalogController::class, 'products']);
         Route::get('services', [CustomerCatalogController::class, 'services']);
         Route::get('brands', [CustomerCatalogController::class, 'brands']);
         Route::get('search', [CustomerCatalogController::class, 'search']);
+        Route::get('advertisements', [CustomerCatalogController::class, 'advertisements']);
+        Route::get('banners', [CustomerCatalogController::class, 'banners']);
+        Route::get('stories', [CustomerCatalogController::class, 'stories']);
+        Route::get('zones', [CustomerCatalogController::class, 'zones']);
+        Route::get('taxes', [CustomerCatalogController::class, 'taxes']);
+        Route::get('parcel/categories', [CustomerCatalogController::class, 'parcelCategories']);
+        Route::get('parcel/weights', [CustomerCatalogController::class, 'parcelWeights']);
+        Route::get('cab/vehicle-types', [CustomerCatalogController::class, 'vehicleTypes']);
+        Route::get('cab/popular-destinations', [CustomerCatalogController::class, 'popularDestinations']);
+        Route::get('rental/vehicle-types', [CustomerCatalogController::class, 'rentalVehicleTypes']);
+        Route::get('rental/packages', [CustomerCatalogController::class, 'rentalPackages']);
+        Route::get('provider/workers', [CustomerCatalogController::class, 'providerWorkers']);
+        Route::get('review-attributes', [CustomerCatalogController::class, 'reviewAttributes']);
+        Route::get('vendor-attributes', [CustomerCatalogController::class, 'vendorAttributes']);
+        Route::get('vendors/{vendorId}/cuisines', [CustomerCatalogController::class, 'vendorCuisines']);
         Route::get('catalog/{type}/{id}', [CustomerCatalogController::class, 'show'])
-            ->where('type', 'vendor|product|service|category|provider-category|brand')
+            ->where('type', 'vendor|product|service|category|provider-category|brand|worker')
             ->where('id', '[a-zA-Z0-9\-_]+');
 
         Route::get('orders', [CustomerOrderController::class, 'index']);
@@ -102,6 +137,11 @@ Route::prefix('customer')->group(function () {
             ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
         Route::patch('orders/{type}/{id}/status', [CustomerOrderController::class, 'updateStatus'])
             ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+
+        Route::get('tracking/orders/{type}/{id}', [CustomerTrackingController::class, 'order'])
+            ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+        Route::get('tracking/drivers/{driverId}', [CustomerTrackingController::class, 'driverLocation'])
+            ->where('driverId', '[a-zA-Z0-9\-_]+');
 
         Route::get('favorites/{type}', [CustomerFavoriteController::class, 'index'])
             ->where('type', 'vendor|item|service|provider');
@@ -115,16 +155,41 @@ Route::prefix('customer')->group(function () {
         Route::post('wallet/topup', [CustomerWalletController::class, 'topUp']);
 
         Route::get('reviews', [CustomerReviewController::class, 'index']);
+        Route::get('reviews/vendor/{vendorId}', [CustomerReviewController::class, 'vendorReviews']);
+        Route::get('reviews/service/{serviceId}', [CustomerReviewController::class, 'serviceReviews']);
         Route::post('reviews', [CustomerReviewController::class, 'store']);
         Route::post('ratings', [CustomerReviewController::class, 'storeRating']);
 
         Route::get('coupons', [CustomerCouponController::class, 'index']);
 
+        Route::get('cashback', [CustomerCashbackController::class, 'index']);
+        Route::get('cashback/redeemed', [CustomerCashbackController::class, 'redeemed']);
+        Route::post('cashback/redeem', [CustomerCashbackController::class, 'redeem']);
+
+        Route::get('chat/{type}/inbox', [CustomerChatController::class, 'inbox'])
+            ->where('type', 'store|driver|provider|worker');
+        Route::get('chat/{type}/{orderId}/messages', [CustomerChatController::class, 'messages'])
+            ->where('type', 'store|driver|provider|worker')
+            ->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/{type}/send', [CustomerChatController::class, 'send'])
+            ->where('type', 'store|driver|provider|worker');
+        Route::post('chat/upload', [CustomerChatController::class, 'upload']);
+
+        Route::post('uploads', [CustomerUploadController::class, 'store']);
+
         Route::get('notifications', [CustomerMiscController::class, 'notifications']);
+        Route::get('notifications/content/{type}', [CustomerMiscController::class, 'notificationContent']);
+        Route::patch('notifications/{id}/read', [CustomerMiscController::class, 'markNotificationRead']);
         Route::get('referral', [CustomerMiscController::class, 'referral']);
+        Route::post('referral', [CustomerMiscController::class, 'storeReferral']);
+        Route::post('referral/rewards', [CustomerMiscController::class, 'processReferralRewards']);
         Route::get('gift-cards', [CustomerMiscController::class, 'giftCards']);
+        Route::get('gift-cards/history', [CustomerMiscController::class, 'giftCardHistory']);
         Route::post('gift-cards/purchase', [CustomerMiscController::class, 'purchaseGiftCard']);
-        Route::post('complaints', [CustomerMiscController::class, 'complaints']);
+        Route::post('gift-cards/redeem', [CustomerMiscController::class, 'redeemGiftCard']);
+        Route::get('email-templates/{type}', [CustomerMiscController::class, 'emailTemplate']);
+        Route::get('complaints', [CustomerMiscController::class, 'getComplaint']);
+        Route::post('complaints', [CustomerMiscController::class, 'storeComplaint']);
         Route::post('sos', [CustomerMiscController::class, 'sos']);
     });
 });
@@ -134,11 +199,17 @@ Route::prefix('provider')->group(function () {
     Route::post('login', [ProviderAuthController::class, 'login']);
     Route::post('auth/apple', [ProviderAuthController::class, 'loginWithApple']);
     Route::post('auth/phone', [ProviderAuthController::class, 'loginWithPhone']);
+    Route::post('auth/phone/send-otp', [ProviderAuthController::class, 'sendPhoneOtp']);
+    Route::post('auth/phone/verify-otp', [ProviderAuthController::class, 'verifyPhoneOtp']);
     Route::post('password/forgot', [ProviderAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [ProviderAuthController::class, 'resetPassword']);
     Route::get('home', [ProviderDashboardController::class, 'home']);
     Route::get('terms', [ProviderMiscController::class, 'terms']);
     Route::get('privacy', [ProviderMiscController::class, 'privacy']);
+    Route::get('settings', [ProviderSettingsController::class, 'index']);
+    Route::get('settings/payment', [ProviderSettingsController::class, 'payment']);
+    Route::get('settings/languages', [ProviderSettingsController::class, 'languages']);
+    Route::get('settings/{key}', [ProviderSettingsController::class, 'show'])->where('key', '[a-zA-Z0-9_]+');
 
     Route::middleware(['auth:sanctum', 'app.role:provider'])->group(function () {
         Route::post('logout', [ProviderAuthController::class, 'logout']);
@@ -150,6 +221,7 @@ Route::prefix('provider')->group(function () {
         Route::put('bank-details', [ProviderProfileController::class, 'updateBankDetails']);
 
         Route::get('dashboard', [ProviderDashboardController::class, 'dashboard']);
+        Route::get('realtime/poll', [ProviderRealtimeController::class, 'poll']);
 
         Route::get('sections', [ProviderServiceController::class, 'sections']);
         Route::get('categories', [ProviderServiceController::class, 'categories']);
@@ -197,6 +269,7 @@ Route::prefix('provider')->group(function () {
         Route::get('subscriptions/plans', [ProviderSubscriptionController::class, 'plans']);
         Route::get('subscriptions/history', [ProviderSubscriptionController::class, 'history']);
         Route::post('subscriptions', [ProviderSubscriptionController::class, 'subscribe']);
+        Route::post('subscriptions/confirm-payment', [ProviderSubscriptionController::class, 'confirmPayment']);
 
         Route::get('chat/inbox', [ProviderChatController::class, 'inbox']);
         Route::get('chat/{orderId}/messages', [ProviderChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
@@ -208,6 +281,8 @@ Route::prefix('provider')->group(function () {
         Route::get('ratings', [ProviderReviewController::class, 'ratings']);
 
         Route::get('notifications', [ProviderMiscController::class, 'notifications']);
+        Route::get('notifications/templates/{type}', [ProviderMiscController::class, 'notificationTemplate'])->where('type', '[a-zA-Z0-9_]+');
+        Route::get('email-templates/{type}', [ProviderMiscController::class, 'emailTemplate'])->where('type', '[a-zA-Z0-9_]+');
         Route::get('documents', [ProviderMiscController::class, 'documents']);
         Route::get('documents/status', [ProviderMiscController::class, 'documentStatus']);
         Route::post('documents', [ProviderMiscController::class, 'submitDocuments']);
@@ -270,12 +345,20 @@ Route::prefix('driver')->group(function () {
     Route::post('auth/google', [DriverAuthController::class, 'loginWithGoogle']);
     Route::post('auth/apple', [DriverAuthController::class, 'loginWithApple']);
     Route::post('auth/phone', [DriverAuthController::class, 'loginWithPhone']);
+    Route::post('auth/phone/send-otp', [DriverAuthController::class, 'sendPhoneOtp']);
+    Route::post('auth/phone/verify-otp', [DriverAuthController::class, 'verifyPhoneOtp']);
     Route::post('password/forgot', [DriverAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [DriverAuthController::class, 'resetPassword']);
     Route::get('home', [DriverDashboardController::class, 'home']);
     Route::get('terms', [DriverMiscController::class, 'terms']);
     Route::get('privacy', [DriverMiscController::class, 'privacy']);
     Route::get('catalog', [DriverMiscController::class, 'catalog']);
+    Route::get('settings', [DriverSettingsController::class, 'index']);
+    Route::get('settings/payment', [DriverSettingsController::class, 'payment']);
+    Route::get('settings/languages', [DriverSettingsController::class, 'languages']);
+    Route::get('settings/taxes', [DriverSettingsController::class, 'taxes']);
+    Route::get('settings/{key}', [DriverSettingsController::class, 'show']);
+    Route::get('catalog/vendor/{vendorId}', [DriverMiscController::class, 'vendor'])->where('vendorId', '[a-zA-Z0-9\-_]+');
 
     Route::middleware(['auth:sanctum', 'app.role:driver'])->group(function () {
         Route::post('logout', [DriverAuthController::class, 'logout']);
@@ -291,6 +374,9 @@ Route::prefix('driver')->group(function () {
         Route::get('dashboard', [DriverDashboardController::class, 'dashboard']);
 
         Route::get('orders', [DriverOrderController::class, 'index']);
+        Route::get('orders/stream', [DriverOrderController::class, 'stream']);
+        Route::get('orders/parcel/search', [DriverOrderController::class, 'searchParcel']);
+        Route::get('orders/rental/search', [DriverOrderController::class, 'searchRental']);
         Route::get('orders/{type}/{id}', [DriverOrderController::class, 'show'])
             ->where('type', 'vendor|ride|parcel|rental')
             ->where('id', '[a-zA-Z0-9\-_]+');
@@ -312,6 +398,7 @@ Route::prefix('driver')->group(function () {
 
         Route::get('wallet', [DriverWalletController::class, 'balance']);
         Route::get('wallet/transactions', [DriverWalletController::class, 'transactions']);
+        Route::post('wallet/topup', [DriverWalletController::class, 'topUp']);
         Route::get('earnings', [DriverWalletController::class, 'earnings']);
         Route::post('wallet/withdraw', [DriverWalletController::class, 'withdraw']);
         Route::get('wallet/payouts', [DriverWalletController::class, 'payoutHistory']);
@@ -319,24 +406,39 @@ Route::prefix('driver')->group(function () {
         Route::put('withdraw-method', [DriverWalletController::class, 'saveWithdrawMethod']);
 
         Route::get('chat/inbox', [DriverChatController::class, 'inbox']);
+        Route::get('chat/restaurant/inbox', [DriverChatController::class, 'restaurantInbox']);
         Route::get('chat/{orderId}/messages', [DriverChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::get('chat/restaurant/{orderId}/messages', [DriverChatController::class, 'restaurantMessages'])->where('orderId', '[a-zA-Z0-9\-_]+');
         Route::post('chat/send', [DriverChatController::class, 'send']);
+        Route::post('chat/restaurant/send', [DriverChatController::class, 'sendRestaurant']);
         Route::post('chat/upload', [DriverChatController::class, 'upload']);
 
+        Route::get('tracking/orders/{type}/{id}', [DriverTrackingController::class, 'order'])
+            ->where('type', 'vendor|ride|parcel|rental')
+            ->where('id', '[a-zA-Z0-9\-_]+');
+
+        Route::post('uploads', [DriverUploadController::class, 'store']);
+
         Route::get('reviews', [DriverReviewController::class, 'index']);
+        Route::post('reviews', [DriverReviewController::class, 'store']);
         Route::get('reviews/order/{orderId}', [DriverReviewController::class, 'forOrder'])->where('orderId', '[a-zA-Z0-9\-_]+');
         Route::get('ratings', [DriverReviewController::class, 'ratings']);
 
         Route::get('notifications', [DriverMiscController::class, 'notifications']);
+        Route::get('notifications/content/{type}', [DriverMiscController::class, 'notificationContent']);
+        Route::patch('notifications/{id}/read', [DriverMiscController::class, 'markNotificationRead']);
         Route::get('documents', [DriverMiscController::class, 'documents']);
         Route::get('documents/status', [DriverMiscController::class, 'documentStatus']);
         Route::post('documents', [DriverMiscController::class, 'submitDocuments']);
         Route::post('documents/upload', [DriverMiscController::class, 'uploadDocument']);
 
         Route::get('owner/drivers', [DriverOwnerController::class, 'index']);
+        Route::get('owner/dashboard', [DriverOwnerController::class, 'dashboard']);
+        Route::get('owner/drivers/locations', [DriverOwnerController::class, 'locations']);
         Route::post('owner/drivers', [DriverOwnerController::class, 'store']);
         Route::get('owner/drivers/{id}', [DriverOwnerController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::put('owner/drivers/{id}', [DriverOwnerController::class, 'update'])->where('id', '[a-zA-Z0-9\-_]+');
+        Route::delete('owner/drivers/{id}', [DriverOwnerController::class, 'destroy'])->where('id', '[a-zA-Z0-9\-_]+');
         Route::post('owner/drivers/{id}/image', [DriverOwnerController::class, 'uploadImage'])->where('id', '[a-zA-Z0-9\-_]+');
     });
 });
