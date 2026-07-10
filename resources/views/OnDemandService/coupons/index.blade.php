@@ -93,7 +93,26 @@
                                     <th>{{trans('lang.actions')}}</th>
                                 </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody>
+                                @forelse($couponRows as $row)
+                                    <tr>
+                                        <td>{!! $row['checkbox'] !!}</td>
+                                        <td>{!! $row['code'] !!}</td>
+                                        <td>{!! $row['discount'] !!}</td>
+                                        @if($id == '')
+                                            <td>{!! $row['provider'] ?? '—' !!}</td>
+                                        @endif
+                                        <td>{!! $row['privacy'] !!}</td>
+                                        <td>{!! $row['expires_at'] !!}</td>
+                                        <td>{!! $row['enabled'] !!}</td>
+                                        <td>{!! $row['actions'] !!}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ $id == '' ? 8 : 7 }}">{{ trans('lang.no_record_found') }}</td>
+                                    </tr>
+                                @endforelse
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -109,8 +128,8 @@
 @section('scripts')
 <script type="text/javascript">
 $(document).ready(function () {
-    var providerId = "{{ $id }}";
-    var sectionId = (typeof getCookie === 'function' ? getCookie('section_id') : '') || '';
+    var providerId = @json($id);
+    var couponsDataUrl = '/ondemand-coupons-data';
 
     if (providerId !== '') {
         var wallet_route = "{{ route('users.walletstransaction','id') }}";
@@ -125,29 +144,55 @@ $(document).ready(function () {
         });
     }
 
+    if ($.fn.DataTable.isDataTable('#couponTable')) {
+        $('#couponTable').DataTable().clear().destroy();
+    }
+
     var table = $('#couponTable').DataTable({
+        pageLength: 10,
         processing: true,
-        serverSide: true,
+        serverSide: false,
         responsive: true,
-        ajax: {
-            url: '{{ route("ondemand.coupons.datatable") }}',
-            type: 'GET',
-            data: function (d) {
-                d.provider_id = providerId;
-                d.section_id = sectionId;
-            },
-            dataSrc: function (json) {
-                $('.total_count').text(json.recordsTotal || 0);
-                return json.data || [];
-            }
-        },
-        columnDefs: [{ orderable: false, targets: [0, -2, -1] }],
+        autoWidth: false,
+        order: [],
+        columnDefs: [{ orderable: false, targets: '_all' }],
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",
             emptyTable: "{{ trans('lang.no_record_found') }}",
             processing: ""
+        },
+        initComplete: function () {
+            $('.total_count').text(@json($couponsCount));
         }
     });
+
+    window.reloadCouponsTable = function () {
+        $.getJSON(couponsDataUrl, {
+            draw: 1,
+            start: 0,
+            length: 1000,
+            provider_id: providerId || ''
+        }).done(function (json) {
+            var rows = (json && Array.isArray(json.data)) ? json.data : [];
+            table.clear();
+            rows.forEach(function (row) {
+                var cells = [
+                    row.checkbox || '',
+                    row.code || '',
+                    row.discount || ''
+                ];
+                if (providerId === '') {
+                    cells.push(row.provider || '—');
+                }
+                cells.push(row.privacy || '', row.expires_at || '', row.enabled || '', row.actions || '');
+                table.row.add(cells);
+            });
+            table.draw();
+            $('.total_count').text((json && json.recordsFiltered) ? json.recordsFiltered : rows.length);
+        }).fail(function (xhr) {
+            console.error('Coupons reload failed', xhr && xhr.status, xhr && xhr.responseText);
+        });
+    };
 
     $('#is_active').on('change', function () {
         $('#couponTable .is_open').prop('checked', $(this).prop('checked'));
@@ -167,7 +212,7 @@ $(document).ready(function () {
             _token: '{{ csrf_token() }}',
             ids: ids
         }).done(function () {
-            table.ajax.reload();
+            window.reloadCouponsTable();
         });
     });
 
@@ -178,7 +223,7 @@ $(document).ready(function () {
             _token: '{{ csrf_token() }}',
             id: id
         }).done(function () {
-            table.ajax.reload();
+            window.reloadCouponsTable();
         });
     });
 

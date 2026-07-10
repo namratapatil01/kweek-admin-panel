@@ -37,12 +37,22 @@ class OnDemandServiceController extends Controller
 
     public function Coupons($id = '')
     {
-        return view('OnDemandService.coupons.index')->with('id', $id);
+        $providerId = (string) ($id ?? '');
+        $coupons = $this->couponsBaseQuery($providerId)
+            ->orderByDesc('created_at')
+            ->get();
+        $couponRows = $this->buildCouponRows($coupons, $providerId);
+
+        return view('OnDemandService.coupons.index', [
+            'id' => $providerId,
+            'couponRows' => $couponRows,
+            'couponsCount' => count($couponRows),
+        ]);
     }
 
     public function CouponCreate($id = '')
     {
-        $providers = $this->getProviders();
+        $providers = $this->getProviders(request()->cookie('section_id'));
 
         return view('OnDemandService.coupons.create', [
             'id' => $id,
@@ -71,108 +81,51 @@ class OnDemandServiceController extends Controller
 
     public function couponsDatatable(Request $request): JsonResponse
     {
-        $draw = (int) $request->input('draw', 1);
-        $start = (int) $request->input('start', 0);
-        $length = (int) $request->input('length', 10);
-        $search = trim($request->input('search.value', ''));
-        $providerId = $request->input('provider_id', '');
-        $sectionId = $request->input('section_id', '');
+        try {
+            $draw = (int) $request->input('draw', 1);
+            $start = (int) $request->input('start', 0);
+            $length = (int) $request->input('length', 10);
+            $search = trim($request->input('search.value', ''));
+            $providerId = (string) $request->input('provider_id', '');
 
-        $query = DB::table('providers_coupons');
+            $query = $this->couponsBaseQuery($providerId);
 
-        if ($providerId !== '') {
-            $query->where('providerId', $providerId);
-        }
-
-        if ($sectionId !== '') {
-            $query->where(function ($q) use ($sectionId) {
-                $q->where('sectionId', $sectionId)
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sectionId]);
-            });
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.code')) LIKE ?", ["%{$search}%"])
-                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.discount')) LIKE ?", ["%{$search}%"])
-                    ->orWhere('title', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%");
-            });
-        }
-
-        $total = (clone $query)->count();
-        $coupons = $query->orderByDesc('created_at')->skip($start)->take($length > 0 ? $length : 10)->get();
-
-        $providerIds = $coupons->pluck('providerId')->filter()->unique()->values()->toArray();
-        $providerNames = DB::table('app_users')
-            ->whereIn('id', $providerIds)
-            ->get(['id', 'firstName', 'lastName'])
-            ->mapWithKeys(fn ($u) => [$u->id => trim(($u->firstName ?? '') . ' ' . ($u->lastName ?? ''))]);
-
-        $rows = [];
-        foreach ($coupons as $coupon) {
-            $payload = json_decode($coupon->payload ?? '{}', true) ?? [];
-            $code = $payload['code'] ?? $coupon->title ?? $coupon->name ?? '—';
-            $discount = $payload['discount'] ?? $coupon->price ?? '0';
-            $discountType = $payload['discountType'] ?? $payload['discount_type'] ?? 'Percentage';
-            $isPublic = $payload['isPublic'] ?? $payload['is_public'] ?? false;
-            $expiresAt = $payload['expiresAt'] ?? $payload['expires_at'] ?? null;
-            $providerName = $providerNames[$coupon->providerId] ?? '';
-
-            $discountLabel = $discountType === 'Percentage'
-                ? $discount . '%'
-                : number_format((float) $discount, 2);
-
-            $privacyBadge = $isPublic
-                ? '<span class="badge badge-success py-2 px-3">Public</span>'
-                : '<span class="badge badge-danger py-2 px-3">Private</span>';
-
-            $expiryLabel = '—';
-            if ($expiresAt) {
-                try {
-                    $expiryLabel = date('D M d Y', strtotime($expiresAt)) . '<br>' . date('g:i:s A', strtotime($expiresAt));
-                } catch (\Throwable $e) {
-                    $expiryLabel = (string) $expiresAt;
-                }
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.code')) LIKE ?", ["%{$search}%"])
+                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.discount')) LIKE ?", ["%{$search}%"])
+                        ->orWhere('title', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
             }
 
-            $enabled = (bool) ($coupon->isEnabled ?? $coupon->isEnable ?? false);
-            $toggleChecked = $enabled ? 'checked' : '';
-            $toggleHtml = '<label class="switch"><input type="checkbox" class="toggle-provider-coupon" data-id="' . e($coupon->id) . '" ' . $toggleChecked . '><span class="slider round"></span></label>';
+            $total = (clone $query)->count();
+            $coupons = $query->orderByDesc('created_at')
+                ->skip($start)
+                ->take($length > 0 ? $length : 10)
+                ->get();
 
-            $editUrl = route('ondemand.coupons.edit', $coupon->id) . ($providerId ? ('?id=' . urlencode($providerId)) : '');
-            $actions = '<span class="action-btn">'
-                . '<a href="' . $editUrl . '" data-toggle="tooltip" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>'
-                . '<a href="javascript:void(0)" class="delete-btn btn-delete-provider-coupon" data-id="' . e($coupon->id) . '" data-toggle="tooltip" title="Delete"><i class="mdi mdi-delete"></i></a>'
-                . '</span>';
+            $rows = $this->buildCouponRows($coupons, $providerId);
 
-            $row = [
-                '<input type="checkbox" class="is_open" dataId="' . e($coupon->id) . '">',
-                '<a href="' . $editUrl . '">' . e($code) . '</a>',
-                $discountLabel,
-            ];
+            return response()->json([
+                'draw' => $draw,
+                'recordsTotal' => $total,
+                'recordsFiltered' => $total,
+                'data' => $rows,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('OnDemandServiceController@couponsDatatable: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-            if ($providerId === '') {
-                $providerLink = $coupon->providerId
-                    ? '<a href="' . route('providers.view', $coupon->providerId) . '">' . e($providerName ?: 'Unknown') . '</a>'
-                    : '—';
-                $row[] = $providerLink;
-            }
-
-            $row[] = $privacyBadge;
-            $row[] = $expiryLabel;
-            $row[] = $toggleHtml;
-            $row[] = $actions;
-
-            $rows[] = $row;
+            return response()->json([
+                'draw' => (int) $request->input('draw', 1),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        return response()->json([
-            'draw' => $draw,
-            'recordsTotal' => $total,
-            'recordsFiltered' => $total,
-            'data' => $rows,
-        ]);
     }
 
     public function couponStore(Request $request): JsonResponse
@@ -835,6 +788,89 @@ class OnDemandServiceController extends Controller
         }
 
         return e(substr($local, 0, 3) . '***@' . $parts[1]);
+    }
+
+    protected function couponsBaseQuery(string $providerId = '')
+    {
+        $query = DB::table('providers_coupons');
+
+        if ($providerId !== '') {
+            $query->where('providerId', $providerId);
+        }
+
+        return $query;
+    }
+
+    protected function buildCouponRows($coupons, string $providerId = ''): array
+    {
+        $providerIds = collect($coupons)->pluck('providerId')->filter()->unique()->values()->toArray();
+        $providerNames = [];
+
+        if ($providerIds !== []) {
+            $providerNames = DB::table('app_users')
+                ->whereIn('id', $providerIds)
+                ->get(['id', 'firstName', 'lastName'])
+                ->mapWithKeys(fn ($u) => [$u->id => trim(($u->firstName ?? '') . ' ' . ($u->lastName ?? ''))])
+                ->all();
+        }
+
+        $rows = [];
+        foreach ($coupons as $coupon) {
+            $payload = json_decode($coupon->payload ?? '{}', true) ?? [];
+            $code = $payload['code'] ?? $coupon->title ?? $coupon->name ?? '—';
+            $discount = $payload['discount'] ?? $coupon->price ?? '0';
+            $discountType = $payload['discountType'] ?? $payload['discount_type'] ?? 'Percentage';
+            $isPublic = $payload['isPublic'] ?? $payload['is_public'] ?? false;
+            $expiresAt = $payload['expiresAt'] ?? $payload['expires_at'] ?? null;
+            $providerName = $providerNames[$coupon->providerId] ?? '';
+
+            $discountLabel = $discountType === 'Percentage'
+                ? $discount . '%'
+                : number_format((float) $discount, 2);
+
+            $privacyBadge = $isPublic
+                ? '<span class="badge badge-success py-2 px-3">Public</span>'
+                : '<span class="badge badge-danger py-2 px-3">Private</span>';
+
+            $expiryLabel = '—';
+            if ($expiresAt) {
+                try {
+                    $expiryLabel = date('D M d Y', strtotime($expiresAt)) . '<br>' . date('g:i:s A', strtotime($expiresAt));
+                } catch (\Throwable $e) {
+                    $expiryLabel = (string) $expiresAt;
+                }
+            }
+
+            $enabled = (bool) ($coupon->isEnabled ?? $coupon->isEnable ?? false);
+            $toggleChecked = $enabled ? 'checked' : '';
+            $toggleHtml = '<label class="switch"><input type="checkbox" class="toggle-provider-coupon" data-id="' . e($coupon->id) . '" ' . $toggleChecked . '><span class="slider round"></span></label>';
+
+            $editUrl = route('ondemand.coupons.edit', $coupon->id) . ($providerId !== '' ? ('?id=' . urlencode($providerId)) : '');
+            $actions = '<span class="action-btn">'
+                . '<a href="' . $editUrl . '" data-toggle="tooltip" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>'
+                . '<a href="javascript:void(0)" class="delete-btn btn-delete-provider-coupon" data-id="' . e($coupon->id) . '" data-toggle="tooltip" title="Delete"><i class="mdi mdi-delete"></i></a>'
+                . '</span>';
+
+            $row = [
+                'checkbox' => '<input type="checkbox" class="is_open" dataId="' . e($coupon->id) . '">',
+                'code' => '<a href="' . $editUrl . '">' . e($code) . '</a>',
+                'discount' => $discountLabel,
+                'privacy' => $privacyBadge,
+                'expires_at' => $expiryLabel,
+                'enabled' => $toggleHtml,
+                'actions' => $actions,
+            ];
+
+            if ($providerId === '') {
+                $row['provider'] = $coupon->providerId
+                    ? '<a href="' . route('providers.view', $coupon->providerId) . '">' . e($providerName ?: 'Unknown') . '</a>'
+                    : '—';
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
     protected function getProviders(?string $sectionId = null)
