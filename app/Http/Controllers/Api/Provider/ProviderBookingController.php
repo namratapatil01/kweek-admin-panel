@@ -24,7 +24,8 @@ class ProviderBookingController extends Controller
             $this->bookingService->list(
                 $user->id,
                 $request->input('tab', 'new'),
-                (int) $request->input('per_page', 20)
+                (int) $request->input('per_page', 20),
+                $request->input('since')
             ),
             'Bookings retrieved'
         );

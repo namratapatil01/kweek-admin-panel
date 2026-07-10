@@ -4,11 +4,21 @@ namespace App\Services\Provider;
 
 use App\Mail\ProviderPasswordResetMail;
 use App\Models\AppUser;
+use App\Models\ChatDriver;
+use App\Models\ChatProvider;
+use App\Models\ChatStore;
+use App\Models\ChatThread;
+use App\Models\FavoriteProvider;
+use App\Models\FavoriteService;
+use App\Models\ProviderCoupon;
+use App\Models\ProviderService;
+use App\Models\ProviderWorker;
 use App\Services\Auth\AppAuthService;
 use App\Services\Auth\AppleTokenVerifier;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,8 +28,24 @@ class ProviderAuthService
     public function __construct(
         protected AppAuthService $authService,
         protected AppleTokenVerifier $appleTokenVerifier,
-        protected SettingsService $settingsService
+        protected SettingsService $settingsService,
+        protected ProviderPhoneOtpService $phoneOtpService
     ) {
+    }
+
+    public function sendPhoneOtp(string $phoneNumber, ?string $countryCode = null): array
+    {
+        return $this->phoneOtpService->sendOtp($phoneNumber, $countryCode);
+    }
+
+    public function verifyPhoneOtpAndLogin(array $data): array
+    {
+        $this->phoneOtpService->verifyOtp(
+            $data['verificationId'],
+            $data['otp']
+        );
+
+        return $this->loginWithPhone($data);
     }
 
     public function register(array $data): array
@@ -181,7 +207,11 @@ class ProviderAuthService
             ]
         );
 
-        Mail::to($email)->send(new ProviderPasswordResetMail($user, $plainToken));
+        try {
+            Mail::to($email)->send(new ProviderPasswordResetMail($user, $plainToken));
+        } catch (\Throwable $e) {
+            Log::warning('Provider password reset email failed', ['email' => $email, 'error' => $e->getMessage()]);
+        }
     }
 
     public function resetPassword(string $email, string $token, string $password): void
@@ -227,15 +257,47 @@ class ProviderAuthService
 
     public function deleteAccount(AppUser $user): void
     {
-        $user->tokens()->delete();
-        $user->update([
-            'active' => false,
-            'isActive' => false,
-            'fcmToken' => null,
-            'email' => 'deleted_' . $user->id . '_' . ($user->email ?? ''),
-        ]);
-        $user->mergePayload(['deleted_at' => now()->toIso8601String()]);
-        $user->save();
+        DB::transaction(function () use ($user) {
+            $providerId = $user->id;
+
+            $serviceIds = ProviderService::query()
+                ->where('payload->author', $providerId)
+                ->pluck('id');
+
+            if ($serviceIds->isNotEmpty()) {
+                FavoriteService::query()
+                    ->whereIn('service_id', $serviceIds)
+                    ->delete();
+            }
+
+            ProviderService::query()
+                ->where('payload->author', $providerId)
+                ->delete();
+
+            FavoriteProvider::query()
+                ->where('provider_id', $providerId)
+                ->delete();
+
+            ProviderCoupon::query()
+                ->where('providerId', $providerId)
+                ->delete();
+
+            ProviderWorker::query()
+                ->where('providerId', $providerId)
+                ->delete();
+
+            $this->deleteChatsForProvider($providerId);
+
+            $user->tokens()->delete();
+            $user->update([
+                'active' => false,
+                'isActive' => false,
+                'fcmToken' => null,
+                'email' => 'deleted_' . $user->id . '_' . ($user->email ?? ''),
+            ]);
+            $user->mergePayload(['deleted_at' => now()->toIso8601String()]);
+            $user->save();
+        });
     }
 
     protected function loginWithSocial(string $provider, array $claims, array $profile): array
@@ -371,5 +433,34 @@ class ProviderAuthService
         $parts = explode(' ', trim($name), 2);
 
         return $parts[1] ?? null;
+    }
+
+    protected function deleteChatsForProvider(string $providerId): void
+    {
+        $chatConfigs = [
+            [ChatProvider::class, 'chat_provider'],
+            [ChatWorker::class, 'chat_worker'],
+            [ChatDriver::class, 'chat_driver'],
+            [ChatStore::class, 'chat_store'],
+        ];
+
+        foreach ($chatConfigs as [$modelClass, $chatType]) {
+            $chatIds = $modelClass::query()
+                ->where('restaurantId', $providerId)
+                ->orWhere('customerId', $providerId)
+                ->pluck('id');
+
+            if ($chatIds->isNotEmpty()) {
+                ChatThread::query()
+                    ->whereIn('chat_id', $chatIds)
+                    ->where('chat_type', $chatType)
+                    ->delete();
+            }
+
+            $modelClass::query()
+                ->where('restaurantId', $providerId)
+                ->orWhere('customerId', $providerId)
+                ->delete();
+        }
     }
 }

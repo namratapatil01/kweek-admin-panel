@@ -6,6 +6,7 @@ use App\Models\AppUser;
 use App\Models\ProviderOrder;
 use App\Models\ProviderWorker;
 use App\Models\Referral;
+use App\Models\Section;
 use App\Models\Wallet;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -22,9 +23,26 @@ class ProviderBookingService
     public const STATUS_REJECTED = 'Order Rejected';
     public const STATUS_CANCELLED = 'Order Cancelled';
 
-    public function list(string $providerId, ?string $tab = null, int $perPage = 20): LengthAwarePaginator
+    public function __construct(
+        protected ProviderNotificationService $notificationService
+    ) {
+    }
+
+    public function list(string $providerId, ?string $tab = null, int $perPage = 20, ?string $since = null): LengthAwarePaginator
     {
         $query = $this->ordersForProvider($providerId);
+
+        if ($since) {
+            try {
+                $sinceAt = Carbon::parse($since);
+                $query->where(function ($q) use ($sinceAt) {
+                    $q->where('updated_at', '>=', $sinceAt)
+                        ->orWhere('createdAt', '>=', $sinceAt);
+                });
+            } catch (\Throwable) {
+                // ignore invalid since
+            }
+        }
 
         $tab = $tab ?: 'new';
 
@@ -80,6 +98,7 @@ class ProviderBookingService
         ]);
 
         $this->creditWalletOnAccept($provider, $order);
+        $this->notifyCustomer($order->fresh(), 'provider_accepted');
 
         return $order->fresh()->toDocumentArray();
     }
@@ -99,7 +118,11 @@ class ProviderBookingService
             'payload' => $payload,
         ]);
 
-        return $order->fresh()->toDocumentArray();
+        $order = $order->fresh();
+        $this->refundCustomerOnReject($order);
+        $this->notifyCustomer($order, 'provider_rejected');
+
+        return $order->toDocumentArray();
     }
 
     public function assignWorker(AppUser $provider, string $id, string $workerId): array
@@ -123,7 +146,19 @@ class ProviderBookingService
             'status' => self::STATUS_ASSIGNED,
         ]);
 
-        return $order->fresh()->toDocumentArray();
+        $order = $order->fresh();
+        $this->notifyCustomer($order, 'worker_assigned');
+
+        $workerUser = AppUser::query()->find($workerId);
+        if ($workerUser?->fcmToken) {
+            $this->notificationService->sendBookingNotification(
+                $workerUser->fcmToken,
+                'worker_assigned',
+                $order->id
+            );
+        }
+
+        return $order->toDocumentArray();
     }
 
     public function start(AppUser $provider, string $id): array
@@ -141,7 +176,10 @@ class ProviderBookingService
             'payload' => $payload,
         ]);
 
-        return $order->fresh()->toDocumentArray();
+        $order = $order->fresh();
+        $this->notifyCustomer($order, 'service_intransit');
+
+        return $order->toDocumentArray();
     }
 
     public function stopTimer(AppUser $provider, string $id): array
@@ -155,7 +193,10 @@ class ProviderBookingService
         $payload['endTime'] = now()->toIso8601String();
         $order->update(['payload' => $payload]);
 
-        return $order->fresh()->toDocumentArray();
+        $order = $order->fresh();
+        $this->notifyCustomer($order, 'stop_time');
+
+        return $order->toDocumentArray();
     }
 
     public function addExtraCharges(AppUser $provider, string $id, array $data): array
@@ -172,7 +213,10 @@ class ProviderBookingService
 
         $order->update(['payload' => $payload]);
 
-        return $order->fresh()->toDocumentArray();
+        $order = $order->fresh();
+        $this->notifyCustomer($order, 'service_charges');
+
+        return $order->toDocumentArray();
     }
 
     public function complete(AppUser $provider, string $id, ?string $otp = null): array
@@ -196,10 +240,12 @@ class ProviderBookingService
             'paymentStatus' => $order->paymentStatus ?: 'success',
         ]);
 
-        $this->creditWalletOnComplete($provider, $order->fresh());
-        $this->applyReferralIfFirstOrder($order->fresh());
+        $order = $order->fresh();
+        $this->creditWalletOnComplete($provider, $order);
+        $this->applyReferralIfFirstOrder($order);
+        $this->notifyCustomer($order, 'service_completed');
 
-        return $order->fresh()->toDocumentArray();
+        return $order->toDocumentArray();
     }
 
     public function updateStatus(AppUser $provider, string $id, string $status, array $extra = []): array
@@ -279,6 +325,56 @@ class ProviderBookingService
         ]);
     }
 
+    protected function refundCustomerOnReject(ProviderOrder $order): void
+    {
+        $providerData = $order->provider ?? ($order->payload['provider'] ?? []);
+        $priceUnit = $providerData['priceUnit'] ?? data_get($providerData, 'priceUnit');
+
+        if (strtolower((string) $priceUnit) !== 'fixed') {
+            return;
+        }
+
+        $paymentMethod = strtolower((string) ($order->payment_method ?? $order->paymentMethod ?? ''));
+        if ($paymentMethod === 'cod') {
+            return;
+        }
+
+        $authorId = $order->authorID ?? data_get($order->payload, 'author.userID');
+        if (! $authorId) {
+            return;
+        }
+
+        $customer = AppUser::query()->where('id', $authorId)->where('role', 'customer')->first();
+        if (! $customer) {
+            return;
+        }
+
+        $price = (float) ($providerData['disPrice'] ?? $providerData['price'] ?? $order->subTotal ?? 0);
+        $quantity = (float) ($order->payload['quantity'] ?? 1);
+        $discount = (float) ($order->discount ?? data_get($order->payload, 'discount', 0));
+        $amount = max(($price * max($quantity, 1)) - $discount, 0);
+
+        if ($amount <= 0) {
+            return;
+        }
+
+        $customer->increment('wallet_amount', $amount);
+
+        Wallet::query()->create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $customer->id,
+            'amount' => $amount,
+            'isTopUp' => true,
+            'payment_method' => 'Wallet',
+            'payment_status' => 'success',
+            'note' => 'Booking amount Refund',
+            'order_id' => $order->id,
+            'serviceType' => 'ondemand-service',
+            'transactionUser' => 'customer',
+            'date' => now(),
+        ]);
+    }
+
     protected function decrementSubscriptionOrders(AppUser $provider): void
     {
         $total = data_get($provider->payload, 'subscriptionTotalOrders');
@@ -320,7 +416,62 @@ class ProviderBookingService
             return;
         }
 
-        // Referral credit handled by existing wallet/referrals data; hook kept for future settings amount.
+        $doc = $referral->toDocumentArray();
+        $referralBy = $doc['referralBy'] ?? $referral->referralBy ?? null;
+
+        if (! $referralBy) {
+            return;
+        }
+
+        $amount = 0.0;
+        if ($sectionId) {
+            $section = Section::query()->find($sectionId);
+            $amount = (float) ($section?->toDocumentArray()['referralAmount'] ?? 0);
+        }
+
+        if ($amount <= 0) {
+            return;
+        }
+
+        $referrer = AppUser::query()->find($referralBy);
+        if (! $referrer) {
+            return;
+        }
+
+        $referrer->increment('wallet_amount', $amount);
+
+        Wallet::query()->create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $referrer->id,
+            'amount' => $amount,
+            'isTopUp' => true,
+            'payment_method' => 'Referral Amount',
+            'payment_status' => 'success',
+            'note' => 'Referral reward for booking #' . $order->id,
+            'order_id' => $order->id,
+            'serviceType' => 'ondemand-service',
+            'transactionUser' => 'driver',
+            'date' => now(),
+        ]);
+
+        $referral->mergePayload(['isSuccessful' => true]);
+        $referral->save();
+    }
+
+    protected function notifyCustomer(ProviderOrder $order, string $type): void
+    {
+        $orderDoc = $order->toDocumentArray();
+        $fcmToken = data_get($orderDoc, 'author.fcmToken')
+            ?? data_get($order->payload, 'author.fcmToken');
+
+        if (! $fcmToken) {
+            $authorId = $order->authorID ?? data_get($order->payload, 'author.userID');
+            if ($authorId) {
+                $fcmToken = AppUser::query()->find($authorId)?->fcmToken;
+            }
+        }
+
+        $this->notificationService->sendBookingNotification($fcmToken, $type, $order->id);
     }
 
     protected function findOwnedOrder(string $providerId, string $id): ?ProviderOrder

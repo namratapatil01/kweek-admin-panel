@@ -22,8 +22,10 @@ use App\Http\Controllers\Api\Provider\ProviderCouponController;
 use App\Http\Controllers\Api\Provider\ProviderDashboardController;
 use App\Http\Controllers\Api\Provider\ProviderMiscController;
 use App\Http\Controllers\Api\Provider\ProviderProfileController;
+use App\Http\Controllers\Api\Provider\ProviderRealtimeController;
 use App\Http\Controllers\Api\Provider\ProviderReviewController;
 use App\Http\Controllers\Api\Provider\ProviderServiceController;
+use App\Http\Controllers\Api\Provider\ProviderSettingsController;
 use App\Http\Controllers\Api\Provider\ProviderSubscriptionController;
 use App\Http\Controllers\Api\Provider\ProviderWalletController;
 use App\Http\Controllers\Api\Provider\ProviderWorkerController;
@@ -197,11 +199,17 @@ Route::prefix('provider')->group(function () {
     Route::post('login', [ProviderAuthController::class, 'login']);
     Route::post('auth/apple', [ProviderAuthController::class, 'loginWithApple']);
     Route::post('auth/phone', [ProviderAuthController::class, 'loginWithPhone']);
+    Route::post('auth/phone/send-otp', [ProviderAuthController::class, 'sendPhoneOtp']);
+    Route::post('auth/phone/verify-otp', [ProviderAuthController::class, 'verifyPhoneOtp']);
     Route::post('password/forgot', [ProviderAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [ProviderAuthController::class, 'resetPassword']);
     Route::get('home', [ProviderDashboardController::class, 'home']);
     Route::get('terms', [ProviderMiscController::class, 'terms']);
     Route::get('privacy', [ProviderMiscController::class, 'privacy']);
+    Route::get('settings', [ProviderSettingsController::class, 'index']);
+    Route::get('settings/payment', [ProviderSettingsController::class, 'payment']);
+    Route::get('settings/languages', [ProviderSettingsController::class, 'languages']);
+    Route::get('settings/{key}', [ProviderSettingsController::class, 'show'])->where('key', '[a-zA-Z0-9_]+');
 
     Route::middleware(['auth:sanctum', 'app.role:provider'])->group(function () {
         Route::post('logout', [ProviderAuthController::class, 'logout']);
@@ -213,6 +221,7 @@ Route::prefix('provider')->group(function () {
         Route::put('bank-details', [ProviderProfileController::class, 'updateBankDetails']);
 
         Route::get('dashboard', [ProviderDashboardController::class, 'dashboard']);
+        Route::get('realtime/poll', [ProviderRealtimeController::class, 'poll']);
 
         Route::get('sections', [ProviderServiceController::class, 'sections']);
         Route::get('categories', [ProviderServiceController::class, 'categories']);
@@ -260,6 +269,7 @@ Route::prefix('provider')->group(function () {
         Route::get('subscriptions/plans', [ProviderSubscriptionController::class, 'plans']);
         Route::get('subscriptions/history', [ProviderSubscriptionController::class, 'history']);
         Route::post('subscriptions', [ProviderSubscriptionController::class, 'subscribe']);
+        Route::post('subscriptions/confirm-payment', [ProviderSubscriptionController::class, 'confirmPayment']);
 
         Route::get('chat/inbox', [ProviderChatController::class, 'inbox']);
         Route::get('chat/{orderId}/messages', [ProviderChatController::class, 'messages'])->where('orderId', '[a-zA-Z0-9\-_]+');
@@ -271,6 +281,8 @@ Route::prefix('provider')->group(function () {
         Route::get('ratings', [ProviderReviewController::class, 'ratings']);
 
         Route::get('notifications', [ProviderMiscController::class, 'notifications']);
+        Route::get('notifications/templates/{type}', [ProviderMiscController::class, 'notificationTemplate'])->where('type', '[a-zA-Z0-9_]+');
+        Route::get('email-templates/{type}', [ProviderMiscController::class, 'emailTemplate'])->where('type', '[a-zA-Z0-9_]+');
         Route::get('documents', [ProviderMiscController::class, 'documents']);
         Route::get('documents/status', [ProviderMiscController::class, 'documentStatus']);
         Route::post('documents', [ProviderMiscController::class, 'submitDocuments']);
