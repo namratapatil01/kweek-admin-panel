@@ -170,9 +170,38 @@
                      
         var database = kweekDb();
         var ref;
+        var initialRef;
         var id = "{{ $id }}";
+
+        var vendorCache = {};
+
+        function buildDeliverymanBaseRef() {
+            if (id != '') {
+                return database.collection('users').where("role", "==", "driver").where("vendorID", "==", id);
+            }
+            return database.collection('users').where("role", "==", "driver").where("vendorID", "!=", "");
+        }
+
+        async function preloadVendorCache() {
+            if (Object.keys(vendorCache).length > 0) {
+                return vendorCache;
+            }
+            var snapshots = await database.collection('vendors').get();
+            (snapshots.docs || []).forEach(function (doc) {
+                var data = doc.data() || {};
+                var vendorKey = data.id || doc.id;
+                if (vendorKey) {
+                    vendorCache[vendorKey] = data;
+                }
+            });
+            return vendorCache;
+        }
+
         if (id != '') {
             database.collection('vendors').where("id", "==", '{{ $id }}').get().then(async function(snapshots) {
+                if (!snapshots.docs || !snapshots.docs.length) {
+                    return;
+                }
                 var vendorData = snapshots.docs[0].data();
                 var wallet_route = "{{ route('users.walletstransaction', 'id') }}";
                 $(".wallet_transaction").attr("href", wallet_route.replace('id', 'storeID=' + vendorData.author));
@@ -190,17 +219,10 @@
             }
                  $(".page-title").text(' - '+vendorData.title);
             });
-            ref = database.collection('users').where("role", "==", "driver").where("vendorID", "==", id);
-        } else {
-            ref = database.collection('users').where("role", "==", "driver");
         }
 
-        // if(sectionType && sectionType == 'delivery-service'){
-        //     ref = ref.where('serviceType', '==', sectionType);
-        // }
-        if(section_id){
-            ref = ref.where('sectionId', '==', section_id);
-        }
+        ref = buildDeliverymanBaseRef();
+        initialRef = ref;
         
         var offest = 1;
         var pagesize = 10;
@@ -252,21 +274,14 @@
             });
         }
         setDate();
-        var initialRef = ref;
         $('.filteredRecords').change(async function() {
             var status = $('.status_selector').val();
             var daterangepicker = $('#daterange').data('daterangepicker');
-            var refData = initialRef;
+            var refData = initialRef || buildDeliverymanBaseRef();
             if (status) {
                 refData = (status === "active") ?
                     refData.where('active', '==', true) :
                     refData.where('active', '==', false);
-            }
-            if(sectionType && sectionType == 'delivery-service'){
-                refData = refData.where('serviceType', '==', sectionType);
-            }
-            else if(section_id){
-                refData = refData.where('sectionId', '==', section_id);
             }
             if ($('#daterange span').html() != '{{ trans('lang.select_range') }}' && daterangepicker) {
                 var from = moment(daterangepicker.startDate).toDate();
@@ -282,7 +297,8 @@
             $('#deliverymanTable').DataTable().ajax.reload();
         });
 
-        $(document).ready(function() {
+        $(document).ready(async function() {
+            await preloadVendorCache();
 
             $(document.body).on('click', '.redirecttopage', function() {
                 var url = $(this).attr('data-url');
@@ -487,6 +503,7 @@
                     } catch (error) {
                         console.error("Error fetching data from database:", error);
                         jQuery('#overlay').hide();
+                        $('#data-table_processing').hide();
                         callback({
                             draw: data.draw,
                             recordsTotal: 0,
@@ -658,42 +675,24 @@
         }
 
         async function getRestaurant(vendorid) {
-
-            const vendorRef = database.collection('vendors').where('id', '==', vendorid);
-            const vendorSnapshot = await vendorRef.get();
-
-            const vendor_userRef = database.collection('users').where('vendorID', '==', vendorid).where('role', '==', 'vendor');
-            const vendor_userSnapshot = await vendor_userRef.get();
-
-
-            if (vendorSnapshot.empty) {
-                return {
-                    title: "-",
-                    email: "-"
-                }; // Default values if vendor not found
+            var vendorData = vendorCache[vendorid];
+            if (!vendorData) {
+                var vendorSnap = await database.collection('vendors').doc(vendorid).get();
+                if (!vendorSnap.exists) {
+                    return {
+                        title: "-",
+                        image: placeholderImage,
+                        email: "-"
+                    };
+                }
+                vendorData = vendorSnap.data() || {};
+                vendorCache[vendorid] = vendorData;
             }
 
-            if (vendor_userSnapshot.empty) {
-                return {
-                    image: "-",
-                    email: "-"
-                }; // Default values if vendor not found
-            }
-
-            let vendorData = {};
-            let vendor_userData = {};
-            vendorSnapshot.forEach((doc) => {
-                vendorData = doc.data();
-            });
-
-            vendor_userSnapshot.forEach((doc) => {
-                vendor_userData = doc.data();
-            });
-            
             return {
                 title: vendorData.title || "-",
-                image: vendorData.profilePictureURL == '' || vendorData.profilePictureURL == null ? placeholderImage : val.profilePictureURL,
-                email: vendor_userData.email || "-"
+                image: vendorData.photo || vendorData.profilePictureURL || placeholderImage,
+                email: "-"
             };
         }
     </script>

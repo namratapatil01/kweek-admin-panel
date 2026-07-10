@@ -74,121 +74,77 @@
 @section('scripts')
 
 <script type="text/javascript">
-    var user_permissions = '<?php echo @session('user_permissions') ?>';
-
-    user_permissions = JSON.parse(user_permissions);
+    var user_permissions = [];
+    try {
+        user_permissions = JSON.parse('<?php echo @session('user_permissions') ?: '[]'; ?>' || '[]');
+    } catch (e) {
+        user_permissions = [];
+    }
 
     var checkDeletePermission = false;
 
-    if ($.inArray('item.attributes.delete', user_permissions) >= 0) {
+    if ($.inArray('item.attributes.delete', user_permissions) >= 0 || {{ (int) (auth()->user()->role_id ?? 0) === 1 ? 'true' : 'false' }}) {
         checkDeletePermission = true;
-    }    
+    }
     var database = kweekDb();
-    var offest = 1;
     var pagesize = 10;
-    var end = null;
-    var endarray = [];
-    var start = null;
-    var user_number = [];
-
     var ref = database.collection('vendor_attributes');
     var append_list = '';
 
     $(document).ready(function() {
-
         append_list = document.getElementById('append_list1');
-
         append_list.innerHTML = '';
 
         ref.get().then(async function(snapshots) {
-            var html = '';
-            if (snapshots.docs.length > 0) {
-                $('.total_count').text(snapshots.docs.length); 
-                
-            }
-            else
-            {
-                $('.total_count').text(0);                 
-            }
-            html = await buildHTML(snapshots);
-             $(function () {
-                                $('[data-toggle="tooltip"]').tooltip();
-                            });
+            $('.total_count').text(snapshots.docs.length || 0);
+            var html = await buildHTML(snapshots);
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
             jQuery("#data-table_processing").hide();
             if (html != '') {
                 append_list.innerHTML = html;
-                start = snapshots.docs[snapshots.docs.length - 1];
-                endarray.push(snapshots.docs[0]);
-                if (snapshots.docs.length < pagesize) {
-                    jQuery("#data-table_paginate").hide();
-                }
             }
             $('#attributesTable').DataTable({
-                order: [],
+                order: [[0, 'asc']],
                 columnDefs: [{
-                       
-                        render: function(data) {
-
-                            return data;
-                        }
-                    },
-                    {
-                        orderable: false,
-                        targets: [1]
-                    },
-                ],
-                order: [0, "asc"],
-                "language": {
-                    "zeroRecords": "{{trans('lang.no_record_found')}}",
-                    "emptyTable": "{{trans('lang.no_record_found')}}"
+                    orderable: false,
+                    targets: [1]
+                }],
+                language: {
+                    zeroRecords: "{{trans('lang.no_record_found')}}",
+                    emptyTable: "{{trans('lang.no_record_found')}}"
                 },
                 responsive: true
             });
+        }).catch(function (err) {
+            console.error('Failed to load item attributes', err);
+            $('.total_count').text(0);
+            jQuery("#data-table_processing").hide();
         });
     });
+
     async function buildHTML(snapshots) {
-        var html = ''; 
-        await Promise.all(snapshots.docs.map(async (listval) => {
-            var val = listval.data();
-
-            let result = user_number.filter(obj => {
-                return obj.id == val.author;
-            })
-
-            if (result.length > 0) {
-                val.phoneNumber = result[0].phoneNumber;
-                val.isActive = result[0].isActive;
-
-            } else {
-                val.phoneNumber = '';
-                val.isActive = false;
-            }
-
-            var getData = await getListData(val);
-            html += getData;
-        }));
+        var html = '';
+        (snapshots.docs || []).forEach(function (listval) {
+            var val = listval.data() || {};
+            val.id = listval.id;
+            html += getListData(val);
+        });
         return html;
     }
-    async function getListData(val) {
-        var html = '';
-        
-            html = html + '<tr>';
-            newdate = '';
 
-            var id = val.id;
-            var route1 = '{{route("attributes.edit",":id")}}';
-            route1 = route1.replace(':id', id);
-
-            html = html + '<td>' + val.title + '</td>';
-            html = html + '<td><span class="action-btn"><a href="' + route1 + '" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
-            if(checkDeletePermission){
-                html=html+'<a id="' + val.id + '" name="attribute-delete" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
-            }
-            html=html+'</span></td>';
-
-
-            html = html + '</tr>';
-       
+    function getListData(val) {
+        var id = val.id;
+        var route1 = '{{ url("attributes/edit") }}/' + encodeURIComponent(id);
+        var title = val.title || val.name || id;
+        var html = '<tr>';
+        html += '<td>' + title + '</td>';
+        html += '<td><span class="action-btn"><a href="' + route1 + '" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
+        if (checkDeletePermission) {
+            html += '<a id="' + id + '" name="attribute-delete" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
+        }
+        html += '</span></td></tr>';
         return html;
     }
 

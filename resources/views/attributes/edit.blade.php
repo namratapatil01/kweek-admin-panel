@@ -50,16 +50,17 @@
 
 var id = "<?php echo $id;?>";
 var database = kweekDb();
-var ref = database.collection('vendor_attributes').where("id","==",id);
   
 $(document).ready(function(){
 
     jQuery("#data-table_processing").show();
-    ref.get().then( async function(snapshots){
-        var attribute = snapshots.docs[0].data();
-        $(".attribute-name").val(attribute.title);
+    database.collection('vendor_attributes').doc(id).get().then(async function(snapshot){
+        var attribute = snapshot.exists ? (snapshot.data() || {}) : {};
+        $(".attribute-name").val(attribute.title || attribute.name || '');
         jQuery("#data-table_processing").hide();
-    })
+    }).catch(function () {
+        jQuery("#data-table_processing").hide();
+    });
 
 	  $(".edit-form-btn").click(function(){
 		  var title = $(".attribute-name").val();
@@ -70,7 +71,7 @@ $(document).ready(function(){
     		window.scrollTo(0,0);
   		}else{
     		database.collection('vendor_attributes').doc(id).update({'title':title}).then(function(result) { 
-    	  		window.location.href = '{{ route("attributes")}}';
+    	  		window.location.href = '{{ url("attributes") }}';
 	    	});
   		}
 	  });

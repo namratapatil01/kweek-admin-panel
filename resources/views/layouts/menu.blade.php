@@ -220,8 +220,8 @@ if (empty($service_type)) {
         @if($service_type == "delivery-service" || $service_type == "ecommerce-service")
         @if (
             in_array('categories', $role_has_permission) || 
-            in_array('items', $role_has_permission) || 
-            in_array('item-attributes', $role_has_permission) || 
+            in_array('items', $role_has_permission) ||
+            in_array('item-attributes', $role_has_permission) ||
             in_array('review-attributes', $role_has_permission)
             )
             <li class="nav-subtitle">
@@ -241,21 +241,19 @@ if (empty($service_type)) {
                     </a>
                 </li>
             @endif
-            @if (in_array('item-attributes', $role_has_permission) || in_array('review-attributes', $role_has_permission))
-                @if (in_array('item-attributes', $role_has_permission))
+            @if ($isSuperAdmin || in_array('item-attributes', $role_has_permission))
                 <li><a class="waves-effect waves-dark" href="{!! url('attributes') !!}" aria-expanded="false">
-                        <i class="ri-archive-stack-fill"></i>
+                        <i class="ri-archive-drawer-fill"></i>
                         <span class="hide-menu">{{ trans('lang.item_attribute_plural') }}</span>
                     </a>
                 </li>
-                @endif
-                @if (in_array('review-attributes', $role_has_permission))
+            @endif
+            @if (in_array('review-attributes', $role_has_permission))
                 <li><a class="waves-effect waves-dark" href="{!! url('reviewattributes') !!}" aria-expanded="false">
                         <i class="ri-shield-star-fill"></i>
                         <span class="hide-menu">{{ trans('lang.review_attribute_plural') }}</span>
                     </a>
                 </li>
-                @endif
             @endif
         @endif
         @endif

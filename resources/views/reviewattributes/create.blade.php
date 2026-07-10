@@ -74,8 +74,8 @@
         window.scrollTo(0, 0);
       } else {
 
-        database.collection('review_attributes').doc(id_reviewattribute).set({ 'id': id_reviewattribute, 'title': title }).then(function (result) {
-          window.location.href = '{{ route("reviewattributes")}}';
+        database.collection('review_attributes').doc(id_reviewattribute).set({ 'id': id_reviewattribute, 'title': title }).then(function () {
+          window.location.href = '{{ url("reviewattributes") }}';
         });
 
       }

@@ -21,7 +21,15 @@ class DriversPayoutController extends Controller
 
     public function create($id = '')
     {
-        return view("drivers_payouts.create")->with('id', $id);
+        $drivers = AppUser::drivers()
+            ->orderBy('firstName')
+            ->orderBy('lastName')
+            ->get(['id', 'firstName', 'lastName', 'wallet_amount']);
+
+        return view('drivers_payouts.create', [
+            'id' => $id,
+            'drivers' => $drivers,
+        ]);
     }
 
     /**
@@ -188,6 +196,7 @@ class DriversPayoutController extends Controller
                 'amount' => $amount,
                 'note' => $note,
                 'paymentStatus' => 'Success',
+                'paidDate' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

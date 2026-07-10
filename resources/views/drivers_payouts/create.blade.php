@@ -13,7 +13,7 @@
                         <a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ url('/driversPayouts') }}">{{ trans('lang.drivers_payout_plural') }}</a>
+                        <a href="{{ route('payoutRequests.driver.disbursement') }}">{{ trans('lang.driver_disburesement') }}</a>
                     </li>
                     <li class="breadcrumb-item">{{ trans('lang.drivers_payout_create') }}</li>
                 </ol>
@@ -32,6 +32,11 @@
                                 <div class="col-7">
                                     <select id="select_vendor" class="form-control">
                                         <option value="">{{ trans('lang.select_driver') }}</option>
+                                        @foreach ($drivers ?? [] as $driver)
+                                            <option value="{{ $driver->id }}" data-wallet="{{ $driver->wallet_amount ?? 0 }}">
+                                                {{ trim(($driver->firstName ?? '') . ' ' . ($driver->lastName ?? '')) }}
+                                            </option>
+                                        @endforeach
                                     </select>
                                     <div class="form-text text-muted">
                                         {{ trans('lang.drivers_payout_driver_id_help') }}
@@ -70,7 +75,7 @@
             {{ trans('lang.save') }}
         </button>
         @if ($id == '')
-            <a href="{!! route('driversPayouts') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            <a href="{!! route('payoutRequests.driver.disbursement') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
         @else
             <a href="{!! route('driver.payouts', $id) !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
         @endif
@@ -85,8 +90,7 @@
         var driverID = "{{ $id }}";
         var driverWalletMap = {};
         var driverApiUrl = '/drivers/api/get-driver';
-        var driversListUrl = '/driversPayouts_get-drivers';
-        var payoutStoreUrl = '/driversPayouts/store';
+        var payoutStoreUrl = '{{ route('driversPayouts.store') }}';
 
         var emailTemplatesData = null;
         var adminEmail = '';
@@ -99,22 +103,12 @@
         var userEmail = '';
 
         $(document).ready(function() {
-            $("#data-table_processing").show();
+            $('#select_vendor option[data-wallet]').each(function() {
+                driverWalletMap[$(this).val()] = parseFloat($(this).data('wallet')) || 0;
+            });
 
             if (driverID == '') {
-                $.get(driversListUrl, function(res) {
-                    if (res && res.data) {
-                        res.data.forEach(function(driver) {
-                            driverWalletMap[driver.id] = parseFloat(driver.wallet_amount) || 0;
-                            $('#select_vendor').append($("<option></option>")
-                                .attr("value", driver.id)
-                                .text(driver.firstName + ' ' + driver.lastName));
-                        });
-                    }
-                    $("#data-table_processing").hide();
-                }).fail(function() {
-                    $("#data-table_processing").hide();
-                });
+                $("#data-table_processing").hide();
             } else {
                 remainingPrice(driverID).finally(function() {
                     $("#data-table_processing").hide();
@@ -158,7 +152,7 @@
                     if (res.success) {
                         jQuery("#data-table_processing").hide();
                         <?php if ($id == '') { ?>
-                            window.location.href = "{{ route('driversPayouts') }}";
+                            window.location.href = "{{ route('payoutRequests.driver.disbursement') }}";
                         <?php } else { ?>
                             window.location.href = "{{ route('driver.payouts', $id) }}";
                         <?php } ?>

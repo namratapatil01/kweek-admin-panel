@@ -94,6 +94,7 @@ return [
         'permission' => 'category',
         'searchable' => ['title'],
         'columns' => [
+            ['field' => 'photo', 'label' => 'Photo'],
             ['field' => 'title', 'label' => 'Title'],
             ['field' => 'section_id', 'label' => 'Section'],
             ['field' => 'publish', 'label' => 'Published', 'type' => 'boolean'],
@@ -125,14 +126,16 @@ return [
         'model' => \App\Models\VendorAttribute::class,
         'view' => 'vendor_attributes',
         'route' => 'attributes',
-        'label' => 'Attributes',
-        'permission' => 'item-attribute',
+        'legacy_route' => 'attributes',
+        'index_route' => 'attributes',
+        'label' => 'Item Attributes',
+        'permission' => 'item-attributes',
         'searchable' => ['title'],
         'columns' => [
-            ['field' => 'title', 'label' => 'Title'],
+            ['field' => 'title', 'label' => 'Name'],
         ],
         'form' => [
-            ['name' => 'title', 'type' => 'text', 'label' => 'Title', 'required' => true],
+            ['name' => 'title', 'type' => 'text', 'label' => 'Name', 'required' => true],
         ],
     ],
     'documents' => [
@@ -155,16 +158,18 @@ return [
     ],
     'review-attributes' => [
         'model' => \App\Models\ReviewAttribute::class,
-        'view' => 'review_attributes',
-        'route' => 'review-attributes',
+        'view' => 'reviewattributes',
+        'route' => 'reviewattributes',
+        'legacy_route' => 'reviewattributes',
+        'index_route' => 'reviewattributes',
         'label' => 'Review Attributes',
-        'permission' => 'review-attribute',
+        'permission' => 'review-attributes',
         'searchable' => ['title'],
         'columns' => [
-            ['field' => 'title', 'label' => 'Title'],
+            ['field' => 'title', 'label' => 'Name'],
         ],
         'form' => [
-            ['name' => 'title', 'type' => 'text', 'label' => 'Title', 'required' => true],
+            ['name' => 'title', 'type' => 'text', 'label' => 'Name', 'required' => true],
         ],
     ],
     'coupons' => [

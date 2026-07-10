@@ -93,6 +93,7 @@ trait ProvidesMySqlCrud
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate(StoreModuleRequest::buildRules($this->moduleSlug(), true));
+        $validated = $this->applyDefaultSectionId($validated);
 
         try {
             $this->crudService()->store($validated);
@@ -327,6 +328,42 @@ trait ProvidesMySqlCrud
         $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
 
         return in_array(($config['permission'] ?? '') . '.delete', $permissions, true);
+    }
+
+    /**
+     * Prefer the active admin section cookie when the form leaves section blank.
+     */
+    protected function applyDefaultSectionId(array $data): array
+    {
+        $sectionId = $data['section_id'] ?? $data['sectionId'] ?? null;
+        if ($sectionId !== null && $sectionId !== '') {
+            return $data;
+        }
+
+        $cookieSection = request()->cookie('section_id') ?: request()->input('sectionId');
+        if (! $cookieSection) {
+            return $data;
+        }
+
+        if (array_key_exists('section_id', $data) || $this->formHasField('section_id')) {
+            $data['section_id'] = $cookieSection;
+        }
+        if (array_key_exists('sectionId', $data) || $this->formHasField('sectionId')) {
+            $data['sectionId'] = $cookieSection;
+        }
+
+        return $data;
+    }
+
+    protected function formHasField(string $name): bool
+    {
+        foreach ($this->moduleConfig()['form'] ?? [] as $field) {
+            if (($field['name'] ?? null) === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Legacy route aliases used by existing web.php */

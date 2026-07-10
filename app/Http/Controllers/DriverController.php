@@ -553,7 +553,7 @@ class DriverController extends Controller
                 'active', 'profilePictureURL', 'carNumber', 'carMakes',
                 'carName', 'vehicleId', 'sectionId', 'rideType',
                 'serviceType', 'vehicleType', 'userBankDetails', 'zoneId', 'ownerId',
-                'password'
+                'password', 'vendorID', 'countryCode', 'isDocumentVerify', 'isActive',
             ]);
 
             $data['role'] = 'driver';
@@ -563,7 +563,17 @@ class DriverController extends Controller
             if (!$request->has('ownerId')) {
                 $data['ownerId'] = null;
             }
-            $data['isDocumentVerify'] = false;
+            if ($request->has('isDocumentVerify')) {
+                $data['isDocumentVerify'] = filter_var($request->input('isDocumentVerify'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            } else {
+                $data['isDocumentVerify'] = false;
+            }
+            if ($request->has('isActive')) {
+                $data['isActive'] = filter_var($request->input('isActive'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+            if (!$request->filled('createdAt')) {
+                $data['createdAt'] = now();
+            }
             $data['wallet_amount'] = 0;
             $data['orderCompleted'] = 0;
 

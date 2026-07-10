@@ -51,15 +51,16 @@
 
   var id = "<?php echo $id; ?>";
   var database = kweekDb();
-  var ref = database.collection('review_attributes').where("id", "==", id);
 
   $(document).ready(function () {
     jQuery("#data-table_processing").show();
-    ref.get().then(async function (snapshots) {
-      var reviewattribute = snapshots.docs[0].data();
-      $(".reviewattribute-name").val(reviewattribute.title);
+    database.collection('review_attributes').doc(id).get().then(async function (snapshot) {
+      var reviewattribute = snapshot.exists ? (snapshot.data() || {}) : {};
+      $(".reviewattribute-name").val(reviewattribute.title || reviewattribute.name || '');
       jQuery("#data-table_processing").hide();
-    })
+    }).catch(function () {
+      jQuery("#data-table_processing").hide();
+    });
 
     $(".edit-form-btn").click(function () {
       var title = $(".reviewattribute-name").val();
@@ -69,8 +70,8 @@
         $(".error_top").append("<p>{{trans('lang.enter_cat_title_error')}}</p>");
         window.scrollTo(0, 0);
       } else {
-        database.collection('review_attributes').doc(id).update({ 'title': title }).then(function (result) {
-          window.location.href = '{{ route("reviewattributes")}}';
+        database.collection('review_attributes').doc(id).update({ 'title': title }).then(function () {
+          window.location.href = '{{ url("reviewattributes") }}';
         });
       }
     });

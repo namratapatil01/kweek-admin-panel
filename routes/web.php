@@ -90,6 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
     Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
     Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+    Route::get('/vendors/api/stores-list', [App\Http\Controllers\VendorController::class, 'getStoresList'])->name('vendors.stores-list');
 });
 
 
@@ -370,6 +371,7 @@ Route::post('order-status-notification', [App\Http\Controllers\OrderController::
 
 Route::middleware(['permission:god-eye,map'])->group(function () {
     Route::get('/map/multivendor', [App\Http\Controllers\MapController::class, 'multivendor'])->name('map.multivendor');
+    Route::get('/map/multivendor/data', [App\Http\Controllers\MapController::class, 'getMultivendorData'])->name('map.multivendor.data');
 });
 Route::middleware(['permission:parcel-service-god-eye,parcel-service-map'])->group(function () {
     Route::get('/map/parcel', [App\Http\Controllers\MapController::class, 'parcel'])->name('map.parcel');
@@ -596,10 +598,18 @@ Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->g
 });
 
 Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->group(function () {
-    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');   
+    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/vendor/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableVendorDisbursement'])->name('payoutRequests.vendor.disbursement.datatable');
+    Route::post('/disbursements/vendor/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyVendorPayout'])->name('payoutRequests.vendor.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-driver,payout-request.driver'])->group(function () {
-    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');   
+    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/drivers/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableDriverDisbursement'])->name('payoutRequests.driver.disbursement.datatable');
+    Route::post('/disbursements/drivers/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyDriverPayout'])->name('payoutRequests.driver.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-owner,payout-request.owner'])->group(function () {
     Route::get('/disbursements/owners', [App\Http\Controllers\PayoutRequestController::class, 'ownerDisbursements'])->name('payoutRequests.owner.disbursement');   
@@ -901,6 +911,8 @@ Route::middleware(['permission:subscription-history,subscription.history'])->gro
 
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {
     Route::get('advertisements', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('advertisements');
+});
+Route::middleware(['auth'])->group(function () {
     Route::get('/advertisements/datatable', [App\Http\Controllers\AdvertisementsController::class, 'datatable'])->name('advertisements.datatable');
     Route::post('/advertisements/delete', [App\Http\Controllers\AdvertisementsController::class, 'destroy'])->name('advertisements.destroy');
 });
