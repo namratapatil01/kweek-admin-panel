@@ -9,11 +9,31 @@ use Illuminate\Support\Str;
 
 class CustomerReviewService
 {
-    public function list(string $customerId, ?string $orderId = null, int $perPage = 20): LengthAwarePaginator
+    public function list(string $customerId, ?string $orderId = null, ?string $vendorId = null, ?string $productId = null, int $perPage = 20): LengthAwarePaginator
     {
         return ItemReview::query()
             ->when($orderId, fn ($q) => $q->where('orderid', $orderId))
-            ->where('CustomerId', $customerId)
+            ->when($vendorId, fn ($q) => $q->where('VendorId', $vendorId))
+            ->when($productId, fn ($q) => $q->where('productId', $productId))
+            ->when($customerId, fn ($q) => $q->where('CustomerId', $customerId))
+            ->orderByDesc('createdAt')
+            ->paginate($perPage)
+            ->through(fn ($item) => $item->toDocumentArray());
+    }
+
+    public function vendorReviews(string $vendorId, int $perPage = 20): LengthAwarePaginator
+    {
+        return ItemReview::query()
+            ->where('VendorId', $vendorId)
+            ->orderByDesc('createdAt')
+            ->paginate($perPage)
+            ->through(fn ($item) => $item->toDocumentArray());
+    }
+
+    public function serviceReviews(string $serviceId, int $perPage = 20): LengthAwarePaginator
+    {
+        return ItemReview::query()
+            ->where('productId', $serviceId)
             ->orderByDesc('createdAt')
             ->paginate($perPage)
             ->through(fn ($item) => $item->toDocumentArray());

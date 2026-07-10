@@ -109,4 +109,181 @@ class CustomerCatalogController extends Controller
 
         return ApiResponse::success($item);
     }
+
+    public function nearestVendors(Request $request): JsonResponse
+    {
+        $request->validate([
+            'latitude' => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+            'radius' => ['nullable', 'numeric', 'min:0.1'],
+            'dine_in' => ['nullable', 'boolean'],
+        ]);
+
+        return ApiResponse::paginated(
+            $this->catalogService->nearestVendors(
+                (float) $request->query('latitude'),
+                (float) $request->query('longitude'),
+                $request->query('section_id') ?? $request->query('sectionId'),
+                $request->query('category_id') ?? $request->query('categoryID'),
+                $request->query('radius') ? (float) $request->query('radius') : null,
+                $request->boolean('dine_in'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Nearest vendors retrieved'
+        );
+    }
+
+    public function advertisements(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->advertisements(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Advertisements retrieved'
+        );
+    }
+
+    public function banners(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->banners(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                $request->query('type'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Banners retrieved'
+        );
+    }
+
+    public function stories(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->stories(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Stories retrieved'
+        );
+    }
+
+    public function zones(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->zones((int) $request->query('per_page', 50)),
+            'Zones retrieved'
+        );
+    }
+
+    public function taxes(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->taxes(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 50)
+            ),
+            'Taxes retrieved'
+        );
+    }
+
+    public function parcelCategories(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->parcelCategories((int) $request->query('per_page', 20)),
+            'Parcel categories retrieved'
+        );
+    }
+
+    public function parcelWeights(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->parcelWeights((int) $request->query('per_page', 20)),
+            'Parcel weights retrieved'
+        );
+    }
+
+    public function vehicleTypes(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->vehicleTypes(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Vehicle types retrieved'
+        );
+    }
+
+    public function popularDestinations(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->popularDestinations(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Popular destinations retrieved'
+        );
+    }
+
+    public function rentalVehicleTypes(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->rentalVehicleTypes(
+                $request->query('section_id') ?? $request->query('sectionId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Rental vehicle types retrieved'
+        );
+    }
+
+    public function rentalPackages(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->rentalPackages(
+                $request->query('vehicle_id') ?? $request->query('vehicleId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Rental packages retrieved'
+        );
+    }
+
+    public function providerWorkers(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->providerWorkers(
+                $request->query('provider_id') ?? $request->query('providerId'),
+                (int) $request->query('per_page', 20)
+            ),
+            'Provider workers retrieved'
+        );
+    }
+
+    public function reviewAttributes(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->reviewAttributes(
+                $request->query('vendor_id') ?? $request->query('vendorId'),
+                (int) $request->query('per_page', 50)
+            ),
+            'Review attributes retrieved'
+        );
+    }
+
+    public function vendorAttributes(Request $request): JsonResponse
+    {
+        return ApiResponse::paginated(
+            $this->catalogService->vendorAttributes(
+                $request->query('vendor_id') ?? $request->query('vendorId'),
+                (int) $request->query('per_page', 50)
+            ),
+            'Vendor attributes retrieved'
+        );
+    }
+
+    public function vendorCuisines(Request $request, string $vendorId): JsonResponse
+    {
+        return ApiResponse::success(
+            $this->catalogService->vendorCuisines($vendorId)->values(),
+            'Vendor cuisines retrieved'
+        );
+    }
 }

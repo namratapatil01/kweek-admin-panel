@@ -150,6 +150,64 @@ class CustomerAuthService
         $this->authService->logout($user);
     }
 
+    public function loginWithPhone(array $data): array
+    {
+        $phone = $data['phoneNumber'] ?? $data['phone'] ?? null;
+        $countryCode = $data['countryCode'] ?? null;
+
+        if (! $phone) {
+            throw ValidationException::withMessages([
+                'phoneNumber' => ['Phone number is required.'],
+            ]);
+        }
+
+        $query = AppUser::query()->where('role', 'customer')->where('phoneNumber', $phone);
+        if ($countryCode) {
+            $query->where('countryCode', $countryCode);
+        }
+
+        $user = $query->first();
+
+        if (! $user && ! ($data['auto_register'] ?? true)) {
+            return [
+                'is_new_user' => true,
+                'user' => null,
+                'token' => null,
+                'profile' => compact('phone', 'countryCode'),
+            ];
+        }
+
+        if (! $user) {
+            $password = $data['password'] ?? Str::random(16);
+            $result = $this->register(array_merge($data, [
+                'firstName' => $data['firstName'] ?? 'Customer',
+                'lastName' => $data['lastName'] ?? '',
+                'email' => $data['email'] ?? ($phone . '@phone.customer.local'),
+                'phoneNumber' => $phone,
+                'countryCode' => $countryCode,
+                'password' => $password,
+                'password_confirmation' => $password,
+            ]));
+
+            return array_merge($result, ['is_new_user' => true]);
+        }
+
+        return array_merge($this->issueTokenForUser($user, $data['fcmToken'] ?? null), ['is_new_user' => false]);
+    }
+
+    public function deleteAccount(AppUser $user): void
+    {
+        $user->tokens()->delete();
+        $user->update([
+            'active' => false,
+            'isActive' => false,
+            'fcmToken' => null,
+            'email' => 'deleted_' . $user->id . '_' . ($user->email ?? ''),
+        ]);
+        $user->mergePayload(['deleted_at' => now()->toIso8601String()]);
+        $user->save();
+    }
+
     protected function loginWithSocial(string $provider, array $claims, array $profile): array
     {
         $providerUid = $claims['sub'] ?? null;

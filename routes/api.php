@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Customer\CustomerAuthController;
+use App\Http\Controllers\Api\Customer\CustomerCashbackController;
 use App\Http\Controllers\Api\Customer\CustomerCatalogController;
+use App\Http\Controllers\Api\Customer\CustomerChatController;
 use App\Http\Controllers\Api\Customer\CustomerCouponController;
 use App\Http\Controllers\Api\Customer\CustomerDashboardController;
 use App\Http\Controllers\Api\Customer\CustomerFavoriteController;
@@ -9,6 +11,9 @@ use App\Http\Controllers\Api\Customer\CustomerMiscController;
 use App\Http\Controllers\Api\Customer\CustomerOrderController;
 use App\Http\Controllers\Api\Customer\CustomerProfileController;
 use App\Http\Controllers\Api\Customer\CustomerReviewController;
+use App\Http\Controllers\Api\Customer\CustomerSettingsController;
+use App\Http\Controllers\Api\Customer\CustomerTrackingController;
+use App\Http\Controllers\Api\Customer\CustomerUploadController;
 use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Provider\ProviderAuthController;
 use App\Http\Controllers\Api\Provider\ProviderBookingController;
@@ -72,12 +77,15 @@ Route::prefix('customer')->group(function () {
     Route::post('login', [CustomerAuthController::class, 'login']);
     Route::post('auth/google', [CustomerAuthController::class, 'loginWithGoogle']);
     Route::post('auth/apple', [CustomerAuthController::class, 'loginWithApple']);
+    Route::post('auth/phone', [CustomerAuthController::class, 'loginWithPhone']);
     Route::post('password/forgot', [CustomerAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [CustomerAuthController::class, 'resetPassword']);
     Route::get('home', [CustomerDashboardController::class, 'home']);
+    Route::get('referral/validate', [CustomerMiscController::class, 'validateReferral']);
 
     Route::middleware(['auth:sanctum', 'app.role:customer'])->group(function () {
         Route::post('logout', [CustomerAuthController::class, 'logout']);
+        Route::delete('account', [CustomerAuthController::class, 'deleteAccount']);
 
         Route::get('profile', [CustomerProfileController::class, 'show']);
         Route::put('profile', [CustomerProfileController::class, 'update']);
@@ -85,15 +93,37 @@ Route::prefix('customer')->group(function () {
 
         Route::get('dashboard', [CustomerDashboardController::class, 'dashboard']);
 
+        Route::get('settings', [CustomerSettingsController::class, 'index']);
+        Route::get('settings/payment', [CustomerSettingsController::class, 'payment']);
+        Route::get('settings/languages', [CustomerSettingsController::class, 'languages']);
+        Route::get('settings/delivery-charge', [CustomerSettingsController::class, 'deliveryCharge']);
+        Route::get('settings/{key}', [CustomerSettingsController::class, 'show']);
+
         Route::get('sections', [CustomerCatalogController::class, 'sections']);
         Route::get('categories', [CustomerCatalogController::class, 'categories']);
         Route::get('vendors', [CustomerCatalogController::class, 'vendors']);
+        Route::get('vendors/nearest', [CustomerCatalogController::class, 'nearestVendors']);
         Route::get('products', [CustomerCatalogController::class, 'products']);
         Route::get('services', [CustomerCatalogController::class, 'services']);
         Route::get('brands', [CustomerCatalogController::class, 'brands']);
         Route::get('search', [CustomerCatalogController::class, 'search']);
+        Route::get('advertisements', [CustomerCatalogController::class, 'advertisements']);
+        Route::get('banners', [CustomerCatalogController::class, 'banners']);
+        Route::get('stories', [CustomerCatalogController::class, 'stories']);
+        Route::get('zones', [CustomerCatalogController::class, 'zones']);
+        Route::get('taxes', [CustomerCatalogController::class, 'taxes']);
+        Route::get('parcel/categories', [CustomerCatalogController::class, 'parcelCategories']);
+        Route::get('parcel/weights', [CustomerCatalogController::class, 'parcelWeights']);
+        Route::get('cab/vehicle-types', [CustomerCatalogController::class, 'vehicleTypes']);
+        Route::get('cab/popular-destinations', [CustomerCatalogController::class, 'popularDestinations']);
+        Route::get('rental/vehicle-types', [CustomerCatalogController::class, 'rentalVehicleTypes']);
+        Route::get('rental/packages', [CustomerCatalogController::class, 'rentalPackages']);
+        Route::get('provider/workers', [CustomerCatalogController::class, 'providerWorkers']);
+        Route::get('review-attributes', [CustomerCatalogController::class, 'reviewAttributes']);
+        Route::get('vendor-attributes', [CustomerCatalogController::class, 'vendorAttributes']);
+        Route::get('vendors/{vendorId}/cuisines', [CustomerCatalogController::class, 'vendorCuisines']);
         Route::get('catalog/{type}/{id}', [CustomerCatalogController::class, 'show'])
-            ->where('type', 'vendor|product|service|category|provider-category|brand')
+            ->where('type', 'vendor|product|service|category|provider-category|brand|worker')
             ->where('id', '[a-zA-Z0-9\-_]+');
 
         Route::get('orders', [CustomerOrderController::class, 'index']);
@@ -102,6 +132,11 @@ Route::prefix('customer')->group(function () {
             ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
         Route::patch('orders/{type}/{id}/status', [CustomerOrderController::class, 'updateStatus'])
             ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+
+        Route::get('tracking/orders/{type}/{id}', [CustomerTrackingController::class, 'order'])
+            ->where('type', 'vendor|parcel|rental|ride|provider|dine-in');
+        Route::get('tracking/drivers/{driverId}', [CustomerTrackingController::class, 'driverLocation'])
+            ->where('driverId', '[a-zA-Z0-9\-_]+');
 
         Route::get('favorites/{type}', [CustomerFavoriteController::class, 'index'])
             ->where('type', 'vendor|item|service|provider');
@@ -115,16 +150,41 @@ Route::prefix('customer')->group(function () {
         Route::post('wallet/topup', [CustomerWalletController::class, 'topUp']);
 
         Route::get('reviews', [CustomerReviewController::class, 'index']);
+        Route::get('reviews/vendor/{vendorId}', [CustomerReviewController::class, 'vendorReviews']);
+        Route::get('reviews/service/{serviceId}', [CustomerReviewController::class, 'serviceReviews']);
         Route::post('reviews', [CustomerReviewController::class, 'store']);
         Route::post('ratings', [CustomerReviewController::class, 'storeRating']);
 
         Route::get('coupons', [CustomerCouponController::class, 'index']);
 
+        Route::get('cashback', [CustomerCashbackController::class, 'index']);
+        Route::get('cashback/redeemed', [CustomerCashbackController::class, 'redeemed']);
+        Route::post('cashback/redeem', [CustomerCashbackController::class, 'redeem']);
+
+        Route::get('chat/{type}/inbox', [CustomerChatController::class, 'inbox'])
+            ->where('type', 'store|driver|provider|worker');
+        Route::get('chat/{type}/{orderId}/messages', [CustomerChatController::class, 'messages'])
+            ->where('type', 'store|driver|provider|worker')
+            ->where('orderId', '[a-zA-Z0-9\-_]+');
+        Route::post('chat/{type}/send', [CustomerChatController::class, 'send'])
+            ->where('type', 'store|driver|provider|worker');
+        Route::post('chat/upload', [CustomerChatController::class, 'upload']);
+
+        Route::post('uploads', [CustomerUploadController::class, 'store']);
+
         Route::get('notifications', [CustomerMiscController::class, 'notifications']);
+        Route::get('notifications/content/{type}', [CustomerMiscController::class, 'notificationContent']);
+        Route::patch('notifications/{id}/read', [CustomerMiscController::class, 'markNotificationRead']);
         Route::get('referral', [CustomerMiscController::class, 'referral']);
+        Route::post('referral', [CustomerMiscController::class, 'storeReferral']);
+        Route::post('referral/rewards', [CustomerMiscController::class, 'processReferralRewards']);
         Route::get('gift-cards', [CustomerMiscController::class, 'giftCards']);
+        Route::get('gift-cards/history', [CustomerMiscController::class, 'giftCardHistory']);
         Route::post('gift-cards/purchase', [CustomerMiscController::class, 'purchaseGiftCard']);
-        Route::post('complaints', [CustomerMiscController::class, 'complaints']);
+        Route::post('gift-cards/redeem', [CustomerMiscController::class, 'redeemGiftCard']);
+        Route::get('email-templates/{type}', [CustomerMiscController::class, 'emailTemplate']);
+        Route::get('complaints', [CustomerMiscController::class, 'getComplaint']);
+        Route::post('complaints', [CustomerMiscController::class, 'storeComplaint']);
         Route::post('sos', [CustomerMiscController::class, 'sos']);
     });
 });

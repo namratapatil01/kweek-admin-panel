@@ -2,15 +2,30 @@
 
 namespace App\Services\Customer;
 
+use App\Models\Advertisement;
+use App\Models\BannerItem;
 use App\Models\Brand;
+use App\Models\ParcelCategory;
+use App\Models\ParcelWeight;
+use App\Models\PopularDestination;
 use App\Models\ProviderCategory;
 use App\Models\ProviderService;
+use App\Models\ProviderWorker;
+use App\Models\RentalPackage;
+use App\Models\RentalVehicleType;
+use App\Models\ReviewAttribute;
 use App\Models\Section;
+use App\Models\Story;
+use App\Models\Tax;
+use App\Models\VehicleType;
 use App\Models\Vendor;
+use App\Models\VendorAttribute;
 use App\Models\VendorCategory;
 use App\Models\VendorProduct;
+use App\Models\Zone;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class CustomerCatalogService
 {
@@ -135,10 +150,216 @@ class CustomerCatalogService
             'category' => VendorCategory::query()->find($id),
             'provider-category' => ProviderCategory::query()->find($id),
             'brand' => Brand::query()->find($id),
+            'worker' => ProviderWorker::query()->find($id),
             default => null,
         };
 
         return $model?->toDocumentArray();
+    }
+
+    public function nearestVendors(
+        float $latitude,
+        float $longitude,
+        ?string $sectionId = null,
+        ?string $categoryId = null,
+        ?float $radiusKm = null,
+        bool $dineInOnly = false,
+        int $perPage = 20
+    ): LengthAwarePaginator {
+        $radiusKm = $radiusKm ?? $this->sectionRadiusKm($sectionId);
+
+        $query = Vendor::query()
+            ->when($sectionId, fn ($q) => $q->where('section_id', $sectionId))
+            ->when($categoryId, fn ($q) => $q->whereJsonContains('categoryID', $categoryId))
+            ->when($dineInOnly, fn ($q) => $q->where(function ($q) {
+                $q->where('dine_in_active', true)
+                    ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.enabledDiveInFuture')) IN ('true', '1', 1)");
+            }))
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->selectRaw('vendors.*, (
+                6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) * sin(radians(latitude))
+                )
+            ) AS distance', [$latitude, $longitude, $latitude])
+            ->having('distance', '<=', $radiusKm)
+            ->orderBy('distance');
+
+        return $this->paginateDocuments($query, $perPage);
+    }
+
+    public function advertisements(?string $sectionId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            Advertisement::query()
+                ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
+                ->orderByDesc('createdAt'),
+            $perPage
+        );
+    }
+
+    public function banners(?string $sectionId = null, ?string $type = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            BannerItem::query()
+                ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
+                ->when($type, fn ($q) => $q->where('type', $type))
+                ->published()
+                ->orderByRaw("CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.set_order')), '0') AS UNSIGNED)"),
+            $perPage
+        );
+    }
+
+    public function stories(?string $sectionId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            Story::query()
+                ->when($sectionId, fn ($q) => $q->where('sectionID', $sectionId))
+                ->orderByDesc('createdAt'),
+            $perPage
+        );
+    }
+
+    public function zones(int $perPage = 50): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            Zone::query()->where('publish', true)->orderBy('name'),
+            $perPage
+        );
+    }
+
+    public function taxes(?string $sectionId = null, int $perPage = 50): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            Tax::query()
+                ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
+                ->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function parcelCategories(int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            ParcelCategory::query()->where('publish', true)->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function parcelWeights(int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            ParcelWeight::query()->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function vehicleTypes(?string $sectionId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            VehicleType::query()
+                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
+                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
+                }))
+                ->orderBy('name'),
+            $perPage
+        );
+    }
+
+    public function popularDestinations(?string $sectionId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            PopularDestination::query()
+                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
+                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
+                }))
+                ->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function rentalVehicleTypes(?string $sectionId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            RentalVehicleType::query()
+                ->when($sectionId, fn ($q) => $q->where(function ($q) use ($sectionId) {
+                    $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
+                }))
+                ->orderBy('name'),
+            $perPage
+        );
+    }
+
+    public function rentalPackages(?string $vehicleId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            RentalPackage::query()
+                ->when($vehicleId, fn ($q) => $q->where('vehicleId', $vehicleId))
+                ->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function providerWorkers(?string $providerId = null, int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            ProviderWorker::query()
+                ->when($providerId, fn ($q) => $q->where('providerId', $providerId))
+                ->orderBy('firstName'),
+            $perPage
+        );
+    }
+
+    public function reviewAttributes(?string $vendorId = null, int $perPage = 50): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            ReviewAttribute::query()
+                ->when($vendorId, fn ($q) => $q->where('vendorId', $vendorId))
+                ->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function vendorAttributes(?string $vendorId = null, int $perPage = 50): LengthAwarePaginator
+    {
+        return $this->paginateDocuments(
+            VendorAttribute::query()
+                ->when($vendorId, fn ($q) => $q->where('vendorId', $vendorId))
+                ->orderBy('title'),
+            $perPage
+        );
+    }
+
+    public function vendorCuisines(string $vendorId): Collection
+    {
+        $products = VendorProduct::query()
+            ->where('vendorID', $vendorId)
+            ->where('publish', true)
+            ->get();
+
+        $categoryIds = $products
+            ->pluck('categoryID')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return VendorCategory::query()
+            ->whereIn('id', $categoryIds)
+            ->get()
+            ->map(fn ($c) => $c->toDocumentArray());
+    }
+
+    protected function sectionRadiusKm(?string $sectionId): float
+    {
+        if (! $sectionId) {
+            return 50.0;
+        }
+
+        $section = Section::query()->find($sectionId);
+
+        return (float) ($section?->nearByRadius ?? 50);
     }
 
     protected function paginateDocuments(Builder $query, int $perPage = 20): LengthAwarePaginator
