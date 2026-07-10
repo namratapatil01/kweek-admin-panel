@@ -33,6 +33,52 @@ class StoreController extends Controller
         return view('stores.edit')->with(compact('id', 'categories'));
     }
 
+    public function getVendor($id)
+    {
+        $vendor = \App\Models\Vendor::find($id);
+        if (!$vendor) return response()->json(['error' => 'Vendor not found'], 404);
+
+        $payload = is_array($vendor->payload) ? $vendor->payload : [];
+        $photos  = is_array($vendor->photos) ? $vendor->photos : json_decode($vendor->photos ?? '[]', true);
+
+        $data = [
+            'id'                   => $vendor->id,
+            'title'                => $vendor->title,
+            'description'          => $vendor->description,
+            'photo'                => $vendor->photo,
+            'photos'               => $photos,
+            'location'             => $vendor->location ?? '',
+            'latitude'             => $vendor->latitude,
+            'longitude'            => $vendor->longitude,
+            'phonenumber'          => $vendor->phonenumber,
+            'categoryID'           => $vendor->categoryID,
+            'section_id'           => $vendor->section_id,
+            'zoneId'               => $vendor->zoneId,
+            'adminCommission'      => $vendor->adminCommission,
+            'filters'              => $vendor->filters ?? (object)[],
+            'workingHours'         => $vendor->workingHours,
+            // payload fields
+            'author'               => $payload['author'] ?? '',
+            'authorName'           => $payload['authorName'] ?? '',
+            'authorProfilePic'     => $payload['authorProfilePic'] ?? '',
+            'categoryTitle'        => $payload['categoryTitle'] ?? '',
+            'enabledDiveInFuture'  => $payload['enabledDiveInFuture'] ?? false,
+            'specialDiscountEnable'=> $payload['specialDiscountEnable'] ?? false,
+            'vendorCost'           => $payload['vendorCost'] ?? '',
+            'openDineTime'         => $payload['openDineTime'] ?? '',
+            'closeDineTime'        => $payload['closeDineTime'] ?? '',
+            'specialDiscount'      => $payload['specialDiscount'] ?? [],
+            'subscription_plan'    => $payload['subscription_plan'] ?? '',
+            'subscriptionPlanId'   => $payload['subscriptionPlanId'] ?? '',
+            'subscriptionExpiryDate'=> $payload['subscriptionExpiryDate'] ?? '',
+            'subscriptionTotalOrders'=> $payload['subscriptionTotalOrders'] ?? '',
+            'isSelfDelivery'       => $payload['isSelfDelivery'] ?? false,
+            'vendorMenuPhotos'     => $payload['vendorMenuPhotos'] ?? [],
+        ];
+
+        return response()->json($data);
+    }
+
     public function view($id)
     {
         $vendor = Vendor::with('section')->find($id);
@@ -324,6 +370,222 @@ class StoreController extends Controller
             DB::rollBack();
             \Illuminate\Support\Facades\Log::error('Error cloning vendor: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json(['message' => 'Failed to clone vendor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function store(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $newOwnerId = (string) \Illuminate\Support\Str::uuid();
+            $newVendorId = (string) \Illuminate\Support\Str::uuid();
+
+            $newOwnerData = [
+                'id' => $newOwnerId,
+                'firstName' => $request->user_name,
+                'lastName' => $request->user_last_name,
+                'email' => $request->user_email,
+                'password' => \Illuminate\Support\Facades\Hash::make($request->user_password),
+                'role' => 'vendor',
+                'active' => true,
+                'isActive' => true,
+                'isOwner' => true,
+                'vendorID' => $newVendorId,
+                'createdAt' => now(),
+            ];
+            \App\Models\AppUser::create($newOwnerData);
+
+            $payload = [
+                'author' => $newOwnerId,
+                'authorName' => $request->user_name . ' ' . $request->user_last_name,
+                'walletAmount' => 0,
+                'reviewsSum' => 0,
+                'reviewsCount' => 0,
+                'categoryTitle' => $request->categoryTitle,
+                'enabledDiveInFuture' => filter_var($request->enabledDiveInFuture, FILTER_VALIDATE_BOOLEAN),
+                'specialDiscountEnable' => filter_var($request->specialDiscountEnable, FILTER_VALIDATE_BOOLEAN),
+                'vendorCost' => $request->vendorCost,
+                'openDineTime' => $request->openDineTime,
+                'closeDineTime' => $request->closeDineTime,
+                'workingHours' => json_decode($request->workingHours, true),
+                'specialDiscount' => json_decode($request->specialDiscount, true),
+                'subscription_plan' => $request->subscription_plan,
+                'subscriptionPlanId' => $request->subscriptionPlanId,
+                'subscriptionExpiryDate' => $request->subscriptionExpiryDate,
+                'subscriptionTotalOrders' => $request->subscriptionTotalOrders,
+                'isSelfDelivery' => filter_var($request->isSelfDelivery, FILTER_VALIDATE_BOOLEAN),
+            ];
+
+            // Image uploads to storage
+            $photoUrl = null;
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $path = $file->store('vendors', 'public');
+                $photoUrl = asset('storage/' . $path);
+            }
+
+            $photos = [];
+            if ($request->hasFile('photos')) {
+                foreach ($request->file('photos') as $file) {
+                    $path = $file->store('vendors', 'public');
+                    $photos[] = asset('storage/' . $path);
+                }
+            }
+            if (count($photos) > 0 && !$photoUrl) {
+                $photoUrl = $photos[0];
+            }
+
+            $menuPhotos = [];
+            if ($request->hasFile('vendorMenuPhotos')) {
+                foreach ($request->file('vendorMenuPhotos') as $file) {
+                    $path = $file->store('vendors/menu', 'public');
+                    $menuPhotos[] = asset('storage/' . $path);
+                }
+            }
+            $payload['vendorMenuPhotos'] = $menuPhotos;
+            
+            $ownerProfilePic = null;
+            if ($request->hasFile('authorProfilePic')) {
+                $file = $request->file('authorProfilePic');
+                $path = $file->store('vendors/profile', 'public');
+                $ownerProfilePic = asset('storage/' . $path);
+            }
+            $payload['authorProfilePic'] = $ownerProfilePic;
+
+            $newVendorData = [
+                'id' => $newVendorId,
+                'title' => $request->title,
+                'description' => $request->description,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'phonenumber' => $request->phonenumber,
+                'categoryID' => $request->categoryID,
+                'section_id' => $request->section_id,
+                'zoneId' => $request->zoneId,
+                'adminCommission' => $request->adminCommission,
+                'filters' => $request->filters, 
+                'photo' => $photoUrl,
+                'photos' => json_encode($photos),
+                'createdAt' => now(),
+                'walletAmount' => 0,
+                'reviewsSum' => 0,
+                'reviewsCount' => 0,
+                'payload' => $payload
+            ];
+
+            \App\Models\Vendor::create($newVendorData);
+            
+            if ($request->hasFile('storyVideo') || $request->hasFile('storyThumbnail')) {
+                $storyVideos = [];
+                if ($request->hasFile('storyVideo')) {
+                    foreach ($request->file('storyVideo') as $file) {
+                        $path = $file->store('vendors/stories', 'public');
+                        $storyVideos[] = asset('storage/' . $path);
+                    }
+                }
+                $thumbnail = null;
+                if ($request->hasFile('storyThumbnail')) {
+                    $file = $request->file('storyThumbnail');
+                    $path = $file->store('vendors/stories', 'public');
+                    $thumbnail = asset('storage/' . $path);
+                }
+                DB::table('stories')->insert([
+                    'vendorID' => $newVendorId,
+                    'sectionID' => $request->section_id,
+                    'videoUrl' => json_encode($storyVideos),
+                    'videoThumbnail' => $thumbnail,
+                    'createdAt' => now()
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Store created successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Error creating store: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['message' => 'Failed to create store: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $vendor = \App\Models\Vendor::find($id);
+            if (!$vendor) return response()->json(['message' => 'Store not found'], 404);
+            
+            $payload = is_array($vendor->payload) ? $vendor->payload : [];
+            if($request->has('categoryTitle')) $payload['categoryTitle'] = $request->categoryTitle;
+            if($request->has('enabledDiveInFuture')) $payload['enabledDiveInFuture'] = filter_var($request->enabledDiveInFuture, FILTER_VALIDATE_BOOLEAN);
+            if($request->has('specialDiscountEnable')) $payload['specialDiscountEnable'] = filter_var($request->specialDiscountEnable, FILTER_VALIDATE_BOOLEAN);
+            if($request->has('vendorCost')) $payload['vendorCost'] = $request->vendorCost;
+            if($request->has('openDineTime')) $payload['openDineTime'] = $request->openDineTime;
+            if($request->has('closeDineTime')) $payload['closeDineTime'] = $request->closeDineTime;
+            if($request->has('workingHours')) $payload['workingHours'] = json_decode($request->workingHours, true);
+            if($request->has('specialDiscount')) $payload['specialDiscount'] = json_decode($request->specialDiscount, true);
+            if($request->has('subscription_plan')) $payload['subscription_plan'] = $request->subscription_plan;
+            if($request->has('subscriptionPlanId')) $payload['subscriptionPlanId'] = $request->subscriptionPlanId;
+            if($request->has('subscriptionExpiryDate')) $payload['subscriptionExpiryDate'] = $request->subscriptionExpiryDate;
+            if($request->has('subscriptionTotalOrders')) $payload['subscriptionTotalOrders'] = $request->subscriptionTotalOrders;
+            if($request->has('isSelfDelivery')) $payload['isSelfDelivery'] = filter_var($request->isSelfDelivery, FILTER_VALIDATE_BOOLEAN);
+
+            $photoUrl = $vendor->photo;
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $path = $file->store('vendors', 'public');
+                $photoUrl = asset('storage/' . $path);
+            }
+
+            $photos = json_decode($vendor->photos ?? '[]', true);
+            if ($request->hasFile('photos')) {
+                $photos = [];
+                foreach ($request->file('photos') as $file) {
+                    $path = $file->store('vendors', 'public');
+                    $photos[] = asset('storage/' . $path);
+                }
+            }
+
+            $menuPhotos = $payload['vendorMenuPhotos'] ?? [];
+            if ($request->hasFile('vendorMenuPhotos')) {
+                $menuPhotos = [];
+                foreach ($request->file('vendorMenuPhotos') as $file) {
+                    $path = $file->store('vendors/menu', 'public');
+                    $menuPhotos[] = asset('storage/' . $path);
+                }
+                $payload['vendorMenuPhotos'] = $menuPhotos;
+            }
+
+            $ownerProfilePic = $payload['authorProfilePic'] ?? null;
+            if ($request->hasFile('authorProfilePic')) {
+                $file = $request->file('authorProfilePic');
+                $path = $file->store('vendors/profile', 'public');
+                $ownerProfilePic = asset('storage/' . $path);
+                $payload['authorProfilePic'] = $ownerProfilePic;
+            }
+
+            $vendor->title = $request->title ?? $vendor->title;
+            $vendor->description = $request->description ?? $vendor->description;
+            $vendor->latitude = $request->latitude ?? $vendor->latitude;
+            $vendor->longitude = $request->longitude ?? $vendor->longitude;
+            $vendor->phonenumber = $request->phonenumber ?? $vendor->phonenumber;
+            $vendor->categoryID = $request->categoryID ?? $vendor->categoryID;
+            $vendor->section_id = $request->section_id ?? $vendor->section_id;
+            $vendor->zoneId = $request->zoneId ?? $vendor->zoneId;
+            $vendor->adminCommission = $request->adminCommission ?? $vendor->adminCommission;
+            $vendor->filters = $request->filters ?? $vendor->filters;
+            $vendor->photo = $photoUrl;
+            $vendor->photos = json_encode($photos);
+            $vendor->payload = $payload;
+            $vendor->save();
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Store updated successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Error updating store: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['message' => 'Failed to update store: ' . $e->getMessage()], 500);
         }
     }
 }

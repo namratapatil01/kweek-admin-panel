@@ -99,16 +99,10 @@
         var markers = [];
         var map_data = [];
         var base_url = '{!! asset('/images/') !!}';
-        var mapType = 'ONLINE';
+        var mapType = 'OFFLINE'; // Use OSM/Leaflet directly
+
         $(document).ready(async function () {
-            // InitializeGodsEyeMap();
-            await database.collection('settings').doc('DriverNearBy').get().then(async function (snapshots) {
-                var data = snapshots.data();
-                if (data && data.selectedMapType && data.selectedMapType == "osm") {
-                    mapType = "OFFLINE"
-                    InitializeGodsEyeMap();
-                }
-            });
+            InitializeGodsEyeMap();
             var orders = [];
             var orders_drivers = [];
             await database.collection('vendor_orders').where('status', '==', 'In Transit').get().then(async function (snapshots) {
@@ -122,7 +116,6 @@
                         }
                     });
                 }
-                // fetchDrivers(orders_drivers, orders);
             });
 
             var drivers = [];
@@ -180,35 +173,24 @@
 
         function InitializeGodsEyeMap() {
 
-            var default_lat = getCookie('default_latitude');
-            var default_lng = getCookie('default_longitude');
+            var default_lat = parseFloat(getCookie('default_latitude')) || 23.0225;
+            var default_lng = parseFloat(getCookie('default_longitude')) || 72.5714;
             var legend = document.getElementById('legend');
-            if (mapType == "OFFLINE" ){
-              
-                if (map && map.remove) {
-                    map.remove(); // properly remove the map instance and listeners
-                }
-                if (L.DomUtil.get('map') != null) {
-                    L.DomUtil.get('map')._leaflet_id = null; // reset internal Leaflet id
-                }
 
-                map = L.map('map').setView([default_lat, default_lng], 10);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-            } else{
-                var myLatlng = new google.maps.LatLng(default_lat, default_lng);
-                var infowindow = new google.maps.InfoWindow();
-                var mapOptions = {
-                    zoom: 10,
-                    center: myLatlng,
-                    streetViewControl: false,
-                    mapTypeId: google.maps.MapTypeId.ROADMAP
-                };
-                map = new google.maps.Map(document.getElementById("map"), mapOptions);
+            if (map && map.remove) {
+                map.remove();
             }
+            var mapDiv = L.DomUtil.get('map');
+            if (mapDiv) {
+                mapDiv._leaflet_id = null;
+            }
+
+            map = L.map('map').setView([default_lat, default_lng], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
             var fliter_icons = {
                 available: {
@@ -220,30 +202,25 @@
                     icon: base_url + '/ontrip.png'
                 }
             };
-            
+
             legend.innerHTML = "<h3>Legend</h3>";
             for (var key in fliter_icons) {
                 var type = fliter_icons[key];
                 var name = type.name;
                 var icon = type.icon;
-
                 var div = document.createElement('div');
                 div.innerHTML = '<img src="' + icon + '" style="width:14px; margin-right:5px;"> ' + name;
                 legend.appendChild(div);
             }
 
-            if (mapType == "OFFLINE" ){
-                var lmaplegend  = L.control({ position: 'bottomleft' });
-                lmaplegend.onAdd = function (map) {
-                    var div = L.DomUtil.create('div', 'legend');
-                    div.innerHTML = "<h4>Map Legend</h4>";
-                    div.appendChild(legend);
-                    return div;
-                };
-                lmaplegend.addTo(map);
-            } else{
-                map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-            }
+            var lmaplegend = L.control({ position: 'bottomleft' });
+            lmaplegend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'legend');
+                div.innerHTML = "<h4>Map Legend</h4>";
+                div.appendChild(legend);
+                return div;
+            };
+            lmaplegend.addTo(map);
         }
 
         async function loadData(data) {

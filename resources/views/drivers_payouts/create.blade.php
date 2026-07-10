@@ -42,39 +42,41 @@
 
                         @if ($id == '')
                             <div class="form-group row width-50">
-                            @else
+                        @else
                                 <div class="form-group row width-100">
-                        @endif
-                        <label class="col-4 control-label">{{ trans('lang.drivers_payout_amount') }}</label>
-                        <div class="col-7">
-                            <input type="number" class="form-control payout_amount">
-                            <div class="form-text text-muted">
-                                {{ trans('lang.drivers_payout_amount_placeholder') }}
+                            @endif
+                                <label class="col-4 control-label">{{ trans('lang.drivers_payout_amount') }}</label>
+                                <div class="col-7">
+                                    <input type="number" class="form-control payout_amount">
+                                    <div class="form-text text-muted">
+                                        {{ trans('lang.drivers_payout_amount_placeholder') }}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                </div>
 
-                <div class="form-group row width-100">
-                    <label class="col-2 control-label">{{ trans('lang.vendors_payout_note') }}</label>
-                    <div class="col-12">
-                        <textarea type="text" rows="7" class="form-control form-control payout_note"></textarea>
-                    </div>
+                            <div class="form-group row width-100">
+                                <label class="col-2 control-label">{{ trans('lang.vendors_payout_note') }}</label>
+                                <div class="col-12">
+                                    <textarea type="text" rows="7" class="form-control form-control payout_note"></textarea>
+                                </div>
+                            </div>
+                    </fieldset>
                 </div>
-                </fieldset>
             </div>
         </div>
-    </div>
 
-    <div class="form-group col-12 text-center btm-btn">
-        <button type="button" class="btn btn-primary save-form-btn"><i class="fa fa-save"></i>
-            {{ trans('lang.save') }}
-        </button>
-        @if ($id == '')
-            <a href="{!! route('driversPayouts') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
-        @else
-            <a href="{!! route('driver.payouts', $id) !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
-        @endif
-    </div>
+        <div class="form-group col-12 text-center btm-btn">
+            <button type="button" class="btn btn-primary save-form-btn"><i class="fa fa-save"></i>
+                {{ trans('lang.save') }}
+            </button>
+            @if ($id == '')
+                <a href="{!! route('driversPayouts') !!}" class="btn btn-default"><i
+                        class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            @else
+                <a href="{!! route('driver.payouts', $id) !!}" class="btn btn-default"><i
+                        class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            @endif
+        </div>
 
     </div>
     </div>
@@ -95,7 +97,7 @@
         var decimal_degits = 0;
 
         var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
+        refCurrency.get().then(async function (snapshots) {
             var currencyData = snapshots.docs[0].data();
             currentCurrency = currencyData.symbol;
             currencyAtRight = currencyData.symbolAtRight;
@@ -108,31 +110,31 @@
         var userContact = '';
         var userEmail = '';
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             $("#data-table_processing").show();
 
-            email_templates.get().then(async function(snapshots) {
+            email_templates.get().then(async function (snapshots) {
                 if (snapshots.docs.length > 0) {
                     emailTemplatesData = snapshots.docs[0].data();
                 }
             });
 
-            emailSetting.get().then(async function(snapshots) {
+            emailSetting.get().then(async function (snapshots) {
                 var emailSettingData = snapshots.data();
                 adminEmail = emailSettingData.userName;
             });
 
             if (driverID == '') {
-                $.get("{{ route('driversPayouts.get-drivers') }}", function(res) {
+                $.get("{{ route('driversPayouts.get-drivers') }}", function (res) {
                     if (res && res.data) {
-                        res.data.forEach(function(driver) {
+                        res.data.forEach(function (driver) {
                             $('#select_vendor').append($("<option></option>")
                                 .attr("value", driver.id)
                                 .text(driver.firstName + ' ' + driver.lastName));
                         });
                     }
                     $("#data-table_processing").hide();
-                }).fail(function() {
+                }).fail(function () {
                     $("#data-table_processing").hide();
                 });
             } else {
@@ -142,7 +144,7 @@
 
         var payoutId = "<?php echo uniqid(); ?>";
 
-        $(".save-form-btn").click(async function() {
+        $(".save-form-btn").click(async function () {
             if (driverID == '') {
                 driverID = $("#select_vendor").val();
             }
@@ -172,7 +174,7 @@
                     driverID: driverID,
                     amount: amount,
                     note: note
-                }, async function(res) {
+                }, async function (res) {
                     if (res.success) {
                         if (emailTemplatesData) {
                             if (currencyAtRight) {
@@ -212,15 +214,15 @@
 
                         jQuery("#data-table_processing").hide();
                         <?php if ($id == '') { ?>
-                            window.location.href = "{{ route('driversPayouts') }}";
+                        window.location.href = "{{ route('driversPayouts') }}";
                         <?php } else { ?>
-                            window.location.href = "{{ route('driver.payouts', $id) }}";
+                        window.location.href = "{{ route('driver.payouts', $id) }}";
                         <?php } ?>
                     } else {
                         jQuery("#data-table_processing").hide();
                         $(".error_top").show().html("<p>" + (res.error || "An error occurred") + "</p>");
                     }
-                }).fail(function(xhr) {
+                }).fail(function (xhr) {
                     jQuery("#data-table_processing").hide();
                     var errMsg = "An error occurred while saving payout.";
                     if (xhr.responseJSON && xhr.responseJSON.error) {
