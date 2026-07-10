@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+
 
 class SettingsController extends Controller
 {
@@ -19,6 +22,40 @@ class SettingsController extends Controller
     public function globals()
     {
         return view("settings.app.global");
+    }
+
+    public function getSectionsList(): JsonResponse
+    {
+        $flags = ['delivery-service', 'ondemand-service', 'ecommerce-service'];
+        $sections = \DB::table('sections')
+            ->whereIn('serviceTypeFlag', $flags)
+            ->orderBy('name')
+            ->get(['id', 'name', 'serviceType', 'serviceTypeFlag']);
+        return response()->json($sections);
+    }
+
+    public function getVendorsBySection(Request $request): JsonResponse
+    {
+        $sectionId   = $request->query('section_id');
+        $serviceType = $request->query('service_type', '');
+        $mode        = $request->query('mode', 'section'); // 'section' or 'all'
+
+        if (str_contains($serviceType, 'On Demand')) {
+            $query = \DB::table('app_users')->where('role', 'provider')->orderBy('firstName');
+            if ($mode === 'section' && $sectionId) {
+                $query->where('section_id', $sectionId);
+            }
+            $users = $query->get(['id', 'firstName', 'lastName']);
+            $data  = $users->map(fn($u) => ['id' => $u->id, 'label' => trim($u->firstName . ' ' . $u->lastName)]);
+        } else {
+            $query = \DB::table('vendors')->orderBy('title');
+            if ($mode === 'section' && $sectionId) {
+                $query->where('section_id', $sectionId);
+            }
+            $vendors = $query->get(['id', 'title']);
+            $data    = $vendors->map(fn($v) => ['id' => $v->id, 'label' => $v->title]);
+        }
+        return response()->json($data);
     }
 
     public function cod()

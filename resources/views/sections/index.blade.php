@@ -328,7 +328,7 @@ $(function () {
                 collection: 'sections',
                 id: id,
                 data: { isActive: isChecked },
-                merge: true
+                merge: 1
             },
             success: function (response) {
                 // Status updated successfully

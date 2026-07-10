@@ -326,8 +326,22 @@ trait ProvidesMySqlCrud
         }
 
         $permissions = json_decode(session('user_permissions', '[]'), true) ?: [];
+        $permissionKey = $config['permission'] ?? '';
 
-        return in_array(($config['permission'] ?? '') . '.delete', $permissions, true);
+        if (in_array($permissionKey . '.delete', $permissions, true)) {
+            return true;
+        }
+        if (in_array($permissionKey . 's.delete', $permissions, true)) {
+            return true;
+        }
+        if (substr($permissionKey, -1) === 's') {
+            $singular = substr($permissionKey, 0, -1);
+            if (in_array($singular . '.delete', $permissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

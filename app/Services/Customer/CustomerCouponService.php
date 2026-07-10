@@ -22,9 +22,11 @@ class CustomerCouponService
         };
 
         if ($sectionId) {
-            $query->where(function ($q) use ($sectionId) {
-                $q->where('section_id', $sectionId)->orWhere('sectionId', $sectionId);
-            });
+            if (in_array($type, ['parcel', 'rental', 'provider', 'cab'], true)) {
+                $query->where('sectionId', $sectionId);
+            } else {
+                $query->where('section_id', $sectionId);
+            }
         }
 
         if ($vendorId && $type === 'vendor') {
@@ -36,8 +38,13 @@ class CustomerCouponService
         }
 
         return $query
-            ->where('isEnabled', true)
-            ->where('expiresAt', '>=', now())
+            ->where(function ($q) {
+                $q->where('isEnabled', true)
+                    ->orWhere('isEnable', true)
+                    ->orWhere('payload->isEnabled', true)
+                    ->orWhere('payload->isEnable', true);
+            })
+            ->orderByDesc('createdAt')
             ->paginate($perPage)
             ->through(fn ($item) => $item->toDocumentArray());
     }

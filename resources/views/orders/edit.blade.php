@@ -598,20 +598,17 @@
         var subscriptionBusinessModel = database.collection('settings').doc("vendor");
         subscriptionBusinessModel.get().then(async function(snapshots) {
             var subscriptionSetting = snapshots.data();
-            if (subscriptionSetting.subscription_model == true) {
+            if (subscriptionSetting && subscriptionSetting.subscription_model == true) {
                 subscriptionModel = true;
             }
         });
-        if (oid != '') {
-            var ref = database.collection('vendor_orders').where("id", "==", oid);
-
-        } else {
-            var ref = database.collection('vendor_orders').where("id", "==", id);
-
-        }
+        var orderDocId = (oid != '') ? oid : id;
+        var orderDocRef = database.collection('vendor_orders').doc(orderDocId);
+        var ref = orderDocRef;
+        var bootstrapOrder = @json($order ?? null);
         var ref_review_attributes = database.collection('review_attributes');
         var selected_review_attributes = '';
-        var refUserReview = database.collection('items_review').where('orderid', '==', oid);
+        var refUserReview = database.collection('items_review').where('orderid', '==', orderDocId);
         var append_procucts_list = '';
         var append_procucts_total = '';
         var total_price = 0;
@@ -628,6 +625,9 @@
         var total_tax_amount = 0;
         var reviewAttributes = {};
         refCurrency.get().then(async function(snapshots) {
+            if (!snapshots.docs || snapshots.docs.length === 0) {
+                return;
+            }
             var currencyData = snapshots.docs[0].data();
             currentCurrency = currencyData.symbol;
             currencyAtRight = currencyData.symbolAtRight;
@@ -637,9 +637,7 @@
             }
         });
 
-        var user_permissions = '<?php echo @session('user_permissions'); ?>';
-
-        user_permissions = JSON.parse(user_permissions);
+        var user_permissions = @json(json_decode(session('user_permissions', '[]'), true) ?: []);
 
         var checkPrintPermission = false;
 
@@ -804,11 +802,34 @@
 
             jQuery("#data-table_processing").show();
 
-            ref.get().then(async function(snapshots) {
-                vendorOrder = snapshots.docs[0].data();
+            function normalizeBootstrapOrder(order) {
+                if (!order || typeof order !== 'object') {
+                    return order;
+                }
+                ['createdAt', 'scheduleTime', 'updatedAt'].forEach(function(field) {
+                    var value = order[field];
+                    if (!value || typeof value !== 'string') {
+                        return;
+                    }
+                    var parsed = Date.parse(value);
+                    if (!isNaN(parsed)) {
+                        order[field] = kweekDb.Timestamp.fromDate(new Date(parsed));
+                    }
+                });
+                return order;
+            }
+
+            function renderOrderPage(order) {
+                if (!order) {
+                    jQuery("#data-table_processing").hide();
+                    console.error('Order not found:', orderDocId);
+                    return;
+                }
+                order = normalizeBootstrapOrder(order);
+                vendorOrder = order;
+                return (async function() {
                 await getDeliverymanList(vendorOrder.vendorID);
                 getUserReview(vendorOrder);
-                var order = snapshots.docs[0].data();
                 database.collection('zone').where('publish', '==', true)/* .where('sectionId', '==', order.vendor.section_id) */.orderBy('name', 'asc').get().then(async function(snapshots) {
                     snapshots.docs.forEach((listval) => {
                         var data = listval.data();
@@ -1135,11 +1156,9 @@
                 var price = 0;
 
                 if (order.vendorID) {
-                    var vendor = database.collection('vendors').where("id", "==", order.vendorID);
-
-                    await vendor.get().then(async function(snapshotsnew) {
-                        if (snapshotsnew.docs.length > 0) {
-                            var vendordata = snapshotsnew.docs[0].data();
+                    await database.collection('vendors').doc(order.vendorID).get().then(async function(snapshot) {
+                        var vendordata = snapshot.exists ? snapshot.data() : (order.vendor || null);
+                        if (vendordata) {
                             if (vendordata.hasOwnProperty('isSelfDelivery') && vendordata.isSelfDelivery) {
                                 isSelfDeliveryByVendor = true;
                             }
@@ -1236,8 +1255,19 @@
                     $('#review_attributes').html(ra_html);
                 })
 
+                })();
+            }
 
-            })
+            if (bootstrapOrder) {
+                renderOrderPage(bootstrapOrder);
+            } else {
+                orderDocRef.get().then(function(snapshot) {
+                    renderOrderPage(snapshot.exists ? snapshot.data() : null);
+                }).catch(function(error) {
+                    jQuery("#data-table_processing").hide();
+                    console.error('Failed to load order:', error);
+                });
+            }
             async function getDeliverymanList(vendorID) {
 
                 database.collection('users').where('role', '==', 'driver').where('vendorID', '==', vendorID).where('isActive', '==', true).get().then(async function(snapshot) {
@@ -1586,7 +1616,11 @@
                             return false;
                         }
                         ref.get().then(async function(snapshot) {
-                            order = snapshot.docs[0].data();
+                            order = snapshot.exists ? snapshot.data() : null;
+                            if (!order) {
+                                alert('Order not found');
+                                return false;
+                            }
                             id = order.id;
                             var scheduleTime = '';
                             if (order.hasOwnProperty('scheduleTime') && order.scheduleTime != null && order.scheduleTime != '') {
@@ -2494,7 +2528,11 @@ database.collection('users').doc(user_id).set({
             $('#data-table_processing').show();
             ref.get().then(async function(snapshot) {
 
-                orderData = snapshot.docs[0].data();
+                orderData = snapshot.exists ? snapshot.data() : null;
+                if (!orderData) {
+                    $('#data-table_processing').hide();
+                    return;
+                }
                 try {
                     const vendorId = orderData.vendor?.author;
                     const customerId = orderData.author?.id;

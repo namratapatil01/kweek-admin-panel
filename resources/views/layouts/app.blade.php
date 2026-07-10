@@ -78,6 +78,12 @@
     </style>
 
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+    
+    <!-- Hide Google Maps Development Error Overlay -->
+    <style>
+        .gm-err-container { display: none !important; }
+        .gm-style iframe + div { border: none !important; }
+    </style>
 </head>
 
 <body>
@@ -159,7 +165,11 @@
     <script src="{{ asset('js/kweek-mysql-client.js') }}"></script>
     <script type="text/javascript">
 
-        var languages_list_main = [];
+        var languages_list_main = [
+            { slug: 'en', title: 'English', is_rtl: false },
+            { slug: 'ar', title: 'Arabic', is_rtl: true }
+        ];
+        
         var database = window.kweekDb();
         var geoQuery = window.kweekGeoQuery;
         var createdAtman = window.kweekDb.Timestamp.fromDate(new Date());
@@ -203,14 +213,22 @@
                 $("#app_name").html(globalSettings.applicationName);
             }
             var localFallbackLogo = "{{ asset('images/kweek-logo.png') }}";
+            var localFallbackIcon = "{{ asset('images/logo-light-icon.png') }}";
             if (globalSettings.appLogo) {
                 // Try to load the stored logo; fall back to local file if it fails (e.g. Firebase URL broken)
                 var testImg = new Image();
-                testImg.onload = function() { $("#logo_web").attr('src', globalSettings.appLogo); };
-                testImg.onerror = function() { $("#logo_web").attr('src', localFallbackLogo); };
+                testImg.onload = function() { 
+                    $("#logo_web").attr('src', globalSettings.appLogo); 
+                    $("#logo_web_icon").attr('src', globalSettings.appLogo); 
+                };
+                testImg.onerror = function() { 
+                    $("#logo_web").attr('src', localFallbackLogo); 
+                    $("#logo_web_icon").attr('src', localFallbackIcon); 
+                };
                 testImg.src = globalSettings.appLogo;
             } else {
                 $("#logo_web").attr('src', localFallbackLogo);
+                $("#logo_web_icon").attr('src', localFallbackIcon);
             }
             if (globalSettings.admin_panel_color) {
                 document.documentElement.style.setProperty('--admin-panel-color', globalSettings.admin_panel_color);
@@ -237,25 +255,18 @@
                 window.location.href = sectionUrl;
                 /*window.location.reload();*/
             });
-        });
-        
-        var langcount = 0;
-        var languages_list = database.collection('settings').doc('languages');
-        languages_list.get().then(async function (snapshotslang) {
-            var languageSettings = snapshotslang.data() || {};
-            var languageList = Array.isArray(languageSettings.list) ? languageSettings.list : [];
-            languages_list_main = languageList;
-            languageList.forEach((data) => {
-                if (data.isActive == true) {
-                    langcount++;
-                    $('#language_dropdown').append($("<option></option>").attr("value", data.slug).text(data.title));
-                }
+
+            // Initialize Language Dropdown
+            var langcount = 0;
+            languages_list_main.forEach((data) => {
+                langcount++;
+                $('#language_dropdown').append($("<option></option>").attr("value", data.slug).text(data.title));
             });
             if (langcount > 1) {
                 $("#language_dropdown_box").css('visibility', 'visible');
             }
             <?php if (session()->get('locale')) { ?>
-                $("#language_dropdown").val("<?php    echo session()->get('locale'); ?>");
+                $("#language_dropdown").val("<?php echo session()->get('locale'); ?>");
             <?php } ?>
         });
 
@@ -412,9 +423,8 @@
         }
 
         async function loadGoogleMapsScript() {
-            var googleMapKeySnapshotsHeader = await database.collection('settings').doc("googleMapKey").get();
-            var placeholderImageHeaderData = googleMapKeySnapshotsHeader.data();
-            googleMapKey = placeholderImageHeaderData.key;
+            var googleMapKey = '{{ env("GOOGLE_MAPS_API_KEY", "") }}';
+            
             const script = document.createElement('script');
             if (mapType == "OFFLINE") {
                 script.src = "https://unpkg.com/leaflet@1.7.1/dist/leaflet.js";

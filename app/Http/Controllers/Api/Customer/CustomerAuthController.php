@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\CustomerForgotPasswordRequest;
 use App\Http\Requests\Api\Customer\CustomerLoginRequest;
+use App\Http\Requests\Api\Customer\CustomerPhoneLoginRequest;
 use App\Http\Requests\Api\Customer\CustomerRegisterRequest;
 use App\Http\Requests\Api\Customer\CustomerResetPasswordRequest;
 use App\Http\Requests\Api\Customer\CustomerSocialLoginRequest;
@@ -67,6 +68,24 @@ class CustomerAuthController extends Controller
         );
     }
 
+    public function loginWithPhone(CustomerPhoneLoginRequest $request): JsonResponse
+    {
+        $result = $this->authService->loginWithPhone($request->validated());
+
+        if (! empty($result['is_new_user']) && empty($result['token'])) {
+            return ApiResponse::success([
+                'is_new_user' => true,
+                'profile' => $result['profile'] ?? null,
+            ], 'Registration required');
+        }
+
+        return ApiResponse::authSuccess(
+            $result['token'],
+            new CustomerResource($result['user']),
+            'Login successful'
+        );
+    }
+
     public function forgotPassword(CustomerForgotPasswordRequest $request): JsonResponse
     {
         $this->authService->forgotPassword($request->input('email'));
@@ -95,6 +114,15 @@ class CustomerAuthController extends Controller
         $this->authService->logout($user);
 
         return ApiResponse::success(null, 'Logout successful');
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        /** @var AppUser $user */
+        $user = $request->user();
+        $this->authService->deleteAccount($user);
+
+        return ApiResponse::success(null, 'Account deleted successfully');
     }
 
     protected function socialLoginResponse(array $result): JsonResponse

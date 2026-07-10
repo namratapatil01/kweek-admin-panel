@@ -15,6 +15,8 @@ if (empty($service_type)) {
         $service_type = 'cab-service';
     } elseif (request()->is('parcel*')) {
         $service_type = 'parcel_delivery';
+    } elseif (request()->is('vendors*') || request()->is('stores*') || request()->is('brands*') || request()->is('gift-card*') || request()->is('categories*') || request()->is('items*') || request()->is('coupon*') || request()->is('tax*')) {
+        $service_type = 'ecommerce-service';
     }
 }
 @endphp
