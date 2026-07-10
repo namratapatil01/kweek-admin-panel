@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+
 class OwnerController extends Controller
 {   
 
@@ -11,7 +13,9 @@ class OwnerController extends Controller
     }
 	public function index()
     {
-        return view("owners.index");
+        $placeholderImage = $this->placeholderImage();
+
+        return view('owners.index', compact('placeholderImage'));
     }
     public function create()
     {
@@ -36,6 +40,18 @@ class OwnerController extends Controller
     public function driverList($id)
     {
         return view('owners.driver_list')->with('id', $id);
+    }
+
+    protected function placeholderImage(): string
+    {
+        $placeholderRaw = DB::table('settings')->where('id', 'placeHolderImage')->value('value');
+        if (! $placeholderRaw) {
+            return '';
+        }
+
+        $decoded = json_decode($placeholderRaw, true);
+
+        return is_array($decoded) ? ($decoded['image'] ?? '') : '';
     }
 }
 

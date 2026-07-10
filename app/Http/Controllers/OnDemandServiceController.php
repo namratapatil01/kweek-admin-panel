@@ -345,7 +345,53 @@ class OnDemandServiceController extends Controller
 
     public function Workers($id = '')
     {
-        return view('OnDemandService.workers.index')->with('id', $id);
+        $providerId = (string) ($id ?? '');
+        $query = ProviderWorker::query();
+        if ($providerId !== '') {
+            $query->where('providerId', $providerId);
+        }
+        $query->orderByRaw('COALESCE(createdAt, created_at) desc');
+
+        $workers = $query->get();
+        $placeholderImage = $this->getPlaceholderImage();
+        $currency = $this->getActiveCurrency();
+
+        $providerIds = $workers->pluck('providerId')->filter()->unique()->values()->all();
+        $providers = collect();
+        if (! empty($providerIds)) {
+            $providers = AppUser::query()
+                ->whereIn('id', $providerIds)
+                ->get(['id', 'firstName', 'lastName'])
+                ->keyBy('id');
+        }
+
+        $permissions = session('user_permissions', []);
+        if (is_string($permissions)) {
+            $permissions = json_decode($permissions, true) ?: [];
+        }
+        if (! is_array($permissions)) {
+            $permissions = [];
+        }
+        $checkDelete = in_array('ondemand.workers.delete', $permissions, true);
+
+        $workerRows = [];
+        foreach ($workers as $worker) {
+            $workerRows[] = $this->buildWorkerRow(
+                $worker,
+                $providers,
+                $placeholderImage,
+                $currency,
+                $checkDelete,
+                $providerId
+            );
+        }
+
+        return view('OnDemandService.workers.index', [
+            'id' => $providerId,
+            'workerRows' => $workerRows,
+            'workersCount' => count($workerRows),
+            'checkDeletePermission' => $checkDelete,
+        ]);
     }
 
     public function WorkersCreate($id = '')
@@ -424,14 +470,14 @@ class OnDemandServiceController extends Controller
             }
 
             $totalFiltered = $query->count();
-            $query->orderBy('createdAt', $orderDir)->orderBy('created_at', $orderDir);
+            $query->orderByRaw('COALESCE(createdAt, created_at) ' . $orderDir);
 
-            $workers = $query->skip($start)->take($length)->get();
+            $workers = $query->skip($start)->take(max($length, 1))->get();
             $placeholderImage = $this->getPlaceholderImage();
             $currency = $this->getActiveCurrency();
 
             $providerIds = $workers->pluck('providerId')->filter()->unique()->values()->all();
-            $providers = [];
+            $providers = collect();
             if (!empty($providerIds)) {
                 $providers = AppUser::query()
                     ->whereIn('id', $providerIds)
@@ -446,11 +492,11 @@ class OnDemandServiceController extends Controller
             if (!is_array($permissions)) {
                 $permissions = [];
             }
-            $checkDelete = in_array('ondemand.workers.delete', $permissions);
+            $checkDelete = in_array('ondemand.workers.delete', $permissions, true);
 
             $data = [];
             foreach ($workers as $worker) {
-                $data[] = $this->buildWorkerRow($worker, $providers, $placeholderImage, $currency, $checkDelete, $providerId);
+                $data[] = $this->buildWorkerRow($worker, $providers, $placeholderImage, $currency, $checkDelete, (string) $providerId);
             }
 
             return response()->json([
@@ -655,14 +701,13 @@ class OnDemandServiceController extends Controller
         bool $checkDelete,
         string $filterProviderId
     ): array {
-        $row = [];
         $id = $worker->id;
         $payload = is_array($worker->payload) ? $worker->payload : [];
 
-        $firstName = $payload['firstName'] ?? $worker->firstName ?? '';
+        $firstName = $payload['firstName'] ?? $worker->firstName ?? $worker->name ?? '';
         $lastName = $payload['lastName'] ?? $worker->lastName ?? '';
         $email = $payload['email'] ?? $worker->email ?? '';
-        $salary = $payload['salary'] ?? $worker->salary ?? 0;
+        $salary = $payload['salary'] ?? $worker->salary ?? $worker->price ?? 0;
         $online = (bool) ($payload['online'] ?? $worker->online ?? false);
         $active = array_key_exists('active', $payload)
             ? (bool) $payload['active']
@@ -672,26 +717,25 @@ class OnDemandServiceController extends Controller
         if ($photo === '' || $photo === null) {
             $photo = $placeholderImage;
         }
+        $fallbackPhoto = e($placeholderImage);
 
-        $editUrl = '/ondemand-worker/edit/' . rawurlencode($id);
+        $editUrl = route('ondemand.workers.edit', $id);
         if ($filterProviderId !== '') {
             $editUrl .= '?id=' . urlencode($filterProviderId);
         }
 
-        if ($checkDelete) {
-            $row[] = '<input type="checkbox" id="is_open_' . $id . '" class="is_open" dataId="' . $id . '"><label class="col-3 control-label" for="is_open_' . $id . '"></label>';
+        $name = e(trim($firstName . ' ' . $lastName));
+        if ($name === '') {
+            $name = e($worker->title ?: ($email ?: 'Worker'));
         }
 
-        $name = e(trim($firstName . ' ' . $lastName));
-        $row[] = '<img class="rounded" style="width:50px;height:50px;object-fit:cover" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">'
+        $info = '<img class="rounded" style="width:50px;height:50px;object-fit:cover" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . $fallbackPhoto . '\'">'
             . '<a class="left_space" href="' . $editUrl . '">' . $name . '</a>';
-
-        $row[] = $this->shortEmail($email);
 
         $decimals = (int) ($currency['decimal_degits'] ?? 2);
         $symbol = $currency['symbol'] ?? '';
         $amount = number_format((float) $salary, $decimals, '.', '');
-        $row[] = !empty($currency['symbolAtRight'])
+        $salaryDisplay = !empty($currency['symbolAtRight'])
             ? e($amount . $symbol)
             : e($symbol . $amount);
 
@@ -701,24 +745,33 @@ class OnDemandServiceController extends Controller
             ? trim(($provider->firstName ?? '') . ' ' . ($provider->lastName ?? ''))
             : '';
         if ($providerName === '') {
-            $providerName = trans('lang.unknown');
-            $row[] = e($providerName);
+            $providerHtml = e(trans('lang.unknown'));
         } else {
-            $providerView = '/providers/view/' . rawurlencode($providerKey);
-            $row[] = '<a href="' . $providerView . '">' . e($providerName) . '</a>';
+            $providerView = route('providers.view', $providerKey);
+            $providerHtml = '<a href="' . $providerView . '">' . e($providerName) . '</a>';
         }
 
-        $row[] = $online ? 'Online' : 'Offline';
-
         $activeChecked = $active ? 'checked' : '';
-        $row[] = '<label class="switch"><input type="checkbox" ' . $activeChecked . ' id="' . $id . '" name="isActive"><span class="slider round"></span></label>';
+        $statusHtml = '<label class="switch"><input type="checkbox" ' . $activeChecked . ' id="' . e($id) . '" name="isActive"><span class="slider round"></span></label>';
 
         $actions = '<span class="action-btn"><a href="' . $editUrl . '" data-toggle="tooltip" title="' . e(trans('lang.edit')) . '"><i class="mdi mdi-lead-pencil"></i></a>';
         if ($checkDelete) {
-            $actions .= '<a id="' . $id . '" class="delete-btn" name="worker-delete" href="javascript:void(0)" data-toggle="tooltip" title="' . e(trans('lang.delete')) . '"><i class="mdi mdi-delete"></i></a>';
+            $actions .= '<a id="' . e($id) . '" class="delete-btn" name="worker-delete" href="javascript:void(0)" data-toggle="tooltip" title="' . e(trans('lang.delete')) . '"><i class="mdi mdi-delete"></i></a>';
         }
         $actions .= '</span>';
-        $row[] = $actions;
+
+        $row = [
+            'checkbox' => $checkDelete
+                ? '<input type="checkbox" id="is_open_' . e($id) . '" class="is_open" dataId="' . e($id) . '"><label class="col-3 control-label" for="is_open_' . e($id) . '"></label>'
+                : '',
+            'info' => $info,
+            'email' => $this->shortEmail($email),
+            'salary' => $salaryDisplay,
+            'provider' => $providerHtml,
+            'online' => $online ? 'Online' : 'Offline',
+            'status' => $statusHtml,
+            'actions' => $actions,
+        ];
 
         return $row;
     }
@@ -733,8 +786,9 @@ class OnDemandServiceController extends Controller
         }
 
         $decoded = json_decode($raw, true);
+        $image = is_array($decoded) ? ($decoded['image'] ?? '') : (string) $raw;
 
-        return is_array($decoded) ? ($decoded['image'] ?? asset('images/default_user.png')) : (string) $raw;
+        return $this->normalizeImageUrl($image) ?: asset('images/default_user.png');
     }
 
     private function getActiveCurrency(): array

@@ -166,9 +166,15 @@ class ProvidersController extends Controller
 
         $editUrl = route('providers.edit', $id);
         $viewUrl = route('providers.view', $id);
-        $photo = $provider->profilePictureURL ?: $placeholderImage;
+        $photo = $this->resolveMediaUrl(
+            $provider->profilePictureURL
+                ?: ($payload['profilePictureURL'] ?? null)
+                ?: ($payload['profilePic'] ?? null)
+                ?: ($payload['photo'] ?? null)
+        ) ?: $this->resolveMediaUrl($placeholderImage);
+        $fallback = e($this->resolveMediaUrl($placeholderImage));
         $name = e(trim(($provider->firstName ?? '') . ' ' . ($provider->lastName ?? '')));
-        $row[] = '<img class="rounded" style="width:50px" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">'
+        $row[] = '<img class="rounded" style="width:50px" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . $fallback . '\'">'
             . '<a href="' . $viewUrl . '" class="redirecttopage left_space">' . $name . '</a>';
 
         $row[] = $this->shortEmail($provider->email ?? '');
@@ -443,7 +449,40 @@ class ProvidersController extends Controller
 
         $decoded = json_decode($raw, true);
 
-        return is_array($decoded) ? ($decoded['image'] ?? '') : (string) $raw;
+        return $this->resolveMediaUrl(is_array($decoded) ? ($decoded['image'] ?? '') : (string) $raw);
+    }
+
+    private function resolveMediaUrl(mixed $value): string
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $resolved = $this->resolveMediaUrl($item);
+                if ($resolved !== '') {
+                    return $resolved;
+                }
+            }
+
+            return '';
+        }
+
+        if (! is_string($value)) {
+            return '';
+        }
+
+        $url = trim($value);
+        if ($url === '' || $url === 'null' || $url === 'undefined') {
+            return '';
+        }
+
+        if (str_starts_with($url, 'data:') || str_starts_with($url, 'http://') || str_starts_with($url, 'https://') || str_starts_with($url, 'blob:')) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return url($url);
+        }
+
+        return url('/storage/' . ltrim(preg_replace('#^storage/#', '', $url), '/'));
     }
 
     private function shortEmail(?string $email): string

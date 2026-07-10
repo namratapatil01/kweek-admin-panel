@@ -82,27 +82,17 @@
 
 @section('scripts')
     <script type="text/javascript">
-        var database = kweekDb();
         var driverID = "{{ $id }}";
-        var email_templates = database.collection('email_templates').where('type', '==', 'payout_request');
+        var driverWalletMap = {};
+        var driverApiUrl = '/drivers/api/get-driver';
+        var driversListUrl = '/driversPayouts_get-drivers';
+        var payoutStoreUrl = '/driversPayouts/store';
 
         var emailTemplatesData = null;
         var adminEmail = '';
-        var emailSetting = database.collection('settings').doc('emailSetting');
-
         var currentCurrency = '';
         var currencyAtRight = false;
         var decimal_degits = 0;
-
-        var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
-            var currencyData = snapshots.docs[0].data();
-            currentCurrency = currencyData.symbol;
-            currencyAtRight = currencyData.symbolAtRight;
-            if (currencyData.decimal_degits) {
-                decimal_degits = currencyData.decimal_degits;
-            }
-        });
 
         var userName = '';
         var userContact = '';
@@ -111,21 +101,11 @@
         $(document).ready(function() {
             $("#data-table_processing").show();
 
-            email_templates.get().then(async function(snapshots) {
-                if (snapshots.docs.length > 0) {
-                    emailTemplatesData = snapshots.docs[0].data();
-                }
-            });
-
-            emailSetting.get().then(async function(snapshots) {
-                var emailSettingData = snapshots.data();
-                adminEmail = emailSettingData.userName;
-            });
-
             if (driverID == '') {
-                $.get("{{ route('driversPayouts.get-drivers') }}", function(res) {
+                $.get(driversListUrl, function(res) {
                     if (res && res.data) {
                         res.data.forEach(function(driver) {
+                            driverWalletMap[driver.id] = parseFloat(driver.wallet_amount) || 0;
                             $('#select_vendor').append($("<option></option>")
                                 .attr("value", driver.id)
                                 .text(driver.firstName + ' ' + driver.lastName));
@@ -136,7 +116,9 @@
                     $("#data-table_processing").hide();
                 });
             } else {
-                $("#data-table_processing").hide();
+                remainingPrice(driverID).finally(function() {
+                    $("#data-table_processing").hide();
+                });
             }
         });
 
@@ -166,7 +148,7 @@
             }
 
             if (remaining >= amount) {
-                $.post("{{ route('driversPayouts.store') }}", {
+                $.post(payoutStoreUrl, {
                     _token: "{{ csrf_token() }}",
                     id: payoutId,
                     driverID: driverID,
@@ -174,42 +156,6 @@
                     note: note
                 }, async function(res) {
                     if (res.success) {
-                        if (emailTemplatesData) {
-                            if (currencyAtRight) {
-                                amount = parseInt(amount).toFixed(decimal_degits) + "" + currentCurrency;
-                            } else {
-                                amount = currentCurrency + "" + parseInt(amount).toFixed(decimal_degits);
-                            }
-
-                            var formattedDate = new Date();
-                            var month = formattedDate.getMonth() + 1;
-                            var day = formattedDate.getDate();
-                            var year = formattedDate.getFullYear();
-
-                            month = month < 10 ? '0' + month : month;
-                            day = day < 10 ? '0' + day : day;
-
-                            formattedDate = day + '-' + month + '-' + year;
-
-                            var subject = emailTemplatesData.subject;
-                            subject = subject.replace(/{userid}/g, driverID);
-                            emailTemplatesData.subject = subject;
-
-                            var message = emailTemplatesData.message;
-                            message = message.replace(/{userid}/g, driverID);
-                            message = message.replace(/{date}/g, formattedDate);
-                            message = message.replace(/{amount}/g, amount);
-                            message = message.replace(/{payoutrequestid}/g, payoutId);
-                            message = message.replace(/{username}/g, userName);
-                            message = message.replace(/{usercontactinfo}/g, userContact);
-                            emailTemplatesData.message = message;
-
-                            var url = "{{ url('send-email') }}";
-                            if (userEmail != '' && userEmail != null) {
-                                await sendEmail(url, emailTemplatesData.subject, emailTemplatesData.message, [adminEmail, userEmail]);
-                            }
-                        }
-
                         jQuery("#data-table_processing").hide();
                         <?php if ($id == '') { ?>
                             window.location.href = "{{ route('driversPayouts') }}";
@@ -236,7 +182,7 @@
 
         async function getDriver(driverId) {
             try {
-                let res = await $.get("{{ route('drivers.get-driver', '') }}/" + driverId);
+                let res = await $.get(driverApiUrl + '/' + encodeURIComponent(driverId));
                 if (res && res.data) {
                     var driverData = res.data;
                     userName = (driverData.firstName || '') + ' ' + (driverData.lastName || '');
@@ -249,14 +195,23 @@
         }
 
         async function remainingPrice(driverID) {
+            if (driverWalletMap[driverID] !== undefined) {
+                return driverWalletMap[driverID];
+            }
+
             try {
-                let res = await $.get("{{ route('drivers.get-driver', '') }}/" + driverID);
-                if (res && res.data && res.data.wallet_amount !== undefined) {
-                    return parseFloat(res.data.wallet_amount);
+                let res = await $.get(driverApiUrl + '/' + encodeURIComponent(driverID));
+                if (res && res.data) {
+                    var wallet = parseFloat(res.data.wallet_amount);
+                    if (!isNaN(wallet)) {
+                        driverWalletMap[driverID] = wallet;
+                        return wallet;
+                    }
                 }
             } catch (err) {
                 console.error(err);
             }
+
             return 0;
         }
 

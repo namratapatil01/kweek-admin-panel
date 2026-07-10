@@ -493,12 +493,17 @@ Route::middleware(['permission:model,model.delete'])->group(function () {
 
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type'])->group(function () {
     Route::get('vehicleType', [App\Http\Controllers\VehicleController::class, 'vehicleType'])->name('vehicleType');
+    Route::get('vehicleType/datatable', [App\Http\Controllers\VehicleController::class, 'vehicleTypeDatatable'])->name('vehicleType.datatable');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.create'])->group(function () {
     Route::get('vehicleType/create', [App\Http\Controllers\VehicleController::class, 'vehicleTypeCreate'])->name('vehicleType.create');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.edit'])->group(function () {
     Route::get('vehicleType/edit/{id}', [App\Http\Controllers\VehicleController::class, 'vehicleTypeEdit'])->name('vehicleType.edit');
+    Route::post('vehicleType/update/{id}', [App\Http\Controllers\VehicleController::class, 'updateVehicleType'])->name('vehicleType.update');
+});
+Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.delete'])->group(function () {
+    Route::post('vehicleType/delete', [App\Http\Controllers\VehicleController::class, 'destroyVehicleType'])->name('vehicleType.delete');
 });
 
 Route::middleware(['permission:terms,termsAndConditions'])->group(function () {

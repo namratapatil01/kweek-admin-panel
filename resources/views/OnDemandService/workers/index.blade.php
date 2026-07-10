@@ -2,6 +2,13 @@
 
 @section('content')
 
+@php
+    $workerRows = $workerRows ?? [];
+    $workersCount = $workersCount ?? count($workerRows);
+    $checkDeletePermission = $checkDeletePermission ?? false;
+    $id = (string) ($id ?? '');
+@endphp
+
 <div class="page-wrapper">
     <div class="row page-titles">
         <div class="col-md-5 align-self-center">
@@ -13,73 +20,59 @@
                 <li class="breadcrumb-item active">{{trans('lang.worker_plural')}}</li>
             </ol>
         </div>
-        <div>
-        </div>
     </div>
     <div class="container-fluid">
-       <div class="admin-top-section"> 
+       <div class="admin-top-section">
         <div class="row">
             <div class="col-12">
                 @if($id!='')
                     <div class="resttab-sec">
-
                         <div class="menu-tab tabDiv">
                             <ul>
-                                <li ><a href="{{route('providers.view', $id)}}"><img src="{{ asset('images/provider.png') }}"> {{trans('lang.tab_basic')}}</a>
-                                </li>
+                                <li ><a href="{{route('providers.view', $id)}}"><img src="{{ asset('images/provider.png') }}"> {{trans('lang.tab_basic')}}</a></li>
                                 <li><a href="{{route('ondemand.services.index', $id)}}"><img src="{{ asset('images/service.png') }}"> {{trans('lang.services')}}</a></li>
-                                <li>
                                 <li class="active"><a href="{{route('ondemand.workers.index', $id)}}"><img src="{{ asset('images/worker.png') }}"> {{trans('lang.workers')}}</a></li>
-                                <li>
                                 <li><a href="{{route('ondemand.bookings.index',$id)}}"><img src="{{ asset('images/booking.png') }}"> {{trans('lang.booking_plural')}}</a></li>
-                                <li>
                                 <li><a href="{{route('ondemand.coupons', $id)}}"><img src="{{ asset('images/coupon.png') }}"> {{trans('lang.coupon_plural')}}</a></li>
-                                 <li>
-                                    <a href="{{route('providerPayouts.payout', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payouts')}}</a>
-                                </li>
+                                <li><a href="{{route('providerPayouts.payout', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payouts')}}</a></li>
+                                <li><a href="{{route('payoutRequests.providers', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payout_request')}}</a></li>
                                 <li>
-                                    <a href="{{route('payoutRequests.providers', $id)}}"><img src="{{ asset('images/payment.png') }}"> {{trans('lang.tab_payout_request')}}</a>
+                                    <a href="{{route('users.walletstransaction',$id)}}" class="wallet_transaction"><img src="{{ asset('images/wallet.png') }}">  {{trans('lang.wallet_transaction')}}</a>
                                 </li>
-                                <li>
-                                    <a href="{{route('users.walletstransaction',$id)}}"
-                                           class="wallet_transaction"><img src="{{ asset('images/wallet.png') }}">  {{trans('lang.wallet_transaction')}}</a>
-                                </li>
-                                <?php 
+                                @php
                                     $subscription =  route("subscription.subscriptionPlanHistory", ":id");
                                     $subscription =  str_replace(":id", "providerID=" . $id, $subscription);
-                                    ?>
-                                <li> 
+                                @endphp
+                                <li>
                                     <a href="{{ $subscription }}"><img src="{{ asset('images/subscription.png') }}"> {{trans('lang.subscription_history')}}</a>
                                 </li>
                             </ul>
                         </div>
-
                     </div>
                 @endif
                 <div class="d-flex top-title-section pb-4 justify-content-between">
                     <div class="d-flex top-title-left align-self-center">
                         <span class="icon mr-3"><img src="{{ asset('images/worker.png') }}"></span>
                         <h3 class="mb-0 PageTitle">{{trans('lang.worker_plural')}}</h3>
-                        <span class="counter ml-3 total_count"></span>
+                        <span class="counter ml-3 total_count">{{ $workersCount }}</span>
                     </div>
                     <div class="d-flex top-title-right align-self-center">
-                                <div class="select-box pl-3">
-                                    <select class="form-control status_selector filteredRecords">
-                                        <option value="">{{trans("lang.status")}}</option>
-                                        <option value="active"  >{{trans("lang.active")}}</option>
-                                        <option value="inactive"  >{{trans("lang.in_active")}}</option>
-                                    </select>
-                                </div>
-                                <div class="select-box pl-3">
-                                    <div id="daterange"><i class="fa fa-calendar"></i>&nbsp;
-                                        <span></span>&nbsp; <i class="fa fa-caret-down"></i>
-                                    </div>
-                                </div>
+                        <div class="select-box pl-3">
+                            <select class="form-control status_selector filteredRecords">
+                                <option value="">{{trans("lang.status")}}</option>
+                                <option value="active">{{trans("lang.active")}}</option>
+                                <option value="inactive">{{trans("lang.in_active")}}</option>
+                            </select>
                         </div>
+                        <div class="select-box pl-3">
+                            <div id="daterange"><i class="fa fa-calendar"></i>&nbsp;
+                                <span></span>&nbsp; <i class="fa fa-caret-down"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div> 
-       
+        </div>
        </div>
        <div class="table-list">
        <div class="row">
@@ -91,46 +84,51 @@
                     <p class="mb-0 text-dark-2">{{trans('lang.worker_table_text')}}</p>
                    </div>
                    <div class="card-header-right d-flex align-items-center">
-                    <div class="card-header-btn mr-3"> 
+                    <div class="card-header-btn mr-3">
                     @if($id=='')
                         <a class="btn-primary btn rounded-full" href="{!! route('ondemand.workers.create') !!}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.worker_create')}}</a>
                     @else
-                    <a class="btn-primary btn rounded-full" href="{!! route('ondemand.workers.create','id='.$id) !!}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.worker_create')}}</a>
+                        <a class="btn-primary btn rounded-full" href="{!! route('ondemand.workers.create','id='.$id) !!}"><i class="mdi mdi-plus mr-2"></i>{{trans('lang.worker_create')}}</a>
                     @endif
                      </div>
-                   </div>                
+                   </div>
                  </div>
                  <div class="card-body">
                          <div class="table-responsive m-t-10">
                             <table id="workerTable" class="display nowrap table table-hover table-striped table-bordered table table-striped" cellspacing="0" width="100%">
                                 <thead>
                                 <tr>
-                                <?php
-                                    $__workerPerms = session('user_permissions', []);
-                                    if (is_string($__workerPerms)) {
-                                        $__workerPerms = json_decode($__workerPerms, true) ?: [];
-                                    }
-                                    if (!is_array($__workerPerms)) {
-                                        $__workerPerms = [];
-                                    }
-                                ?>
-                                <?php if (in_array('ondemand.workers.delete', $__workerPerms)) { ?>
-                                        <th class="delete-all"><input type="checkbox" id="is_active"><label
-                                                    class="col-3 control-label" for="is_active"
-                                            ><a id="deleteAll" class="do_not_delete"
-                                                href="javascript:void(0)"><i
-                                                            class="fa fa-trash"></i> {{trans('lang.all')}}</a></label></th>
-                                            <?php }?>
-                                        <th>{{trans('lang.worker_info')}}</th>
-                                        <th>{{trans('lang.email')}}</th>
-                                        <th>{{trans('lang.salary')}}</th>
-                                        <th>{{trans('lang.provider')}}</th>
-                                        <th>{{trans('lang.onoff')}}</th>
-                                        <th>{{trans('lang.status')}}</th>
-                                        <th>{{trans('lang.actions')}}</th>
+                                    @if($checkDeletePermission)
+                                        <th class="delete-all"><input type="checkbox" id="is_active"><label class="col-3 control-label" for="is_active"><a id="deleteAll" class="do_not_delete" href="javascript:void(0)"><i class="fa fa-trash"></i> {{trans('lang.all')}}</a></label></th>
+                                    @endif
+                                    <th>{{trans('lang.worker_info')}}</th>
+                                    <th>{{trans('lang.email')}}</th>
+                                    <th>{{trans('lang.salary')}}</th>
+                                    <th>{{trans('lang.provider')}}</th>
+                                    <th>{{trans('lang.onoff')}}</th>
+                                    <th>{{trans('lang.status')}}</th>
+                                    <th>{{trans('lang.actions')}}</th>
                                 </tr>
                                 </thead>
                                 <tbody id="append_list1">
+                                    @forelse($workerRows as $row)
+                                        <tr>
+                                            @if($checkDeletePermission)
+                                                <td>{!! $row['checkbox'] !!}</td>
+                                            @endif
+                                            <td>{!! $row['info'] !!}</td>
+                                            <td>{!! $row['email'] !!}</td>
+                                            <td>{!! $row['salary'] !!}</td>
+                                            <td>{!! $row['provider'] !!}</td>
+                                            <td>{!! $row['online'] !!}</td>
+                                            <td>{!! $row['status'] !!}</td>
+                                            <td>{!! $row['actions'] !!}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $checkDeletePermission ? 8 : 7 }}">{{ trans('lang.no_record_found') }}</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -147,21 +145,10 @@
 
 @section('scripts')
 <script>
-    var user_permissions = [];
-    try {
-        user_permissions = JSON.parse(@json(session('user_permissions') ?: '[]'));
-        if (typeof user_permissions === 'string') {
-            user_permissions = JSON.parse(user_permissions);
-        }
-    } catch (e) {
-        user_permissions = [];
-    }
-    if (!Array.isArray(user_permissions)) {
-        user_permissions = [];
-    }
-    var checkDeletePermission = $.inArray('ondemand.workers.delete', user_permissions) >= 0;
-    var id = @json((string) ($id ?? ''));
+    var checkDeletePermission = @json((bool) $checkDeletePermission);
+    var id = @json($id);
     var selectRangeLabel = @json(trans('lang.select_range'));
+    var workersDataUrl = '/ondemand-workers-data';
 
     $('.status_selector').select2({
         placeholder: @json(trans('lang.status')),
@@ -207,37 +194,36 @@
     $(document).ready(function () {
         $('body').tooltip({ selector: '[data-toggle="tooltip"]' });
 
-        var orderCol = checkDeletePermission ? 1 : 0;
+        var columns = [];
+        if (checkDeletePermission) {
+            columns.push({ data: 'checkbox', orderable: false, searchable: false, defaultContent: '' });
+        }
+        columns.push(
+            { data: 'info', orderable: false, defaultContent: '' },
+            { data: 'email', orderable: false, defaultContent: '' },
+            { data: 'salary', orderable: false, defaultContent: '' },
+            { data: 'provider', orderable: false, defaultContent: '' },
+            { data: 'online', orderable: false, defaultContent: '' },
+            { data: 'status', orderable: false, defaultContent: '' },
+            { data: 'actions', orderable: false, searchable: false, defaultContent: '' }
+        );
 
-        $('#workerTable').DataTable({
+        if ($.fn.DataTable.isDataTable('#workerTable')) {
+            $('#workerTable').DataTable().clear().destroy();
+        }
+
+        // Keep already-rendered server rows visible; enable search/paging client-side.
+        // Filters (status/date) still use AJAX reload.
+        var table = $('#workerTable').DataTable({
             pageLength: 10,
             processing: true,
-            serverSide: true,
+            serverSide: false,
             responsive: true,
-            ajax: {
-                url: "/ondemand-workers-data",
-                data: function (d) {
-                    d.provider_id = id;
-                    d.status = $('.status_selector').val();
-                    var daterangepicker = $('#daterange').data('daterangepicker');
-                    if ($('#daterange span').html() !== selectRangeLabel && daterangepicker) {
-                        d.from_date = daterangepicker.startDate.format('YYYY-MM-DD');
-                        d.to_date = daterangepicker.endDate.format('YYYY-MM-DD');
-                    }
-                },
-                dataSrc: function (json) {
-                    $('.total_count').text((json && json.recordsFiltered) ? json.recordsFiltered : 0);
-                    return (json && json.data) ? json.data : [];
-                },
-                error: function (xhr, error, thrown) {
-                    console.error('Workers datatable error:', error, thrown, xhr && xhr.responseText);
-                    $('.total_count').text(0);
-                }
-            },
-            order: [[orderCol, 'desc']],
+            autoWidth: false,
+            order: [],
             columnDefs: [{
                 orderable: false,
-                targets: checkDeletePermission ? [0, 5, 6, 7] : [4, 5, 6]
+                targets: '_all'
             }],
             language: {
                 zeroRecords: @json(trans('lang.no_record_found')),
@@ -261,7 +247,47 @@
                 $('.dataTables_filter label').contents().filter(function () {
                     return this.nodeType === 3;
                 }).remove();
+                $('.total_count').text(@json($workersCount));
             }
+        });
+
+        // When filters change, fetch filtered rows via AJAX and replace table body.
+        window.reloadWorkersWithFilters = function () {
+            var params = {
+                draw: 1,
+                start: 0,
+                length: 1000,
+                provider_id: id || '',
+                status: $('.status_selector').val() || ''
+            };
+            var daterangepicker = $('#daterange').data('daterangepicker');
+            if ($('#daterange span').html() !== selectRangeLabel && daterangepicker) {
+                params.from_date = daterangepicker.startDate.format('YYYY-MM-DD');
+                params.to_date = daterangepicker.endDate.format('YYYY-MM-DD');
+            }
+
+            $.getJSON(workersDataUrl, params)
+                .done(function (json) {
+                    var rows = (json && Array.isArray(json.data)) ? json.data : [];
+                    table.clear();
+                    rows.forEach(function (row) {
+                        var cells = [];
+                        if (checkDeletePermission) {
+                            cells.push(row.checkbox || '');
+                        }
+                        cells.push(row.info || '', row.email || '', row.salary || '', row.provider || '', row.online || '', row.status || '', row.actions || '');
+                        table.row.add(cells);
+                    });
+                    table.draw();
+                    $('.total_count').text((json && json.recordsFiltered) ? json.recordsFiltered : rows.length);
+                })
+                .fail(function (xhr) {
+                    console.error('Workers filter reload failed', xhr && xhr.status, xhr && xhr.responseText);
+                });
+        };
+
+        $('.filteredRecords').off('change').on('change', function () {
+            window.reloadWorkersWithFilters();
         });
     });
 
@@ -295,7 +321,7 @@
             ids: ids
         }).always(function () {
             jQuery("#data-table_processing").hide();
-            $('#workerTable').DataTable().ajax.reload();
+            window.location.reload();
         });
     });
 
@@ -310,7 +336,7 @@
             id: workerId
         }).always(function () {
             jQuery("#data-table_processing").hide();
-            $('#workerTable').DataTable().ajax.reload();
+            window.location.reload();
         });
     });
 </script>
