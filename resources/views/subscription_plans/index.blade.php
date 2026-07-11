@@ -33,8 +33,8 @@
                             <div class="card-header d-flex justify-content-between align-items-center border-0">
                                 <div class="card-header-title d-flex">
                                     <div>
-                                    <h3 class="text-dark-2 mb-2 h4">{{ trans('lang.overview') }}</h3>
-                                    <p class="mb-0 text-dark-2">{{ trans('lang.see_overview_of_package_earning') }}</p>
+                                        <h3 class="text-dark-2 mb-2 h4">{{ trans('lang.overview') }}</h3>
+                                        <p class="mb-0 text-dark-2">{{ trans('lang.see_overview_of_package_earning') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -57,7 +57,8 @@
                                 </div>
                                 <div class="card-header-right d-flex align-items-center">
                                     <div class="card-header-btn mr-3">
-                                        <a href="{!! route('subscription-plans.save') !!}" class="btn-primary btn rounded-full"><i
+                                        <a href="{!! route('subscription-plans.save') !!}"
+                                            class="btn-primary btn rounded-full"><i
                                                 class="mdi mdi-plus mr-2"></i>{{ trans('lang.create_subscription_plan') }}</a>
                                     </div>
                                 </div>
@@ -100,6 +101,9 @@
 @section('scripts')
     <script type="text/javascript">
         var section_id = getCookie('section_id') || '';
+        var database = firebase.firestore();
+        var ref = database.collection('subscription_plans');
+
         var database = kweekDb();
        
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
@@ -112,17 +116,19 @@
         var currencyAtRight = false;
         var decimal_degits = 0;
         var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
+        refCurrency.get().then(async function (snapshots) {
             var currencyData = snapshots.docs[0].data();
             currentCurrency = currencyData.symbol;
             currencyAtRight = currencyData.symbolAtRight;
             decimal_degits = currencyData.decimal_degits;
         });
         var placeholder = database.collection('settings').doc('placeHolderImage');
-        placeholder.get().then(async function(snapshotsimage) {
+        placeholder.get().then(async function (snapshotsimage) {
             var placeholderImageData = snapshotsimage.data();
             placeholderImage = placeholderImageData.image;
         })
+
+        $(document).ready(async function () {
 
         function resolveImageUrl(url) {
             if (!url) {
@@ -140,8 +146,8 @@
         $(document).ready(async function() {
             
             getOverviewSection(section_id);
-           
-            $(document.body).on('click', '.redirecttopage', function() {
+
+            $(document.body).on('click', '.redirecttopage', function () {
                 var url = $(this).attr('data-url');
                 window.location.href = url;
             });
@@ -155,7 +161,7 @@
                 ajax: {
                     url: "{{ route('subscription-plans.datatable') }}",
                     type: "GET",
-                    data: function(d) {
+                    data: function (d) {
                         d.section_id = section_id;
                     },
                     complete: function() {
@@ -167,9 +173,9 @@
                 },
                 columns: [
                     <?php if (in_array('subscription-plans.delete', json_decode(@session('user_permissions'), true))) { ?>
-                    {
+                        {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             if (checkDeletePermission && row.isCommissionPlan != true) {
                                 return '<input type="checkbox" id="is_open_' + row.id + '" class="is_open" dataId="' + row.id + '"><label class="col-3 control-label" for="is_open_' + row.id + '"></label>';
                             }
@@ -177,9 +183,9 @@
                         }
                     },
                     <?php } ?>
-                    {
+                        {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             var rowId = row.id || '';
                             var rowName = row.name || '';
                             var rowImage = resolveImageUrl(row.image);
@@ -189,7 +195,7 @@
                     },
                     {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             var rowType = row.type || '';
                             var rowPrice = row.price || 0;
                             if (rowType === 'free') {
@@ -200,14 +206,14 @@
                     },
                     {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             var expiry = row.expiryDay || '-1';
                             return expiry == '-1' ? "{{ trans('lang.unlimited') }}" : expiry + ' Days';
                         }
                     },
                     {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             var rowId = row.id || '';
                             var url = "{{ url('current-subscriber') }}/" + rowId;
                             return '<a href="' + url + '">0</a>';
@@ -215,7 +221,7 @@
                     },
                     {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             if (row.isCommissionPlan == true || row.isCommissionPlan === 'true') return '';
                             var isEnable = (row.isEnable == 1 || row.isEnable === true || row.isEnable === 'true');
                             var checked = isEnable ? 'checked' : '';
@@ -224,7 +230,7 @@
                     },
                     {
                         data: null,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             var rowId = row.id || '';
                             var editRoute = "{{ url('subscription-plans/save') }}/" + rowId;
                             var html = '<span class="action-btn"><a href="' + editRoute + '" class="link-td" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
@@ -257,12 +263,12 @@
             function debounce(func, wait) {
                 let timeout;
                 const context = this;
-                return function(...args) {
+                return function (...args) {
                     clearTimeout(timeout);
                     timeout = setTimeout(() => func.apply(context, args), wait);
                 };
             }
-            $('#search-input').on('input', debounce(function() {
+            $('#search-input').on('input', debounce(function () {
                 const searchValue = $(this).val();
                 if (searchValue.length >= 3) {
                     $('#data-table_processing').show();
@@ -273,11 +279,11 @@
                 }
             }, 300));
         });
-        $(document).on("click", "input[name='isActive']", async function(e) {
+        $(document).on("click", "input[name='isActive']", async function (e) {
             var ischeck = $(this).is(':checked');
             var sectionId = $(this).attr('data-section');
             var id = this.id;
-            
+
             $.ajax({
                 url: "{{ route('subscription-plans.store') }}",
                 type: 'POST',
@@ -289,7 +295,7 @@
             });
         });
 
-        $(document).on("click", "a[name='plan-delete']", async function(e) {
+        $(document).on("click", "a[name='plan-delete']", async function (e) {
             var id = this.id;
             $.ajax({
                 url: "{{ route('subscription-plans.delete') }}",
@@ -298,32 +304,32 @@
                     id: id,
                     _token: '{{ csrf_token() }}'
                 },
-                success: function() {
+                success: function () {
                     window.location.reload();
                 }
             });
         });
 
-        $("#is_active").click(function() {
+        $("#is_active").click(function () {
             $("#subscriptionPlansTable .is_open").prop('checked', $(this).prop('checked'));
         });
 
-        $("#deleteAll").click(function() {
+        $("#deleteAll").click(function () {
             if ($('#subscriptionPlansTable .is_open:checked').length) {
                 if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
                     jQuery("#data-table_processing").show();
                     var ids = [];
-                    $('#subscriptionPlansTable .is_open:checked').each(function() {
+                    $('#subscriptionPlansTable .is_open:checked').each(function () {
                         ids.push($(this).attr('dataId'));
                     });
                     $.ajax({
-                        url: "{{ route('subscription-plans.bulk-delete') }}",
+                        url: "{{ url('/subscription-plans/bulk-delete') }}",
                         type: 'POST',
                         data: {
                             ids: ids,
                             _token: '{{ csrf_token() }}'
                         },
-                        success: function() {
+                        success: function () {
                             window.location.reload();
                         }
                     });
@@ -335,14 +341,14 @@
         async function getTotalSubscriber(id) {
             var total = 0;
             await database.collection('users').where('subscriptionPlanId', '==', id).get()
-                .then(async function(snapshots) {
+                .then(async function (snapshots) {
                     total = snapshots.docs.length;
                 });
             return total;
         }
         async function getSectionName(id) {
             var sectionName = '';
-            await database.collection('sections').where('id', '==', id).get().then(async function(snapshots) {
+            await database.collection('sections').where('id', '==', id).get().then(async function (snapshots) {
                 if (snapshots.docs.length > 0) {
                     var data = snapshots.docs[0].data();
                     sectionName = data.name;
@@ -351,42 +357,50 @@
             return sectionName;
         }
 
-        async function getOverviewSection(selectedSectionId){
+        async function getOverviewSection(selectedSectionId) {
             $.ajax({
                 url: "{{ route('subscription-plans.overview') }}",
                 type: "GET",
                 data: { section_id: selectedSectionId },
-                success: function(response) {
+                success: function (response) {
                     var html = '';
                     if (response.success && response.data.length > 0) {
-                        response.data.forEach(function(data) {
+                        response.data.forEach(function (data) {
                             getEarnings(data.id);
                             var dName = data.name || (data.payload && data.payload.name) || 'Plan';
-                            var img = resolveImageUrl(data.image || (data.payload && data.payload.image));
-                            html += ` <div class="col-md-4">
-                                <div class="card card-box-with-icon">
-                                    <div class="card-body">
-                                        <span class="box-icon"><img src="${img}" onerror="this.src='${placeholderImage}'"></span>
-                                        <div class="card-box-with-content mt-3">
-                                        <h4 class="text-dark-2 mb-1 h4 earnings_${data.id}"></h4>
-                                        <p class="mb-0 text-dark-2">${dName}</p>
+                            var img = data.image || (data.payload && data.payload.image) || placeholderImage;
+                            var planCode = data.id ? data.id.substring(0, 6) : 'P' + Math.floor(Math.random() * 10000);
+                            var planType = data.type || (data.payload && data.payload.type) || 'free';
+                            var badgeClass = planType === 'paid' ? 'badge-primary' : 'badge-success';
+                            var badgeText = planType === 'paid' ? 'Premium' : 'Basic';
+                            
+                            html += ` <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h5 class="mb-1">${planCode}</h5>
+                                                    <h6 class="text-muted mb-0">${dName}</h6>
+                                                </div>
+                                                <span class="badge ${badgeClass}">${badgeText}</span>
+                                            </div>
+                                            <h4 class="text-primary mb-0 earnings_${data.id}"></h4>
                                         </div>
                                     </div>
-                                </div>
-                            </div>`;
+                                </div>`;
                         });
                         $('.subscription-list').html(html);
                     } else {
-                        $('.subscription-list').html('');
+                        $('.subscription-list').html('<div class="col-12"><p class="text-muted">{{ trans("lang.no_active_plans") }}</p></div>');
                     }
                 }
             });
         }
-         
+
         function getEarnings(planId) {
             var total = 0;
             database.collection('subscription_history').where('subscription_plan.id', '==', planId).get().then(
-                async function(snapshots) {
+                async function (snapshots) {
                     await snapshots.docs.map(async (listval) => {
                         var data = listval.data();
                         total += parseFloat(data.subscription_plan.price);

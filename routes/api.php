@@ -35,7 +35,9 @@ use App\Http\Controllers\Api\Worker\WorkerDashboardController;
 use App\Http\Controllers\Api\Worker\WorkerJobController;
 use App\Http\Controllers\Api\Worker\WorkerMiscController;
 use App\Http\Controllers\Api\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Worker\WorkerRealtimeController;
 use App\Http\Controllers\Api\Worker\WorkerReviewController;
+use App\Http\Controllers\Api\Worker\WorkerSettingsController;
 use App\Http\Controllers\Api\Driver\DriverAuthController;
 use App\Http\Controllers\Api\Driver\DriverChatController;
 use App\Http\Controllers\Api\Driver\DriverDashboardController;
@@ -296,6 +298,9 @@ Route::prefix('worker')->group(function () {
     Route::post('password/forgot', [WorkerAuthController::class, 'forgotPassword']);
     Route::post('password/reset', [WorkerAuthController::class, 'resetPassword']);
     Route::get('home', [WorkerDashboardController::class, 'home']);
+    Route::get('settings', [WorkerSettingsController::class, 'index']);
+    Route::get('settings/languages', [WorkerSettingsController::class, 'languages']);
+    Route::get('settings/{key}', [WorkerSettingsController::class, 'show'])->where('key', '[a-zA-Z0-9_]+');
     Route::get('terms', [WorkerMiscController::class, 'terms']);
     Route::get('privacy', [WorkerMiscController::class, 'privacy']);
 
@@ -310,6 +315,7 @@ Route::prefix('worker')->group(function () {
         Route::get('provider', [WorkerProfileController::class, 'provider']);
 
         Route::get('dashboard', [WorkerDashboardController::class, 'dashboard']);
+        Route::get('realtime/poll', [WorkerRealtimeController::class, 'poll']);
 
         Route::get('jobs', [WorkerJobController::class, 'index']);
         Route::get('jobs/{id}', [WorkerJobController::class, 'show'])->where('id', '[a-zA-Z0-9\-_]+');
@@ -332,6 +338,7 @@ Route::prefix('worker')->group(function () {
 
         Route::get('earnings', [WorkerMiscController::class, 'earnings']);
         Route::get('notifications', [WorkerMiscController::class, 'notifications']);
+        Route::get('notifications/templates/{type}', [WorkerMiscController::class, 'notificationTemplate'])->where('type', '[a-zA-Z0-9_]+');
         Route::get('documents', [WorkerMiscController::class, 'documents']);
         Route::get('documents/status', [WorkerMiscController::class, 'documentStatus']);
         Route::post('documents', [WorkerMiscController::class, 'submitDocuments']);

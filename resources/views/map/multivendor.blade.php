@@ -293,6 +293,17 @@
                 };
                 map = new google.maps.Map(document.getElementById("map"), mapOptions);
             }
+            var mapDiv = L.DomUtil.get('map');
+            if (mapDiv) {
+                mapDiv._leaflet_id = null;
+            }
+
+            map = L.map('map').setView([default_lat, default_lng], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
             godsEyeMapReady = true;
 
@@ -312,24 +323,19 @@
                 var type = fliter_icons[key];
                 var name = type.name;
                 var icon = type.icon;
-
                 var div = document.createElement('div');
                 div.innerHTML = '<img src="' + icon + '" style="width:14px; margin-right:5px;"> ' + name;
                 legend.appendChild(div);
             }
 
-            if (mapType == "OFFLINE" ){
-                var lmaplegend  = L.control({ position: 'bottomleft' });
-                lmaplegend.onAdd = function (map) {
-                    var div = L.DomUtil.create('div', 'legend');
-                    div.innerHTML = "<h4>Map Legend</h4>";
-                    div.appendChild(legend);
-                    return div;
-                };
-                lmaplegend.addTo(map);
-            } else{
-                map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
-            }
+            var lmaplegend = L.control({ position: 'bottomleft' });
+            lmaplegend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'legend');
+                div.innerHTML = "<h4>Map Legend</h4>";
+                div.appendChild(legend);
+                return div;
+            };
+            lmaplegend.addTo(map);
         }
 
         async function loadData(data) {

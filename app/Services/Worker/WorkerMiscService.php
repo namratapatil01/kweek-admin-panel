@@ -7,6 +7,7 @@ use App\Models\AppUser;
 use App\Models\CmsPage;
 use App\Models\Document;
 use App\Models\DocumentVerify;
+use App\Models\DynamicNotification;
 use App\Models\ProviderOrder;
 use App\Services\SettingsService;
 use App\Services\Storage\FileStorageService;
@@ -122,6 +123,22 @@ class WorkerMiscService
             'url' => url($result['url']),
             'path' => $result['path'],
             'mime' => $result['mime_type'],
+        ];
+    }
+
+    public function notificationContent(string $type): array
+    {
+        $notification = DynamicNotification::query()->where('type', $type)->first();
+
+        if ($notification) {
+            return $notification->toDocumentArray();
+        }
+
+        return [
+            'id' => '',
+            'type' => $type,
+            'subject' => 'setup notification',
+            'message' => 'Notification setup is pending',
         ];
     }
 }

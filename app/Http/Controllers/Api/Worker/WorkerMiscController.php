@@ -90,4 +90,12 @@ class WorkerMiscController extends Controller
             201
         );
     }
+
+    public function notificationTemplate(string $type): JsonResponse
+    {
+        return ApiResponse::success(
+            $this->miscService->notificationContent($type),
+            'Notification template retrieved'
+        );
+    }
 }

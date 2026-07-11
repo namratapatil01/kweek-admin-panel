@@ -57,7 +57,7 @@
                                 </div>
                                 
                                 <div class="form-group row width-50">
-                                    <label class="col-3 control-label">{{ trans('lang.vendor_cuisine') }}</label>
+                                    <label class="col-3 control-label">Category</label>
                                     <div class="col-7">
                                         <select id='vendor_cuisines' class="form-control chosen-select" multiple="multiple" required>
                                             @foreach($categories as $cat)
@@ -65,7 +65,7 @@
                                             @endforeach
                                         </select>
                                         <div class="form-text text-muted">
-                                            {{ trans('lang.vendor_cuisines_help') }}
+                                            Select Store Category
                                         </div>
                                     </div>
                                 </div>
@@ -964,18 +964,9 @@
             })
         });
 
-        $('#vendor_cuisines').empty();
-        database.collection('vendor_categories').where('publish', '==', true).where('section_id', '==', section_id).get().then(async function(snapshots) {
-            snapshots.docs.forEach((listval) => {
-                var data = listval.data();
-                categories_list.push(data);
-                $('#vendor_cuisines').append($("<option></option>")
-                    .attr("value", data.id)
-                    .text(data.title));
-            });
-            $("#vendor_cuisines").show().chosen({
-                "placeholder_text": "{{ trans('lang.select_cuisines') }}"
-            });
+        // Categories are populated via blade. Initialize chosen.
+        $("#vendor_cuisines").chosen({
+            placeholder_text_multiple: "Select Categories"
         });
         
         $('#store_vendors').on('change', function() {
@@ -1007,6 +998,7 @@
                 placeholder: "Select Country",
                 allowClear: true
             });
+            
 
             // --- ADD THIS BLOCK TO SET DEFAULT COUNTRY CODE ---
             var globalSettingsRef = database.collection('settings').doc('globalSettings');
@@ -1319,9 +1311,9 @@
                 $(".error_top").append("<p>{{ trans('lang.invalid_location_zone') }}</p>");
                 window.scrollTo(0, 0);
 
-            } else {
-                if (story_vedios.length > 0 || story_thumbnail != '') {
-                    if (story_vedios.length > 0 && story_thumbnail == '') {
+                        } else {
+                if (story_vedios.length > 0 || story_thumbnail != "") {
+                    if (story_vedios.length > 0 && story_thumbnail == "") {
                         $(".error_top").show();
                         $(".error_top").html("");
                         $(".error_top").append("<p>{{ trans('lang.story_error') }}</p>");
@@ -1333,115 +1325,84 @@
                         $(".error_top").append("<p>{{ trans('lang.story_error') }}</p>");
                         window.scrollTo(0, 0);
                         return false;
-                    } else {
-                        await storeStoryImageData().then(async (IMG) => {
-                            database.collection('story').doc(vendor_id).set({
-                                'createdAt': new Date(),
-                                'sectionID': section_id,
-                                'vendorID': vendor_id,
-                                'videoThumbnail': IMG.storyThumbnailImage,
-                                'videoUrl': story_vedios,
-                            });
-                        }).catch(err => {
-                            jQuery("#data-table_processing").hide();
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + err + "</p>");
-                            window.scrollTo(0, 0);
-                        });
                     }
                 }
                 jQuery("#data-table_processing").show();
+                var formData = new FormData();
+                formData.append("_token", "{{ csrf_token() }}");
+                formData.append("title", vendorname);
+                formData.append("description", description);
+                formData.append("latitude", latitude);
+                formData.append("longitude", longitude);
+                formData.append("location", address);
+                formData.append("categoryID", cuisines);
+                formData.append("phonenumber", country_code + phonenumber);
+                formData.append("categoryTitle", categoryTitle);
+                formData.append("filters", JSON.stringify(filters_new));
+                formData.append("authorName", name);
+                formData.append("enabledDiveInFuture", enabledDiveInFuture);
+                formData.append("specialDiscountEnable", enabledSpecialOffer);
+                formData.append("vendorCost", vendorCost);
+                formData.append("openDineTime", openDineTime);
+                formData.append("closeDineTime", closeDineTime);
+                formData.append("workingHours", JSON.stringify(workingHours));
+                formData.append("specialDiscount", JSON.stringify(specialDiscount));
+                formData.append("subscription_plan", subscription_plan);
+                formData.append("subscriptionPlanId", subscriptionPlanId);
+                formData.append("subscriptionExpiryDate", subscriptionExpiryDate);
+                formData.append("subscriptionTotalOrders", subscriptionOrderLimit);
+                formData.append("adminCommission", adminCommission);
+                formData.append("isSelfDelivery", enable_self_delivery);
+                formData.append("zoneId", zoneId);
+                formData.append("section_id", section_id);
+                formData.append("delivery_charges_per_km", delivery_charges_per_km);
+                formData.append("minimum_delivery_charges", minimum_delivery_charges);
+                formData.append("minimum_delivery_charges_within_km", minimum_delivery_charges_within_km);
 
+                formData.append("user_name", userFirstName);
+                formData.append("user_last_name", userLastName);
+                formData.append("user_email", email);
+                formData.append("user_password", password);
+                formData.append("user_phone", userPhone);
+                
+                if (document.getElementById("vendor_image") && document.getElementById("vendor_image").files[0]) formData.append("photo", document.getElementById("vendor_image").files[0]);
+                if (document.getElementById("owner_image") && document.getElementById("owner_image").files[0]) formData.append("authorProfilePic", document.getElementById("owner_image").files[0]);
+                if (document.getElementById("story_thumbnail") && document.getElementById("story_thumbnail").files[0]) formData.append("storyThumbnail", document.getElementById("story_thumbnail").files[0]);
+                
+                if(document.getElementById("gallery_image")) {
+                    var files_gallery = document.getElementById("gallery_image").files;
+                    for(var i = 0; i < files_gallery.length; i++) { formData.append("photos[]", files_gallery[i]); }
+                }
 
+                if(document.getElementById("vendor_menu_photos")) {
+                    var files_menu = document.getElementById("vendor_menu_photos").files;
+                    for(var i = 0; i < files_menu.length; i++) { formData.append("vendorMenuPhotos[]", files_menu[i]); }
+                }
+                
+                if(document.getElementById("story_video")) {
+                    var files_video = document.getElementById("story_video").files;
+                    for(var i = 0; i < files_video.length; i++) { formData.append("storyVideo[]", files_video[i]); }
+                }
 
-                await storeImageData().then(async (IMG) => {
-                    await storeGalleryImageData().then(async (GalleryIMG) => {
-                        await storeMenuImageData().then(async (MenuIMG) => {
-                            database.collection('users').doc(user_id).update({
-                                'section_id': section_id,
-                                'vendorID': vendor_id,
-
-                            }).then(function(result) {
-
-                                coordinates = new kweekDb.GeoPoint(latitude, longitude);
-
-                                geoQuery.collection('vendors').doc(vendor_id).set({
-                                    'section_id': section_id,
-                                    'title': vendorname,
-                                    'description': description,
-                                    'latitude': latitude,
-                                    'longitude': longitude,
-                                    'location': address,
-                                    'photo': (Array.isArray(GalleryIMG) && GalleryIMG.length > 0) ? GalleryIMG[0] : null,
-                                    'categoryID': cuisines,
-                                    'phonenumber': country_code + phonenumber,
-                                    'categoryTitle': categoryTitle,
-                                    'coordinates': coordinates,
-                                    'id': vendor_id,
-                                    'filters': filters_new,
-                                    'photos': GalleryIMG,
-                                    'author': user_id,
-                                    'authorName': name,
-                                    'authorProfilePic': IMG.ownerImage,
-                                    hidephotos: false,
-                                    createdAt: createdAt,
-                                    'enabledDiveInFuture': enabledDiveInFuture,
-                                    'specialDiscountEnable': enabledSpecialOffer,
-                                    'vendorMenuPhotos': MenuIMG,
-                                    'vendorCost': vendorCost,
-                                    'openDineTime': openDineTime,
-                                    'closeDineTime': closeDineTime,
-                                    'workingHours': workingHours,
-                                    'specialDiscount': specialDiscount,
-                                    'subscription_plan': subscription_plan,
-                                    'subscriptionPlanId': subscriptionPlanId,
-                                    'subscriptionExpiryDate': subscriptionExpiryDate,
-                                    'subscriptionTotalOrders': subscriptionOrderLimit,
-                                    'adminCommission': adminCommission,
-                                    'isSelfDelivery': enable_self_delivery,
-                                    'zoneId': zoneId,
-
-                                }).then(async function(result) {
-                                    await database.collection('users').doc(user_id).update({
-                                        'section_id': section_id
-                                    })
-
-                                    if (deliveryChargeFlag) {
-                                        geoQuery.collection('vendors').doc(vendor_id).update({
-                                            'DeliveryCharge': deliveryCharge
-                                        }).then(async function(result) {
-                                            window.location.href = '{{ route('stores') }}';
-                                        });
-                                    } else {
-                                        window.location.href = '{{ route('stores') }}';
-                                    }
-                                });
-                            })
-
-                        }).catch(function(error) {
-                            jQuery("#data-table_processing").hide();
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + error + "</p>");
-                        });
-                    }).catch(err => {
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('stores.store') }}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        jQuery("#data-table_processing").hide();
+                        window.location.href = "{{ route('stores') }}";
+                    },
+                    error: function (xhr) {
                         jQuery("#data-table_processing").hide();
                         $(".error_top").show();
                         $(".error_top").html("");
-                        $(".error_top").append("<p>" + err + "</p>");
+                        $(".error_top").append("<p>" + (xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText) + "</p>");
                         window.scrollTo(0, 0);
-                    })
-                }).catch(err => {
-                    jQuery("#data-table_processing").hide();
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>" + err + "</p>");
-                    window.scrollTo(0, 0);
+                    }
                 });
-
             }
-
         });
 
         $(".add_special_offer_restaurant_btn").click(function() {

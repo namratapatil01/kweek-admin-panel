@@ -49,7 +49,7 @@
                                     </div>
 
                                     <div class="form-group row width-50">
-                                        <label class="col-3 control-label">{{ trans('lang.vendor_cuisine') }}</label>
+                                        <label class="col-3 control-label">Category</label>
                                         <div class="col-7">
                                             <select id='vendor_cuisines' class="form-control chosen-select" multiple="multiple" required>
                                                 @foreach($categories as $cat)
@@ -57,7 +57,7 @@
                                                 @endforeach
                                             </select>
                                             <div class="form-text text-muted">
-                                                {{ trans('lang.vendor_cuisines_help') }}
+                                                Select Store Category
                                             </div>
                                         </div>
                                     </div>
@@ -952,10 +952,11 @@
                     .attr("data-area", JSON.stringify(area))
                     .text(data.name));
             })
+            $("#zone").trigger("chosen:updated");
         });
 
         $("#vendor_cuisines").chosen({
-            "placeholder_text": "{{ trans('lang.select_cuisines') }}"
+            placeholder_text_multiple: "Select Categories"
         });
         $(document).ready(function() {
 
@@ -972,13 +973,12 @@
 
             jQuery("#data-table_processing").show();
 
-            ref.get().then(async function(snapshots) {
-                var vendor = snapshots.docs[0].data();
-
+            $.get("{{ route('stores.get-vendor', ':id') }}".replace(':id', id), function(vendor) {
 
                 $(".vendor_name").val(vendor.title);
 
-                $(".vendor_address").val(vendor.location);
+
+                $(".vendor_address").val(vendor.location ?? '');
                 if (vendor.adminCommission) {
                     $("#commission_type").val(vendor.adminCommission.type);
                     $(".commission_fix").val(vendor.adminCommission.commission);
@@ -1307,24 +1307,7 @@
                         selected_category.push(catId);
                     });
                 }
-                await database.collection('vendor_categories').where('publish', '==', true).where('section_id', '==', vendor.section_id).get().then(async function(snapshots) {
-                    if ($("#vendor_cuisines").data('chosen')) {
-                        $('#vendor_cuisines').chosen('destroy');
-                    }
-                    snapshots.docs.forEach((listval) => {
-                        var data = listval.data();
-                        var selected = '';
-                        if ($.inArray(data.id, selected_category) !== -1) {
-                            var selected = 'selected="selected"';
-                        }
-                        var option = '<option value="' + data.id + '" ' + selected + '>' + data.title + '</option>';
-                        $('#vendor_cuisines').append(option);
-
-                    })
-                    $("#vendor_cuisines").show().chosen({
-                        "placeholder_text": "{{ trans('lang.select_cuisines') }}"
-                    });
-                });
+                $("#vendor_cuisines").val(selected_category).trigger('chosen:updated');
                 if (vendor.hasOwnProperty('phonenumber')) {
                     if (vendor.phonenumber.includes('+')) {
                         $(".vendor_phone").val('+' + EditPhoneNumber(vendor.phonenumber.slice(1)));
@@ -1364,7 +1347,7 @@
                     $('#enable_self_delivery').prop('checked', true);
                 }
                 jQuery("#data-table_processing").hide();
-            })
+            });
 
             async function getRestaurantStory(vendorId) {
                 await database.collection('story').where('vendorID', '==', vendorId).get().then(async function(snapshots) {
@@ -1654,122 +1637,72 @@
                     window.scrollTo(0, 0);
                     jQuery("#data-table_processing").hide();
 
-                } else {
+                                } else {
                     jQuery("#data-table_processing").show();
+                    var formData = new FormData();
+                    formData.append("_token", "{{ csrf_token() }}");
+                    formData.append("title", vendorname);
+                    formData.append("description", description);
+                    formData.append("latitude", latitude);
+                    formData.append("longitude", longitude);
+                    formData.append("location", address);
+                    formData.append("categoryID", cuisines);
+                    formData.append("phonenumber", phonenumber);
+                    formData.append("categoryTitle", categoryTitle);
+                    formData.append("filters", JSON.stringify(filters_new));
+                    formData.append("enabledDiveInFuture", enabledDiveInFuture);
+                    formData.append("specialDiscountEnable", enabledSpecialOffer);
+                    formData.append("vendorCost", vendorCost);
+                    formData.append("openDineTime", openDineTime);
+                    formData.append("closeDineTime", closeDineTime);
+                    formData.append("workingHours", JSON.stringify(workingHours));
+                    formData.append("specialDiscount", JSON.stringify(specialDiscount));
+                    formData.append("adminCommission", adminCommission);
+                    formData.append("isSelfDelivery", enable_self_delivery);
+                    formData.append("zoneId", zoneId);
+                    formData.append("section_id", section_id);
+                    formData.append("delivery_charges_per_km", delivery_charges_per_km);
+                    formData.append("minimum_delivery_charges", minimum_delivery_charges);
+                    formData.append("minimum_delivery_charges_within_km", minimum_delivery_charges_within_km);
 
-                    coordinates = new kweekDb.GeoPoint(latitude, longitude);
-                    await storeImageData().then(async (IMG) => {
-                        await storeGalleryImageData().then(async (GalleryIMG) => {
-                            await storeMenuImageData().then(async (MenuIMG) => {
-                                geoQuery.collection('vendors').doc(id).update({
+                    if (typeof change_expiry_date !== "undefined" && change_expiry_date != null) formData.append("subscriptionExpiryDate", change_expiry_date);
 
-                                    'title': vendorname,
-                                    'description': description,
-                                    'latitude': latitude,
-                                    'longitude': longitude,
-                                    'location': address,
-                                    'photo': (Array.isArray(GalleryIMG) && GalleryIMG.length > 0) ? GalleryIMG[0] : null,
-                                    'photos': GalleryIMG,
-                                    'categoryID': cuisines,
-                                    'phonenumber': phonenumber,
-                                    'categoryTitle': categoryTitle,
-                                    'coordinates': coordinates,
-                                    'filters': filters_new,
-                                    'enabledDiveInFuture': enabledDiveInFuture,
-                                    'specialDiscountEnable': enabledSpecialOffer,
-                                    'vendorMenuPhotos': MenuIMG,
-                                    'vendorCost': vendorCost,
-                                    'openDineTime': openDineTime,
-                                    'closeDineTime': closeDineTime,
-                                    'specialDiscount': specialDiscount,
-                                    'workingHours': workingHours,
-                                    'adminCommission': adminCommission,
-                                    'isSelfDelivery': enable_self_delivery,
-                                    'zoneId': zoneId,
+                    if (document.getElementById("vendor_image") && document.getElementById("vendor_image").files[0]) formData.append("photo", document.getElementById("vendor_image").files[0]);
+                    if (document.getElementById("owner_image") && document.getElementById("owner_image").files[0]) formData.append("authorProfilePic", document.getElementById("owner_image").files[0]);
+                    if (document.getElementById("story_thumbnail") && document.getElementById("story_thumbnail").files[0]) formData.append("storyThumbnail", document.getElementById("story_thumbnail").files[0]);
 
-                                }).then(function(result) {
-                                    if (story_vedios.length > 0 || story_thumbnail != '') {
-                                        if (story_vedios.length > 0 && story_thumbnail == '') {
+                    if(document.getElementById("gallery_image")) {
+                        var files_gallery = document.getElementById("gallery_image").files;
+                        for(var i = 0; i < files_gallery.length; i++) { formData.append("photos[]", files_gallery[i]); }
+                    }
 
-                                            $(".error_top").show();
-                                            $(".error_top").html("");
-                                            $(".error_top").append("<p>{{ trans('lang.story_error') }}</p>");
-                                            window.scrollTo(0, 0);
-                                            jQuery("#data-table_processing").hide();
-                                            return false;
-                                        } else if (story_thumbnail && story_vedios.length == 0) {
+                    if(document.getElementById("vendor_menu_photos")) {
+                        var files_menu = document.getElementById("vendor_menu_photos").files;
+                        for(var i = 0; i < files_menu.length; i++) { formData.append("vendorMenuPhotos[]", files_menu[i]); }
+                    }
 
-                                            $(".error_top").show();
-                                            $(".error_top").html("");
-                                            $(".error_top").append("<p>{{ trans('lang.story_error') }}</p>");
-                                            window.scrollTo(0, 0);
-                                            jQuery("#data-table_processing").hide();
-                                            return false;
-                                        } else {
-                                            database.collection('story').doc(id).set({
-                                                    'createdAt': new Date(),
-                                                    'sectionID': section_id,
-                                                    'vendorID': id,
-                                                    'videoThumbnail': IMG.storyThumbnailImage,
-                                                    'videoUrl': story_vedios,
-                                                })
-                                                .then(function(result) {
-                                                    jQuery("#data-table_processing").hide();
-                                                    if (deliveryChargeFlag) {
+                    if(document.getElementById("story_video")) {
+                        var files_video = document.getElementById("story_video").files;
+                        for(var i = 0; i < files_video.length; i++) { formData.append("storyVideo[]", files_video[i]); }
+                    }
 
-                                                        geoQuery.collection('vendors').doc(id).update({
-                                                            'DeliveryCharge': deliveryCharge
-                                                        }).then(function(result) {
-
-                                                            window.location.href = '{{ route('stores') }}';
-                                                        });
-                                                    } else {
-
-                                                        window.location.href = '{{ route('stores') }}';
-                                                    }
-
-                                                });
-                                        }
-
-                                    } else {
-                                        jQuery("#data-table_processing").hide();
-                                        if (deliveryChargeFlag) {
-
-                                            geoQuery.collection('vendors').doc(id).update({
-                                                'DeliveryCharge': deliveryCharge
-                                            }).then(function(result) {
-
-                                                window.location.href = '{{ route('stores') }}';
-                                            });
-                                        } else {
-
-                                            window.location.href = '{{ route('stores') }}';
-                                        }
-                                    }
-
-
-
-                                });
-                            }).catch(err => {
-                                jQuery("#data-table_processing").hide();
-                                $(".error_top").show();
-                                $(".error_top").html("");
-                                $(".error_top").append("<p>" + err + "</p>");
-                                window.scrollTo(0, 0);
-                            });
-                        }).catch(err => {
+                    $.ajax({
+                        type: "POST",
+                        url: "/stores/update/" + id,
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (data) {
+                            jQuery("#data-table_processing").hide();
+                            window.location.href = "{{ route('stores') }}";
+                        },
+                        error: function (xhr) {
                             jQuery("#data-table_processing").hide();
                             $(".error_top").show();
                             $(".error_top").html("");
-                            $(".error_top").append("<p>" + err + "</p>");
+                            $(".error_top").append("<p>" + (xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText) + "</p>");
                             window.scrollTo(0, 0);
-                        });
-                    }).catch(err => {
-                        jQuery("#data-table_processing").hide();
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + err + "</p>");
-                        window.scrollTo(0, 0);
+                        }
                     });
                 }
             })
