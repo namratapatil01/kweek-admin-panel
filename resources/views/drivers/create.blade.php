@@ -82,18 +82,14 @@ foreach ($countries as $keycountry => $valuecountry) {
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_latitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" step="any" class="form-control user_latitude"
-                                        onkeypress="return chkAlphabets3(event,'error2')">
-                                    <div id="error2" class="err"></div>
+                                    <input type="text" inputmode="decimal" class="form-control user_latitude">
                                     <div class="form-text text-muted">{{trans('lang.user_latitude_help')}}</div>
                                 </div>
                             </div>
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_longitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" step="any" class="form-control user_longitude"
-                                        onkeypress="return chkAlphabets3(event,'error3')">
-                                    <div id="error3" class="err"></div>
+                                    <input type="text" inputmode="decimal" class="form-control user_longitude">
                                     <div class="form-text text-muted">{{trans('lang.user_longitude_help')}}</div>
                                 </div>
                             </div>
@@ -442,8 +438,8 @@ foreach ($countries as $keycountry => $valuecountry) {
         var active = $(".user_active").is(":checked");
         var zoneId = $('#zone option:selected').val();
         
-        var latitude = parseFloat($(".user_latitude").val());
-        var longitude = parseFloat($(".user_longitude").val());
+        var latitude = parseCoordinate($(".user_latitude").val());
+        var longitude = parseCoordinate($(".user_longitude").val());
         var location = { 'latitude': latitude, 'longitude': longitude };
         
         var vehicleSectionId = $('#vehicle_section_id').val() || section_id;
@@ -635,15 +631,17 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     window.handleFileSelect = handleFileSelect;
     
-    function chkAlphabets3(event, msg) {
-        if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
-            document.getElementById(msg).innerHTML = "Accept only Number and Dot(.)";
-            return false;
-        } else {
-            document.getElementById(msg).innerHTML = "";
-            return true;
+    function parseCoordinate(value) {
+        if (value === null || value === undefined) {
+            return NaN;
         }
+        var cleaned = String(value).trim().replace(',', '.');
+        if (cleaned === '') {
+            return NaN;
+        }
+        return parseFloat(cleaned);
     }
+
     async function storeImageData() {
         var newPhoto = [];
         newPhoto['profile'] = '';

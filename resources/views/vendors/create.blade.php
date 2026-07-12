@@ -201,6 +201,25 @@ foreach ($countries as $keycountry => $valuecountry) {
     
 </div>
 
+<style>
+    #phone-box .select2-container {
+        position: absolute !important;
+        left: 0;
+        top: 0;
+        z-index: 2;
+        width: 120px !important;
+    }
+    #phone-box .select2-selection__clear {
+        display: none !important;
+    }
+    #phone-box .form-control.user_phone {
+        padding-left: 125px;
+        width: 100%;
+    }
+    .error_top {
+        display: none;
+    }
+</style>
 
 @endsection
 
@@ -208,9 +227,14 @@ foreach ($countries as $keycountry => $valuecountry) {
 <script type="text/javascript">
     var section_id = getCookie('section_id') || '';
     var ownerphoto = '';
-    var ownerFileName = '';
     var businessModelData = { subscription_model: false };
-    var newcountriesjs = JSON.parse(@json($newcountriesjs));
+    var hasSubscriptionPlans = false;
+    var newcountriesjs = @json($newcountriesjs);
+
+    function showError(msg) {
+        $(".error_top").show().html("<p>" + msg + "</p>");
+        window.scrollTo(0, 0);
+    }
 
     window.chkAlphabetsLower = window.chkAlphabetsLower || function (event, msg) {
         var char = event.which || event.keyCode;
@@ -239,33 +263,51 @@ foreach ($countries as $keycountry => $valuecountry) {
     }
     window.handleFileSelectowner = handleFileSelectowner;
 
-    async function storeImageData() {
-        return { ownerImage: ownerphoto || '' };
-    }
-
     function formatState(state) {
         if (!state.id) return state.text;
+        var phoneCode = String(state.id);
+        var code = (newcountriesjs[phoneCode] || '').toLowerCase();
         var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
-        return $('<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>');
+        var label = state.text || ('+' + phoneCode);
+        if (!code) {
+            return $('<span>' + label + '</span>');
+        }
+        return $('<span class="phone-country-prefix"><img src="' + baseUrl + '/' + code + '.svg" class="img-flag" alt="" /><span>' + label + '</span></span>');
     }
+
     function formatState2(state) {
         if (!state.id) return state.text;
+        var phoneCode = String(state.id);
+        var code = (newcountriesjs[phoneCode] || '').toLowerCase();
         var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
-        var $state = $('<span><img class="img-flag" /><span></span></span>');
-        $state.find('span').text(state.text);
-        $state.find('img').attr('src', baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg');
-        return $state;
+        if (!code) {
+            return $('<span class="phone-dial-code">+' + phoneCode + '</span>');
+        }
+        return $('<span class="phone-country-prefix"><img src="' + baseUrl + '/' + code + '.svg" class="img-flag" alt="" /><span class="phone-dial-code">+' + phoneCode + '</span></span>');
     }
 
     $(document).ready(function () {
+        jQuery("#country_selector").select2({
+            templateResult: formatState,
+            templateSelection: formatState2,
+            placeholder: 'Select Country',
+            minimumResultsForSearch: 6,
+            width: '120px',
+            dropdownParent: $('#phone-box')
+        });
+
         $.get("{{ route('vendors.meta') }}", function (meta) {
             businessModelData.subscription_model = meta.subscription_model;
             if (meta.subscription_model) {
                 $(".subscription-plans-wrapper").removeClass('d-none');
                 $.get("{{ route('vendors.subscription-plans') }}", { section_id: section_id }, function (res) {
+                    hasSubscriptionPlans = (res.plans || []).length > 0;
                     (res.plans || []).forEach(function (plan) {
                         $('#subscription_plan').append($('<option></option>').attr('value', plan.id).text(plan.name));
                     });
+                    if (!hasSubscriptionPlans) {
+                        $(".subscription-plans-wrapper").addClass('d-none');
+                    }
                 });
             }
             if (meta.defaultCountryCode) {
@@ -274,115 +316,111 @@ foreach ($countries as $keycountry => $valuecountry) {
                     return $(this).val() === defaultPhoneCode;
                 });
                 if ($option.length) {
-                    $("#country_selector").val(defaultPhoneCode).trigger('change');
+                    $("#country_selector").val(defaultPhoneCode).trigger('change.select2');
                 }
             }
         });
 
-        jQuery("#country_selector").select2({
-            templateResult: formatState,
-            templateSelection: formatState2,
-            placeholder: 'Select Country',
-            allowClear: true
-        });
-    });
+        $(".save-form-btn").click(async function () {
+            $(".error_top").hide();
 
-    $(".save-form-btn").click(async function () {
-        $(".error_top").hide();
-        var userFirstName = $(".user_first_name").val();
-        var userLastName = $(".user_last_name").val();
-        var email = $(".user_email").val();
-        var password = $(".user_password").val();
-        var userPhone = $(".user_phone").val();
-        var country_code = '+' + jQuery("#country_selector").val();
-        var ccode = jQuery("#country_selector").val();
-        var vendor_active = $("#is_active").is(':checked');
-        var subscriptionPlanId = $('#subscription_plan').val();
-        var user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('vendor_' + Date.now());
+            var userFirstName = $(".user_first_name").val().trim();
+            var userLastName = $(".user_last_name").val().trim();
+            var email = $(".user_email").val().trim();
+            var password = $(".user_password").val();
+            var userPhone = $(".user_phone").val().trim();
+            var ccode = jQuery("#country_selector").val();
+            var country_code = ccode ? ('+' + ccode) : '';
+            var vendor_active = $("#is_active").is(':checked');
+            var subscriptionPlanId = $('#subscription_plan').val();
+            var user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('vendor_' + Date.now());
 
-        if (!userFirstName) {
-            $(".error_top").show().html("<p>{{ trans('lang.enter_owners_name_error') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!userLastName) {
-            $(".error_top").show().html("<p>{{ trans('lang.enter_owners_lastname_error') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!email) {
-            $(".error_top").show().html("<p>{{ trans('lang.enter_owners_email') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!password) {
-            $(".error_top").show().html("<p>{{ trans('lang.enter_owners_password_error') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!ccode) {
-            $(".error_top").show().html("<p>{{ trans('lang.select_country_code') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!userPhone) {
-            $(".error_top").show().html("<p>{{ trans('lang.enter_owners_phone') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-        if (!subscriptionPlanId && businessModelData.subscription_model) {
-            $(".error_top").show().html("<p>{{ trans('lang.select_subscription_plan') }}</p>");
-            return window.scrollTo(0, 0);
-        }
-
-        jQuery("#data-table_processing").show();
-        var subscriptionData = null;
-        var subscriptionExpiryDate = null;
-
-        try {
-            if (subscriptionPlanId) {
-                var planRes = await $.get("{{ route('vendors.subscription-plan', ':id') }}".replace(':id', subscriptionPlanId));
-                subscriptionData = planRes.data;
-                subscriptionExpiryDate = planRes.data.expiryDate;
+            if (!userFirstName) {
+                return showError("{{ trans('lang.enter_owners_name_error') }}");
+            }
+            if (!userLastName) {
+                return showError("{{ trans('lang.enter_owners_lastname_error') }}");
+            }
+            if (!email) {
+                return showError("{{ trans('lang.enter_owners_email') }}");
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return showError("{{ trans('validation.email', ['attribute' => trans('lang.email')]) }}");
+            }
+            if (!password) {
+                return showError("{{ trans('lang.enter_owners_password_error') }}");
+            }
+            if (password.length < 6) {
+                return showError("Password must be at least 6 characters.");
+            }
+            if (!ccode) {
+                return showError("{{ trans('lang.select_country_code') }}");
+            }
+            if (!userPhone) {
+                return showError("{{ trans('lang.enter_owners_phone') }}");
+            }
+            if (!subscriptionPlanId && businessModelData.subscription_model && hasSubscriptionPlans) {
+                return showError("{{ trans('lang.select_subscription_plan') }}");
             }
 
-            var IMG = await storeImageData();
-            var userBankDetails = {
-                bankName: $("#bankName").val(),
-                branchName: $("#branchName").val(),
-                holderName: $("#holderName").val(),
-                accountNumber: $("#accountNumber").val(),
-                otherDetails: $("#otherDetails").val()
-            };
+            jQuery("#data-table_processing").show();
+            var subscriptionData = null;
+            var subscriptionExpiryDate = null;
 
-            $.ajax({
-                url: "{{ route('vendors.store-vendor') }}",
-                type: 'POST',
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: user_id,
-                    firstName: userFirstName,
-                    lastName: userLastName,
-                    email: email,
-                    password: password,
-                    phoneNumber: country_code + userPhone,
-                    active: vendor_active,
-                    profilePictureURL: IMG.ownerImage,
-                    userBankDetails: userBankDetails,
-                    sectionId: section_id,
-                    subscription_plan: subscriptionData,
-                    subscriptionPlanId: subscriptionPlanId || null,
-                    subscriptionExpiryDate: subscriptionExpiryDate
-                },
-                success: function () {
-                    window.location.href = '{{ route('vendors') }}';
-                },
-                error: function (xhr) {
-                    jQuery("#data-table_processing").hide();
-                    var msg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Save failed';
-                    $(".error_top").show().html('<p>' + msg + '</p>');
-                    window.scrollTo(0, 0);
+            try {
+                if (subscriptionPlanId) {
+                    var planRes = await $.get("{{ route('vendors.subscription-plan', ':id') }}".replace(':id', subscriptionPlanId));
+                    subscriptionData = planRes.data;
+                    subscriptionExpiryDate = planRes.data.expiryDate;
                 }
-            });
-        } catch (err) {
-            jQuery("#data-table_processing").hide();
-            $(".error_top").show().html('<p>' + err + '</p>');
-            window.scrollTo(0, 0);
-        }
+
+                var userBankDetails = {
+                    bankName: $("#bankName").val(),
+                    branchName: $("#branchName").val(),
+                    holderName: $("#holderName").val(),
+                    accountNumber: $("#accountNumber").val(),
+                    otherDetails: $("#otherDetails").val()
+                };
+
+                $.ajax({
+                    url: "{{ route('vendors.store-vendor') }}",
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        id: user_id,
+                        firstName: userFirstName,
+                        lastName: userLastName,
+                        email: email,
+                        password: password,
+                        phoneNumber: country_code + userPhone,
+                        active: vendor_active,
+                        profilePictureURL: ownerphoto || '',
+                        userBankDetails: userBankDetails,
+                        sectionId: section_id,
+                        subscription_plan: subscriptionData,
+                        subscriptionPlanId: subscriptionPlanId || null,
+                        subscriptionExpiryDate: subscriptionExpiryDate
+                    },
+                    success: function (response) {
+                        jQuery("#data-table_processing").hide();
+                        if (response && response.success) {
+                            window.location.href = "{{ route('vendors') }}";
+                            return;
+                        }
+                        showError((response && response.error) ? response.error : 'Save failed');
+                    },
+                    error: function (xhr) {
+                        jQuery("#data-table_processing").hide();
+                        var msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Save failed';
+                        showError(msg);
+                    }
+                });
+            } catch (err) {
+                jQuery("#data-table_processing").hide();
+                showError(String(err));
+            }
+        });
     });
 </script>
 @endsection

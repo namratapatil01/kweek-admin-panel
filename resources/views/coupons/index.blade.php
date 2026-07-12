@@ -317,4 +317,35 @@ $(document).ready(function () {
     });
 });
 </script>
+
+<style>
+/* Toggle Switch */
+.coupon-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    margin: 0;
+}
+.coupon-toggle-switch input { opacity: 0; width: 0; height: 0; }
+.coupon-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    border-radius: 26px;
+    transition: .3s;
+}
+.coupon-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px; width: 20px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .3s;
+}
+.coupon-toggle-switch input:checked + .coupon-slider { background-color: #28a745; }
+.coupon-toggle-switch input:checked + .coupon-slider:before { transform: translateX(22px); }
+</style>
 @endsection

@@ -271,11 +271,16 @@ class SubscriptionPlanController extends Controller
 
             $query = SubscriptionHistory::query()
                 ->select('subscription_histories.*', 'app_users.firstName', 'app_users.lastName')
-                ->leftJoin('app_users', 'app_users.id', '=', 'subscription_histories.user_id')
-                ->leftJoin('vendors', 'vendors.id', '=', 'app_users.vendorID');
+                ->leftJoin('app_users', function ($join) {
+                    $join->on('app_users.id', '=', 'subscription_histories.user_id')
+                        ->orOn('app_users.id', '=', DB::raw("JSON_UNQUOTE(JSON_EXTRACT(subscription_histories.payload, '$.user_id'))"));
+                });
 
             if ($id) {
-                $query->where('subscription_histories.user_id', $id);
+                $query->where(function ($q) use ($id) {
+                    $q->where('subscription_histories.user_id', $id)
+                      ->orWhere('payload->user_id', $id);
+                });
             }
 
             if ($sectionId) {
@@ -378,26 +383,18 @@ class SubscriptionPlanController extends Controller
 
                 // plan expires at
                 $expiryDate = $payload['expiry_date'] ?? null;
-                if ($expiryDate && $expiryDate !== '-1') {
-                    try {
-                        $dt = \Carbon\Carbon::parse($expiryDate);
-                        $row[] = '<span class="dt-time">' . $dt->format('D M d Y g:i:s A') . '</span>';
-                    } catch (\Exception $e) {
-                        $row[] = e($expiryDate);
-                    }
+                $expiryDt = $this->parseHistoryDate($expiryDate);
+                if ($expiryDt) {
+                    $row[] = '<span class="dt-time">' . $expiryDt->format('D M d Y g:i:s A') . '</span>';
                 } else {
                     $row[] = trans('lang.unlimited');
                 }
 
                 // purchase date
                 $createdAt = $payload['data_created_at'] ?? $payload['createdAt'] ?? $history->created_at;
-                if ($createdAt && $createdAt !== '-1') {
-                    try {
-                        $dt = \Carbon\Carbon::parse($createdAt);
-                        $row[] = '<span class="dt-time">' . $dt->format('D M d Y g:i:s A') . '</span>';
-                    } catch (\Exception $e) {
-                        $row[] = e($createdAt);
-                    }
+                $purchaseDt = $this->parseHistoryDate($createdAt);
+                if ($purchaseDt) {
+                    $row[] = '<span class="dt-time">' . $purchaseDt->format('D M d Y g:i:s A') . '</span>';
                 } else {
                     $row[] = trans('lang.unlimited');
                 }
@@ -413,7 +410,7 @@ class SubscriptionPlanController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            Log::error('SubscriptionPlanController@historyDatatable: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Log::error('SubscriptionPlanController@historyDatatable: ' . $e->getMessage());
             return response()->json([
                 'draw' => intval($request->input('draw', 1)),
                 'recordsTotal' => 0,
@@ -421,6 +418,27 @@ class SubscriptionPlanController extends Controller
                 'data' => [],
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    private function parseHistoryDate($value): ?\Carbon\Carbon
+    {
+        if ($value === null || $value === '' || $value === '-1') {
+            return null;
+        }
+
+        if (is_array($value)) {
+            $seconds = $value['seconds'] ?? $value['_seconds'] ?? null;
+            if ($seconds !== null) {
+                return \Carbon\Carbon::createFromTimestamp((int) $seconds);
+            }
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value);
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 

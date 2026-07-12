@@ -91,18 +91,14 @@
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_latitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" step="any" class="form-control user_latitude"
-                                           onkeypress="return chkAlphabets3(event,'error2')">
-                                    <div id="error2" class="err"></div>
+                                    <input type="text" inputmode="decimal" class="form-control user_latitude">
                                     <div class="form-text text-muted">{{trans('lang.user_latitude_help')}}</div>
                                 </div>
                             </div>
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_longitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" step="any" class="form-control user_longitude"
-                                           onkeypress="return chkAlphabets3(event,'error3')">
-                                    <div id="error3" class="err"></div>
+                                    <input type="text" inputmode="decimal" class="form-control user_longitude">
                                     <div class="form-text text-muted">{{trans('lang.user_longitude_help')}}</div>
                                 </div>
                             </div>
@@ -507,9 +503,11 @@
                 if (user.hasOwnProperty('vehicleType')) {
                     $('.vehicle_type').val(user.vehicleType).trigger('change');
                 }
-                if (user.hasOwnProperty('location')) {
-                    $(".user_latitude").val(user.location.latitude);
-                    $(".user_longitude").val(user.location.longitude);
+                if (user.location || user.latitude != null || user.longitude != null) {
+                    var lat = (user.location && user.location.latitude != null) ? user.location.latitude : user.latitude;
+                    var lng = (user.location && user.location.longitude != null) ? user.location.longitude : user.longitude;
+                    $(".user_latitude").val(lat != null ? lat : '');
+                    $(".user_longitude").val(lng != null ? lng : '');
                 }
                 oldProfileFile = user.profilePictureURL;
                 
@@ -566,8 +564,8 @@
                 var active = $(".user_active").is(":checked");
                 var zoneId = $('#zone option:selected').val();
                 
-                var latitude = parseFloat($(".user_latitude").val());
-                var longitude = parseFloat($(".user_longitude").val());
+                var latitude = parseCoordinate($(".user_latitude").val());
+                var longitude = parseCoordinate($(".user_longitude").val());
                 var location = { 'latitude': latitude, 'longitude': longitude };
                 var vehicleSectionId = $('#vehicle_section_id').val();
 
@@ -772,14 +770,15 @@
             return newPhoto;
         }
 
-        function chkAlphabets3(event, msg) {
-            if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
-                document.getElementById(msg).innerHTML = "Accept only Number and Dot(.)";
-                return false;
-            } else {
-                document.getElementById(msg).innerHTML = "";
-                return true;
+        function parseCoordinate(value) {
+            if (value === null || value === undefined) {
+                return NaN;
             }
+            var cleaned = String(value).trim().replace(',', '.');
+            if (cleaned === '') {
+                return NaN;
+            }
+            return parseFloat(cleaned);
         }
 
     </script>

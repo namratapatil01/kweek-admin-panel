@@ -80,7 +80,7 @@
 @section('scripts')
 <script type="text/javascript">
 $(function () {
-    var table = $('#example24').DataTable({
+    var table = $('#documentsTable').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
@@ -94,32 +94,27 @@ $(function () {
                 if (json.recordsTotal !== undefined) {
                     $('.total_count').text(json.recordsTotal);
                 }
-                setTimeout(function(){ $('[data-toggle="tooltip"]').tooltip(); }, 100);
-                
-                return (json.data || []).map(function(row) {
+                setTimeout(function () { $('[data-toggle="tooltip"]').tooltip(); }, 100);
+
+                return (json.data || []).map(function (row) {
                     var idMatch = row[0].match(/data-id="([^"]+)"/);
                     var id = idMatch ? idMatch[1] : '';
 
-                    var typeStr = String(row[3]);
-                    if (typeStr.toLowerCase() === 'driver') typeStr = 'Individual Driver';
-                    else if (typeStr.toLowerCase() === 'vendor') typeStr = 'Vendor';
-                    else if (typeStr.toLowerCase() === 'owner') typeStr = 'Owner';
+                    var typeStr = String(row[3] || '');
+                    if (typeStr.toLowerCase() === 'driver') typeStr = '{{ trans("lang.document_driver") }}';
+                    else if (typeStr.toLowerCase() === 'vendor') typeStr = '{{ trans("lang.document_vendor") }}';
+                    else if (typeStr.toLowerCase() === 'owner') typeStr = '{{ trans("lang.document_owner") }}';
 
-                    var isEnabled = row[4].indexOf('badge-success') !== -1;
-                    
-                    var checkboxHtml = '<input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label for="is_open_' + id + '"></label>';
-
-                    var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
-                    var titleLinkHtml = '<a href="' + routeEdit + '" class="document-title-link">' + row[2] + '</a>';
-
+                    var isEnabled = String(row[4] || '').indexOf('badge-success') !== -1;
                     var toggleHtml = '<label class="switch"><input type="checkbox" class="doc-enable-toggle" data-id="' + id + '" ' + (isEnabled ? 'checked' : '') + '><span class="slider round"></span></label>';
 
-                    var actionsHtml = '<span class="action-btn-container">' +
-                        '<a href="' + routeEdit + '" class="btn-circle-edit mr-2" data-toggle="tooltip" title="{{ trans("lang.edit") }}"><i class="mdi mdi-lead-pencil"></i></a>' +
-                        '<a href="javascript:void(0)" class="delete-row btn-circle-delete" data-id="' + id + '" data-toggle="tooltip" title="{{ trans("lang.delete") }}"><i class="mdi mdi-delete"></i></a>' +
-                    '</span>';
+                    var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
+                    var actionsHtml = '<span class="action-btn">'
+                        + '<a href="' + routeEdit + '" data-toggle="tooltip" title="{{ trans("lang.edit") }}"><i class="mdi mdi-lead-pencil"></i></a>'
+                        + '<a href="javascript:void(0)" class="delete-row" data-id="' + id + '" data-toggle="tooltip" title="{{ trans("lang.delete") }}"><i class="mdi mdi-delete"></i></a>'
+                        + '</span>';
 
-                    return [ checkboxHtml, titleLinkHtml, typeStr, toggleHtml, actionsHtml ];
+                    return [row[0], row[2], typeStr, toggleHtml, actionsHtml];
                 });
             }
         },
@@ -135,40 +130,8 @@ $(function () {
         }
     });
 
-    $("#is_active").click(function () {
-        $("#example24 .is_open").prop('checked', $(this).prop('checked'));
-    });
-
-    $("#deleteAll").click(function () {
-        if ($('#example24 .is_open:checked').length) {
-            if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
-                var ids = [];
-                $('#example24 .is_open:checked').each(function () {
-                    ids.push($(this).attr('dataId'));
-                });
-                
-                jQuery("#data-table_processing").show();
-                $.ajax({
-                    url: '{{ route("documents.bulk-destroy") }}',
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        ids: ids
-                    },
-                    success: function () {
-                        jQuery("#data-table_processing").hide();
-                        $("#is_active").prop('checked', false);
-                        table.ajax.reload();
-                    },
-                    error: function (xhr) {
-                        jQuery("#data-table_processing").hide();
-                        alert(xhr.responseJSON?.error || 'Bulk delete failed');
-                    }
-                });
-            }
-        } else {
-            alert("{{ trans('lang.select_to_delete_alert') }}");
-        }
+    $('#is_active').on('click', function () {
+        $('#documentsTable .row-select').prop('checked', $(this).prop('checked'));
     });
 
     $(document).on('click', '.delete-row', function () {
@@ -187,7 +150,7 @@ $(function () {
     $(document).on('change', '.doc-enable-toggle', function () {
         var id = $(this).data('id');
         var isChecked = $(this).is(':checked') ? 1 : 0;
-        
+
         $.ajax({
             url: '{{ url("documents/status") }}/' + id,
             type: 'POST',
@@ -195,10 +158,7 @@ $(function () {
                 _token: '{{ csrf_token() }}',
                 enable: isChecked
             },
-            success: function(res) {
-                // Done
-            },
-            error: function() {
+            error: function () {
                 alert('Failed to update status');
                 table.ajax.reload();
             }
@@ -208,136 +168,13 @@ $(function () {
 </script>
 
 <style>
-    .btn-create-document {
-        background-color: #000;
-        color: #fff;
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-weight: 600;
-        font-size: 13px;
-        display: inline-flex;
-        align-items: center;
-        transition: all 0.2s ease;
-    }
-    .btn-create-document:hover {
-        background-color: #2b354e;
-        color: #fff;
-        text-decoration: none;
-    }
-    .document-title-link {
-        font-weight: 600;
-        color: #000 !important;
-        text-decoration: underline !important;
-        font-size: 14px;
-    }
-    .document-title-link:hover {
-        color: #ff5e3a !important;
-    }
-
-    /* Custom Switch Toggle styling (Green/Red) */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 46px;
-        height: 24px;
-        margin-bottom: 0;
-        vertical-align: middle;
-    }
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #e53e3e;
-        transition: .4s;
-    }
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .3s;
-    }
-    input:checked + .slider {
-        background-color: #38a169;
-    }
-    input:checked + .slider:before {
-        transform: translateX(22px);
-    }
-    .slider.round {
-        border-radius: 24px;
-    }
-    .slider.round:before {
-        border-radius: 50%;
-    }
-
-    /* Actions styling */
-    .action-btn-container {
-        display: flex;
-        align-items: center;
-    }
-    .btn-circle-edit {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        border: 1px solid #5ac8fa !important;
-        color: #5ac8fa !important;
-        background-color: transparent !important;
-        transition: all 0.2s ease;
-    }
-    .btn-circle-edit:hover {
-        background-color: #5ac8fa !important;
-        color: #fff !important;
-        text-decoration: none;
-    }
-    .btn-circle-edit i {
-        font-size: 16px;
-    }
-    .btn-circle-delete {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        border: 1px solid #ff3b30 !important;
-        color: #ff3b30 !important;
-        background-color: transparent !important;
-        transition: all 0.2s ease;
-    }
-    .btn-circle-delete:hover {
-        background-color: #ff3b30 !important;
-        color: #fff !important;
-        text-decoration: none;
-    }
-    .btn-circle-delete i {
-        font-size: 16px;
-    }
-
-    /* Pagination controls */
-    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
-    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
-        width: auto !important;
-        padding: 5px 12px !important;
-        border-radius: 4px !important;
-    }
-
-    /* Table styling to align checkboxes and center elements */
-    #example24 td {
-        vertical-align: middle;
-    }
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #dc3545; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: #28a745; }
+input:checked + .slider:before { transform: translateX(20px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
 </style>
 @endsection

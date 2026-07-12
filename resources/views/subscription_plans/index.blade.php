@@ -214,11 +214,9 @@
 @section('scripts')
     <script type="text/javascript">
         var section_id = getCookie('section_id') || '';
-        var database = firebase.firestore();
-        var ref = database.collection('subscription_plans');
-
         var database = kweekDb();
-       
+        var placeholderImage = '';
+
         var user_permissions = '<?php echo @session('user_permissions'); ?>';
         user_permissions = Object.values(JSON.parse(user_permissions));
         var checkDeletePermission = false;
@@ -241,8 +239,6 @@
             placeholderImage = placeholderImageData.image;
         })
 
-        $(document).ready(async function () {
-
         function resolveImageUrl(url) {
             if (!url) {
                 return placeholderImage;
@@ -255,9 +251,8 @@
             }
             return url;
         }
-        
-        $(document).ready(async function() {
-            
+
+        $(document).ready(async function () {
             getOverviewSection(section_id);
 
             $(document.body).on('click', '.redirecttopage', function () {
@@ -391,66 +386,67 @@
                     table.search('').draw();
                 }
             }, 300));
-        });
-        $(document).on("click", "input[name='isActive']", async function (e) {
-            var ischeck = $(this).is(':checked');
-            var sectionId = $(this).attr('data-section');
-            var id = this.id;
 
-            $.ajax({
-                url: "{{ route('subscription-plans.store') }}",
-                type: 'POST',
-                data: {
-                    id: id,
-                    isEnable: ischeck,
-                    _token: '{{ csrf_token() }}'
+            $(document).on("click", "input[name='isActive']", async function (e) {
+                var ischeck = $(this).is(':checked');
+                var id = this.id;
+
+                $.ajax({
+                    url: "{{ route('subscription-plans.store') }}",
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        isEnable: ischeck,
+                        _token: '{{ csrf_token() }}'
+                    }
+                });
+            });
+
+            $(document).on("click", "a[name='plan-delete']", async function (e) {
+                var id = this.id;
+                $.ajax({
+                    url: "{{ route('subscription-plans.delete') }}",
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function () {
+                        window.location.reload();
+                    }
+                });
+            });
+
+            $("#is_active").click(function () {
+                $("#subscriptionPlansTable .is_open").prop('checked', $(this).prop('checked'));
+            });
+
+            $("#deleteAll").click(function () {
+                if ($('#subscriptionPlansTable .is_open:checked').length) {
+                    if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
+                        jQuery("#data-table_processing").show();
+                        var ids = [];
+                        $('#subscriptionPlansTable .is_open:checked').each(function () {
+                            ids.push($(this).attr('dataId'));
+                        });
+                        $.ajax({
+                            url: "{{ url('/subscription-plans/bulk-delete') }}",
+                            type: 'POST',
+                            data: {
+                                ids: ids,
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function () {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                } else {
+                    alert("{{ trans('lang.select_delete_alert') }}");
                 }
             });
         });
 
-        $(document).on("click", "a[name='plan-delete']", async function (e) {
-            var id = this.id;
-            $.ajax({
-                url: "{{ route('subscription-plans.delete') }}",
-                type: 'POST',
-                data: {
-                    id: id,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function () {
-                    window.location.reload();
-                }
-            });
-        });
-
-        $("#is_active").click(function () {
-            $("#subscriptionPlansTable .is_open").prop('checked', $(this).prop('checked'));
-        });
-
-        $("#deleteAll").click(function () {
-            if ($('#subscriptionPlansTable .is_open:checked').length) {
-                if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
-                    jQuery("#data-table_processing").show();
-                    var ids = [];
-                    $('#subscriptionPlansTable .is_open:checked').each(function () {
-                        ids.push($(this).attr('dataId'));
-                    });
-                    $.ajax({
-                        url: "{{ url('/subscription-plans/bulk-delete') }}",
-                        type: 'POST',
-                        data: {
-                            ids: ids,
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function () {
-                            window.location.reload();
-                        }
-                    });
-                }
-            } else {
-                alert("{{ trans('lang.select_delete_alert') }}");
-            }
-        });
         async function getTotalSubscriber(id) {
             var total = 0;
             await database.collection('users').where('subscriptionPlanId', '==', id).get()
