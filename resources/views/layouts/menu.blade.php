@@ -21,6 +21,7 @@ if (empty($service_type)) {
 }
 $section_id_cookie = (string) request()->cookie('section_id', '');
 $cabLiveMapPath = $section_id_cookie === '8' ? 'map/toda' : 'map/taxi';
+$parcelLiveMapPath = 'map/padala';
 @endphp
 
 
@@ -551,7 +552,7 @@ $cabLiveMapPath = $section_id_cookie === '8' ? 'map/toda' : 'map/taxi';
         )
 
         @if (in_array('parcel-service-god-eye', $role_has_permission))
-        <li><a class="waves-effect waves-dark" href="{!! url('map/parcel') !!}" aria-expanded="false">
+        <li><a class="waves-effect waves-dark" href="{!! url($parcelLiveMapPath) !!}" aria-expanded="false">
                 <i class="ri-taxi-wifi-fill"></i>
                 <span class="hide-menu">{{ trans('lang.live_tracking') }}</span>
             </a>

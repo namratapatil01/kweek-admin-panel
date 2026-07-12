@@ -262,7 +262,13 @@ Route::middleware(['permission:parcel-categories,parcel.categories.edit'])->grou
 });
 
 Route::middleware(['permission:parcel-weight,parcel.weight'])->group(function () {
-    Route::get('/parcel_weight', [App\Http\Controllers\ParcelController::class, 'parcelWeight'])->name('parcel_weight');
+    Route::get('/parcel_weight', [App\Http\Controllers\ParcelWeightController::class, 'legacyIndex'])->name('parcel_weight');
+    Route::get('/parcel_weight/data', [App\Http\Controllers\ParcelWeightController::class, 'records'])->name('parcel_weight.data');
+    Route::post('/parcel_weight/bulk-save', [App\Http\Controllers\ParcelWeightController::class, 'bulkSave'])->name('parcel_weight.bulk_save');
+});
+Route::middleware(['permission:parcel-weight,parcel.weight.edit'])->group(function () {
+    Route::post('/parcel_weight/save', [App\Http\Controllers\ParcelWeightController::class, 'saveRecord'])->name('parcel_weight.save');
+    Route::delete('/parcel_weight/{id}', [App\Http\Controllers\ParcelWeightController::class, 'deleteRecord'])->name('parcel_weight.delete');
 });
 
 Route::middleware(['permission:parcel-coupons,parcel.coupons'])->group(function () {
@@ -276,9 +282,9 @@ Route::middleware(['permission:parcel-coupons,parcel.coupons.create'])->group(fu
 });
 
 Route::middleware(['permission:parcel-orders,parcel.orders'])->group(function () {
-    Route::get('/parcel_orders', [App\Http\Controllers\ParcelController::class, 'parcelOrders'])->name('parcel_orders');
+    Route::get('/parcel_orders', [App\Http\Controllers\ParcelOrderController::class, 'index'])->name('parcel_orders');
 });
-Route::get('/parcel_orders/{id}', [App\Http\Controllers\ParcelController::class, 'parcelOrders'])->name('parcel_orders.driver');
+Route::get('/parcel_orders/{id}', [App\Http\Controllers\ParcelOrderController::class, 'index'])->name('parcel_orders.driver');
 Route::middleware(['permission:parcel-orders,parcel.orders.edit'])->group(function () {
     Route::get('/parcel_orders/edit/{id}', [App\Http\Controllers\ParcelController::class, 'parcelOrderEdit'])->name('parcel_orders.edit');
 });
@@ -390,6 +396,8 @@ Route::middleware(['permission:god-eye,map'])->group(function () {
     Route::get('/map/multivendor/data', [App\Http\Controllers\MapController::class, 'getMultivendorData'])->name('map.multivendor.data');
 });
 Route::middleware(['permission:parcel-service-god-eye,parcel-service-map'])->group(function () {
+    Route::get('/map/padala', [App\Http\Controllers\MapController::class, 'padala'])->name('map.padala');
+    Route::get('/map/padala/data', [App\Http\Controllers\MapController::class, 'getPadalaData'])->name('map.padala.data');
     Route::get('/map/parcel', [App\Http\Controllers\MapController::class, 'parcel'])->name('map.parcel');
 });
 Route::middleware(['permission:rental-plural-god-eye,rental-plural-map'])->group(function () {

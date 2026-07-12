@@ -39,7 +39,14 @@ class MapController extends Controller
 
     public function parcel()
     {
-        return view('map.parcel');
+        return redirect()->route('map.padala');
+    }
+
+    public function padala()
+    {
+        return view('map.padala', [
+            'sectionName' => (string) (DB::table('sections')->where('id', '6')->value('name') ?? 'Padala'),
+        ]);
     }
 
     public function rental()
@@ -118,6 +125,57 @@ class MapController extends Controller
     public function getTodaData()
     {
         return $this->buildCabMapData('8');
+    }
+
+    public function getPadalaData()
+    {
+        return $this->buildParcelMapData('6');
+    }
+
+    protected function buildParcelMapData(string $sectionId)
+    {
+        $driversQuery = DB::table('app_users')
+            ->where('role', 'driver')
+            ->where('serviceType', 'parcel_delivery');
+
+        $drivers = collect(
+            $this->applySectionFilter($driversQuery, $sectionId, true)
+                ->get()
+                ->map(fn ($driver) => $this->normalizeDriverForMap($driver))
+                ->all()
+        );
+
+        $ordersQuery = DB::table('parcel_orders')
+            ->whereIn('status', ['In Transit', 'in_transit', 'Order Shipped'])
+            ->orderByDesc('createdAt')
+            ->limit(200);
+
+        $orders = $this->applySectionFilter($ordersQuery, $sectionId)
+            ->get()
+            ->map(function ($order) {
+                $payload = $this->decodePayload($order->payload ?? null);
+                $driver = $this->extractRidePerson($order->driver ?? null, $payload['driver'] ?? null);
+                $author = $this->extractRidePerson($order->author ?? null, $payload['author'] ?? null);
+
+                return [
+                    'id' => $order->id,
+                    'status' => $order->status,
+                    'flag' => 'in_transit',
+                    'driver' => $driver,
+                    'author' => $author,
+                    'sender' => $payload['sender'] ?? null,
+                    'receiver' => $payload['receiver'] ?? null,
+                ];
+            })
+            ->values();
+
+        $drivers = $this->mergeTransitDrivers($drivers, $orders, 'driver')->values();
+
+        return response()->json([
+            'drivers' => $drivers,
+            'orders' => $orders,
+            'section' => $this->getSectionMeta($sectionId),
+        ]);
     }
 
     protected function buildCabMapData(string $sectionId)

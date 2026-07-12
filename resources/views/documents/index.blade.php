@@ -27,7 +27,7 @@
                 <i class="fa fa-folder-open-o" style="color: #4b5563;"></i>
             </span>
             <span class="section-header-title" style="font-size: 20px; font-weight: 600; color: #1a202c;">{{ trans('lang.document_plural') }}</span>
-            <span class="count-badge ml-2 total_count" style="background-color: #ff3b30; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 700;">0</span>
+            <span class="count-badge ml-2 total_count">0</span>
         </div>
 
         <div class="table-list">
@@ -47,14 +47,14 @@
                         </div>
                         <div class="card-body pt-0">
                             <div class="table-responsive">
-                                <table id="example24" class="table table-hover table-striped" cellspacing="0" width="100%">
+                                <table id="example24" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
                                     <thead>
                                         <tr>
                                             <th class="delete-all" style="width: 90px; vertical-align: middle;">
                                                 <div class="d-flex align-items-center">
                                                     <input type="checkbox" id="is_active" class="mr-2">
-                                                    <label for="is_active" class="mr-2" style="margin-bottom: 0;"></label>
-                                                    <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 600; font-size: 13px; text-decoration: none;">
+                                                    <label for="is_active" class="mr-2 doc-select-label"></label>
+                                                    <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center delete-all-link" href="javascript:void(0)">
                                                         <i class="fa fa-trash mr-1"></i> {{ trans('lang.all') }}
                                                     </a>
                                                 </div>
@@ -80,7 +80,7 @@
 @section('scripts')
 <script type="text/javascript">
 $(function () {
-    var table = $('#documentsTable').DataTable({
+    var table = $('#example24').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
@@ -99,6 +99,7 @@ $(function () {
                 return (json.data || []).map(function (row) {
                     var idMatch = row[0].match(/data-id="([^"]+)"/);
                     var id = idMatch ? idMatch[1] : '';
+                    var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
 
                     var typeStr = String(row[3] || '');
                     if (typeStr.toLowerCase() === 'driver') typeStr = '{{ trans("lang.document_driver") }}';
@@ -108,13 +109,20 @@ $(function () {
                     var isEnabled = String(row[4] || '').indexOf('badge-success') !== -1;
                     var toggleHtml = '<label class="switch"><input type="checkbox" class="doc-enable-toggle" data-id="' + id + '" ' + (isEnabled ? 'checked' : '') + '><span class="slider round"></span></label>';
 
-                    var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
+                    var titleHtml = id
+                        ? '<a href="' + routeEdit + '" class="document-title-link">' + row[2] + '</a>'
+                        : row[2];
+
                     var actionsHtml = '<span class="action-btn">'
                         + '<a href="' + routeEdit + '" data-toggle="tooltip" title="{{ trans("lang.edit") }}"><i class="mdi mdi-lead-pencil"></i></a>'
                         + '<a href="javascript:void(0)" class="delete-row" data-id="' + id + '" data-toggle="tooltip" title="{{ trans("lang.delete") }}"><i class="mdi mdi-delete"></i></a>'
                         + '</span>';
 
-                    return [row[0], row[2], typeStr, toggleHtml, actionsHtml];
+                    var checkboxHtml = id
+                        ? '<input type="checkbox" id="doc_select_' + id + '" class="row-select" data-id="' + id + '"><label class="mb-0" for="doc_select_' + id + '"></label>'
+                        : '';
+
+                    return [checkboxHtml, titleHtml, typeStr, toggleHtml, actionsHtml];
                 });
             }
         },
@@ -122,6 +130,9 @@ $(function () {
         columnDefs: [
             { orderable: false, targets: [0, 3, 4] }
         ],
+        createdRow: function (row) {
+            $('td:eq(0)', row).addClass('delete-all');
+        },
         pageLength: 10,
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",
@@ -131,7 +142,7 @@ $(function () {
     });
 
     $('#is_active').on('click', function () {
-        $('#documentsTable .row-select').prop('checked', $(this).prop('checked'));
+        $('#example24 .row-select').prop('checked', $(this).prop('checked'));
     });
 
     $(document).on('click', '.delete-row', function () {
@@ -164,17 +175,192 @@ $(function () {
             }
         });
     });
+
+    $('#deleteAll').on('click', function () {
+        var checkedIds = [];
+        $('#example24 .row-select:checked').each(function () {
+            var id = $(this).data('id');
+            if (id) {
+                checkedIds.push(id);
+            }
+        });
+
+        if (!checkedIds.length) {
+            alert("{{ trans('lang.select_delete_alert') }}");
+            return;
+        }
+
+        if (!confirm("{{ trans('lang.selected_delete_alert') }}")) {
+            return;
+        }
+
+        $.ajax({
+            url: '{{ route("documents.bulk-destroy") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                ids: checkedIds
+            },
+            success: function () {
+                table.ajax.reload();
+                $('#is_active').prop('checked', false);
+            },
+            error: function (xhr) {
+                alert(xhr.responseJSON?.error || 'Bulk delete failed');
+            }
+        });
+    });
 });
 </script>
 
 <style>
-.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.section-header-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2b354e;
+}
+.count-badge {
+    background-color: #ffe9e3;
+    color: #ff5e3a;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.card {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
+    border: 1px solid #eef2f6 !important;
+    background-color: #fff;
+}
+#example24 {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+#example24 thead th {
+    background-color: #fff !important;
+    border-bottom: 2px solid #f4f6f9 !important;
+    color: #4b5563 !important;
+    font-weight: 600 !important;
+    font-size: 14px;
+    padding: 12px 16px !important;
+    border-top: none !important;
+}
+#example24 tbody tr {
+    background-color: #fff !important;
+}
+#example24 tbody td {
+    padding: 16px !important;
+    vertical-align: middle !important;
+    border-top: 1px solid #f4f6f9 !important;
+    border-bottom: 1px solid #f4f6f9 !important;
+    font-size: 14px;
+    color: #333;
+}
+#example24 tbody tr:hover {
+    background-color: #fafbfc !important;
+}
+.btn-create-document {
+    background-color: #000 !important;
+    color: #fff !important;
+    border-radius: 30px !important;
+    padding: 8px 20px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    border: none !important;
+}
+.btn-create-document:hover {
+    color: #fff !important;
+    opacity: 0.9;
+}
+.action-btn a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    margin-right: 6px;
+    text-decoration: none !important;
+}
+.action-btn a:first-child {
+    border: 1px solid #5ac8fa;
+    color: #5ac8fa;
+}
+.action-btn a.delete-row {
+    border: 1px solid #ff3b30;
+    color: #ff3b30;
+}
+.action-btn a:hover {
+    color: #fff !important;
+}
+.action-btn a:first-child:hover {
+    background-color: #5ac8fa;
+}
+.action-btn a.delete-row:hover {
+    background-color: #ff3b30;
+}
+.document-title-link {
+    font-weight: 600;
+    color: #000 !important;
+    text-decoration: underline !important;
+}
+.document-title-link:hover {
+    color: #ff5e3a !important;
+}
+.delete-all-link {
+    color: #1a202c !important;
+    font-weight: 600;
+    font-size: 13px;
+    text-decoration: none !important;
+}
+.delete-all-link:hover {
+    color: #000 !important;
+}
+.delete-all input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #ff5e3a;
+}
+.delete-all label {
+    margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding-left: 24px;
+    height: 18px;
+    line-height: 18px;
+}
+#example24 th.delete-all .doc-select-label {
+    padding-left: 24px;
+    height: 18px;
+    line-height: 18px;
+    margin-bottom: 0;
+    min-width: 18px;
+}
+#example24 td.delete-all label {
+    min-width: 18px;
+}
+#example24 th.delete-all input[type="checkbox"] + label:before,
+#example24 td.delete-all input[type="checkbox"] + label:before {
+    margin-top: 0;
+    top: 0;
+}
+#example24 .row-select {
+    cursor: pointer;
+}
+.switch { position: relative; display: inline-block; width: 46px; height: 24px; margin-bottom: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #dc3545; transition: .4s; }
-.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; }
-input:checked + .slider { background-color: #28a745; }
-input:checked + .slider:before { transform: translateX(20px); }
-.slider.round { border-radius: 34px; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e53e3e; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; }
+input:checked + .slider { background-color: #38a169; }
+input:checked + .slider:before { transform: translateX(22px); }
+.slider.round { border-radius: 24px; }
 .slider.round:before { border-radius: 50%; }
 </style>
 @endsection

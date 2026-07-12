@@ -146,8 +146,12 @@ return [
     ],
     'documents' => [
         'model' => \App\Models\Document::class,
+        'view' => 'documents',
+        'route' => 'documents',
+        'legacy_route' => 'documents',
         'label' => 'Documents',
         'permission' => 'documents',
+        'section_scoped' => false,
         'searchable' => ['title', 'type'],
         'columns' => [
             ['field' => 'title', 'label' => 'Title'],
@@ -279,8 +283,10 @@ return [
         'model' => \App\Models\ParcelWeight::class,
         'view' => 'parcel_weights',
         'route' => 'parcel-weights',
+        'legacy_route' => 'parcel_weight',
         'label' => 'Parcel Weights',
         'permission' => 'parcel-weight',
+        'section_scoped' => false,
         'searchable' => ['title'],
         'columns' => [
             ['field' => 'title', 'label' => 'Title'],
