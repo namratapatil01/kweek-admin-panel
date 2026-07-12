@@ -10,6 +10,8 @@ return [
     'banner_items' => ['table' => 'banner_items', 'model' => \App\Models\BannerItem::class],
     'booked_table' => ['table' => 'booked_tables', 'model' => \App\Models\BookedTable::class],
     'brands' => ['table' => 'brands', 'model' => \App\Models\Brand::class],
+    'cashback' => ['table' => 'cashbacks', 'model' => \App\Models\Cashback::class],
+    'cashback_redeem' => ['table' => 'cashback_redeems', 'model' => \App\Models\CashbackRedeem::class],
     'car_make' => ['table' => 'car_makes', 'model' => \App\Models\CarMake::class],
     'car_model' => ['table' => 'car_models', 'model' => \App\Models\CarModel::class],
     'chat_admin' => ['table' => 'chat_admin', 'model' => \App\Models\ChatAdmin::class],

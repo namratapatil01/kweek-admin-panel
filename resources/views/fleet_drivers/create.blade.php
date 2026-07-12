@@ -223,11 +223,65 @@ foreach ($countries as $keycountry => $valuecountry) {
 @section('scripts')
 <script type="text/javascript">
 
-    var section_id = '';
-    var service_type = '';
+    var section_id = getCookie('section_id') || '';
+    var service_type = getCookie('service_type') || '';
+    var photo = '';
+    var fileName = '';
+
+    if (service_type == "cab-service" || service_type == "rental-service") {
+        $('.vehicle-details').show();
+        $('.ride-service').show();
+    } else if (service_type == "parcel_delivery") {
+        $('.vehicle-details').show();
+    }
+
+    function handleFileSelect(evt) {
+        var f = evt.target.files[0];
+        if (!f) {
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = (function (theFile) {
+            return function (e) {
+                var filePayload = e.target.result;
+                var parts = theFile.name.split('.');
+                var ext = parts.length > 1 ? parts.pop() : 'jpg';
+                var filename = theFile.name.replace(/C:\\fakepath\\/i, '');
+                var timestamp = Number(new Date());
+                filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
+                photo = filePayload;
+                fileName = filename;
+                $(".user_image").empty();
+                $(".user_image").append('<img class="rounded" style="width:50px" src="' + photo + '" alt="image">');
+            };
+        })(f);
+        reader.readAsDataURL(f);
+    }
+
+    window.handleFileSelect = handleFileSelect;
+
+    async function storeImageData() {
+        var newPhoto = [];
+        newPhoto['profile'] = '';
+        try {
+            if (photo != "") {
+                newPhoto['profile'] = photo;
+            }
+        } catch (error) {
+            console.log("Error handling image: ", error);
+        }
+        return newPhoto;
+    }
 
     // Dropdowns will be populated from MySQL
     $(document).ready(async function () {
+
+        jQuery("#country_selector").select2({
+            templateResult: formatState,
+            templateSelection: formatState2,
+            placeholder: "Select Country",
+            allowClear: true
+        });
 
         jQuery("#data-table_processing").show();
 
@@ -477,6 +531,21 @@ foreach ($countries as $keycountry => $valuecountry) {
         }
     });
 
+    $('#vehicle_section_id').on('change', function () {
+        var selected_section_id = $(this).val();
+        var selected_service_type = $('#service_type').val() || service_type;
+        
+        $('.vehicle_type').html('<option value="">{{trans("lang.select")}} {{trans("lang.vehicle_type")}}</option>');
+        
+        if (selected_service_type == "cab-service" || selected_service_type == "rental-service") {
+            $.get("{{ route('drivers.vehicle-types') }}", { service_type: selected_service_type, sectionId: selected_section_id }, function(vRes) {
+                vRes.vehicleTypes && vRes.vehicleTypes.forEach(function(data) {
+                    $('.vehicle_type').append($('<option></option>').attr("value", data.name).attr("data-id", data.id).text(data.name));
+                });
+            });
+        }
+    });
+
     $('.car_make').on('change', function () {
         var cab_make_name = $(this).val();
         var options = '<option value="">{{trans("lang.select")}} {{trans("lang.car_model")}}</option>';
@@ -488,52 +557,8 @@ foreach ($countries as $keycountry => $valuecountry) {
         });
     });
 
-    function handleFileSelect(evt) {
-        var f = evt.target.files[0];
-        var reader = new FileReader();
-        reader.onload = (function (theFile) {
-            return function (e) {
-                var filePayload = e.target.result;
-                var hash = CryptoJS.SHA256(Math.random() + CryptoJS.SHA256(filePayload));
-                var val = f.name;
-                var ext = val.split('.')[1];
-                var docName = val.split('fakepath')[1];
-                var filename = (f.name).replace(/C:\\fakepath\\/i, '')
-                var timestamp = Number(new Date());
-                var filename = filename.split('.')[0] + "_" + timestamp + '.' + ext;
-                photo = filePayload;
-                fileName = filename;
-                $(".user_image").empty();
-                $(".user_image").append('<img class="rounded" style="width:50px" src="' + photo + '" alt="image">');
-            };
-        })(f);
-        reader.readAsDataURL(f);
-    }
-    
-    function chkAlphabets3(event, msg) {
-        if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
-            document.getElementById(msg).innerHTML = "Accept only Number and Dot(.)";
-            return false;
-        } else {
-            document.getElementById(msg).innerHTML = "";
-            return true;
-        }
-    }
-    async function storeImageData() {
-        var newPhoto = [];
-        newPhoto['profile'] = '';
-        try {
-            if (photo != "") {
-                newPhoto['profile'] = photo;
-            }
-        } catch (error) {
-            console.log("Error handling image: ", error);
-        }
-        return newPhoto;
-    }
-    
     var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
-    var newcountriesjs = JSON.parse(newcountriesjs);
+    newcountriesjs = JSON.parse(newcountriesjs);
     function formatState(state) {
         if (!state.id) {
             return state.text;
@@ -556,17 +581,6 @@ foreach ($countries as $keycountry => $valuecountry) {
         $state.find("span").text(state.text);
         $state.find("img").attr("src", baseUrl + "/" + newcountriesjs[state.element.value].toLowerCase() + ".svg");
         return $state;
-    }
-
-    function chkAlphabets2(event,msg)
-    {
-        if(!(event.which>=48  && event.which<=57)){
-            document.getElementById(msg).innerHTML="Accept only Number";
-            return false;
-        }else{
-            document.getElementById(msg).innerHTML="";
-            return true;
-        }
     }
 
 </script>

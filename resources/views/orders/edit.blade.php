@@ -74,240 +74,184 @@
                             <div class="order_detail-top">
                                 <div class="row">
 
+                                    {{-- Left Column: General details and Items table --}}
                                     <div class="order_edit-genrl col-lg-7 col-md-12 col-md-7">
-
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h4 class="card-header-title">{{ trans('lang.general_details') }}</h4>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="order_detail-top-box">
-
-                                                    <div class="form-group row widt-100 gendetail-col">
-                                                        <label class="col-12 control-label"><strong>{{ trans('lang.date_created') }}
-                                                                : </strong><span id="createdAt"></span></label>
-
-                                                    </div>
-
-                                                    <div class="form-group row widt-100 gendetail-col payment_method">
-                                                        <label class="col-12 control-label"><strong>{{ trans('lang.payment_methods') }}
-                                                                : </strong><span id="payment_method"></span></label>
-
-                                                    </div>
-
-                                                    <div class="form-group row widt-100 gendetail-col">
-                                                        <label class="col-12 control-label"><strong>{{ trans('lang.order_type') }}
-                                                                :</strong> <span id="order_type"></span></label>
-                                                    </div>
-                                                    <div class="form-group row widt-100 gendetail-col schedule_date"></div>
-                                                    <div class="form-group row widt-100 gendetail-col prepare_time"></div>
-
-                                                    <div class="form-group row widt-100 gendetail-col" id="ccname_div" style="display:none">
-                                                        <label class="col-12 control-label"><strong>{{ trans('lang.courier_company_name') }}
-                                                                :</strong>
-                                                            <span id="ccname"></span></label>
-                                                    </div>
-
-                                                    <div class="form-group row widt-100 gendetail-col" id="ccid_div" style="display:none">
-                                                        <label class="col-12 control-label"><strong>{{ trans('lang.courier_tracking_id') }}
-                                                                :</strong>
-                                                            <span id="ccid"></span></label>
-                                                    </div>
-
-                                                    <div class="form-group row width-100 ">
-                                                        <label class="col-3 control-label">{{ trans('lang.status') }}
-                                                            :</label>
-                                                        <div class="col-7">
-                                                            <select id="order_status" class="form-control">
-                                                                <option value="Order Placed" id="order_placed">{{ trans('lang.order_placed') }}
-                                                                </option>
-                                                                <option value="Order Accepted" id="order_accepted">{{ trans('lang.order_accepted') }}
-                                                                </option>
-                                                                <option value="Order Rejected" id="order_rejected">{{ trans('lang.order_rejected') }}
-                                                                </option>
-                                                                <option value="Driver Pending" id="driver_pending">{{ trans('lang.driver_pending') }}
-                                                                </option>
-                                                                <option value="Driver Rejected" id="driver_rejected">{{ trans('lang.driver_rejected') }}
-                                                                </option>
-                                                                <option value="Order Shipped" id="order_shipped">{{ trans('lang.order_shipped') }}
-                                                                </option>
-                                                                <option value="In Transit" id="in_transit">{{ trans('lang.in_transit') }}
-                                                                </option>
-                                                                <option value="Order Completed" id="order_completed">{{ trans('lang.order_completed') }}
-                                                                </option>
-                                                                <option value="Order Cancelled" id="order_canceled">
-                                                                    {{ trans('lang.order_canceled') }}
-                                                                </option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="form-group row width-100 non-printable">
-                                                        <label class="col-3 control-label"></label>
-                                                        <div class="col-7 text-right">
-                                                            <button type="button" class="btn btn-primary save_order_btn show_popup edit-form-btn"><i class="fa fa-save "></i> {{ trans('lang.update') }}
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                        
+                                        {{-- General Details Card --}}
+                                        <div class="order-page-card">
+                                            <div class="payment-badge-container">
+                                                <div class="payment-badge">
+                                                    <span id="payment_method"></span>
                                                 </div>
+                                            </div>
+
+                                            <div class="info-row">
+                                                <span class="info-row-label">{{ trans('lang.date_created') }}</span>
+                                                <span class="info-row-value" id="createdAt"></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-row-label">{{ trans('lang.order_type') }}</span>
+                                                <span class="info-row-value" id="order_type"></span>
+                                            </div>
+                                            <div class="info-row" id="ccname_div" style="display:none">
+                                                <span class="info-row-label">{{ trans('lang.courier_company_name') }}</span>
+                                                <span class="info-row-value" id="ccname"></span>
+                                            </div>
+                                            <div class="info-row" id="ccid_div" style="display:none">
+                                                <span class="info-row-label">{{ trans('lang.courier_tracking_id') }}</span>
+                                                <span class="info-row-value" id="ccid"></span>
+                                            </div>
+
+                                            <div class="order-status-group">
+                                                <label class="order-status-label">{{ trans('lang.status') }}</label>
+                                                <select id="order_status" class="order-status-select">
+                                                    <option value="Order Placed" id="order_placed">{{ trans('lang.order_placed') }}</option>
+                                                    <option value="Order Accepted" id="order_accepted">{{ trans('lang.order_accepted') }}</option>
+                                                    <option value="Order Rejected" id="order_rejected">{{ trans('lang.order_rejected') }}</option>
+                                                    <option value="Driver Pending" id="driver_pending">{{ trans('lang.driver_pending') }}</option>
+                                                    <option value="Driver Rejected" id="driver_rejected">{{ trans('lang.driver_rejected') }}</option>
+                                                    <option value="Order Shipped" id="order_shipped">{{ trans('lang.order_shipped') }}</option>
+                                                    <option value="In Transit" id="in_transit">{{ trans('lang.in_transit') }}</option>
+                                                    <option value="Order Completed" id="order_completed">{{ trans('lang.order_completed') }}</option>
+                                                    <option value="Order Cancelled" id="order_canceled">{{ trans('lang.order_canceled') }}</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="text-right non-printable mt-3">
+                                                <button type="button" class="order-update-btn save_order_btn show_popup edit-form-btn">
+                                                    <i class="fa fa-save mr-1"></i> {{ trans('lang.update') }}
+                                                </button>
                                             </div>
                                         </div>
-                                        <div class="order-items-list mt-4 ">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <table cellpadding="0" cellspacing="0" class="table table-striped table-valign-middle">
 
-                                                        <thead>
-                                                            <tr>
-                                                                <th>{{ trans('lang.item') }}</th>
-                                                                <th class="d-head" style="display:none;">
-                                                                    {{ trans('lang.file') }}
-                                                                </th>
-                                                                <th>{{ trans('lang.price') }}</th>
-                                                                <th>{{ trans('lang.qty') }}</th>
-                                                                <th>{{ trans('lang.extras') }}</th>
-                                                                <th>{{ trans('lang.total') }}</th>
-                                                            </tr>
-
-                                                        </thead>
-
-                                                        <tbody id="order_products">
-
-                                                        </tbody>
-                                                    </table>
-                                                    <div class="order-data-row order-totals-items">
-                                                        <div class="card">
-                                                            <div class="card-body">
-                                                                <table class="order-totals">
-
-                                                                    <tbody id="order_products_total">
-
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
+                                        {{-- Items Card --}}
+                                        <div class="order-page-card">
+                                            <div class="order-page-card-title">Items</div>
+                                            <div class="table-responsive">
+                                                <table class="items-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="text-align: left;">{{ trans('lang.item') }}</th>
+                                                            <th class="d-head" style="display:none;">{{ trans('lang.file') }}</th>
+                                                            <th style="text-align: center;">{{ trans('lang.price') }}</th>
+                                                            <th style="text-align: center;">{{ trans('lang.qty') }}</th>
+                                                            <th style="text-align: center;">{{ trans('lang.extras') }}</th>
+                                                            <th style="text-align: right;">{{ trans('lang.total') }}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="order_products">
+                                                        {{-- Loaded via JavaScript --}}
+                                                    </tbody>
+                                                </table>
                                             </div>
 
+                                            <table class="totals-table">
+                                                <tbody id="order_products_total">
+                                                    {{-- Loaded via JavaScript --}}
+                                                </tbody>
+                                            </table>
                                         </div>
 
                                     </div>
 
+                                    {{-- Right Column: Customer Info, Store Info, Reviews, etc. --}}
                                     <div class="order_addre-edit col-lg-5 col-md-12 col-md-5">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h4 class="card-header-title">{{ trans('lang.billing_details') }}</h4>
+                                        
+                                        {{-- Customer Info Card --}}
+                                        <div class="order-page-card" style="padding: 18px 24px;">
+                                            <div class="info-row">
+                                                <span class="info-row-label">Email Address:</span>
+                                                <span class="info-row-value" id="billing_email"></span>
                                             </div>
-                                            <div class="card-body">
+                                            <div class="info-row">
+                                                <span class="info-row-label">Phone:</span>
+                                                <span class="info-row-value" id="billing_phone"></span>
+                                            </div>
+                                            
+                                            {{-- Keep hidden elements required by JS so it doesn't fail --}}
+                                            <div style="display:none;">
+                                                <span id="billing_name"></span>
+                                                <span id="billing_line1"></span>
+                                                <span id="billing_line2"></span>
+                                                <span id="billing_country"></span>
+                                                <span id="billing_adrs"></span>
+                                            </div>
+                                        </div>
 
-                                                <div class="address order_detail-top-box">
-                                                    <p><strong>{{ trans('lang.name') }}
-                                                            : </strong><span id="billing_name"></span></p>
+                                        {{-- Store Info Card --}}
+                                        <div class="order-page-card">
+                                            <div class="order-page-card-title">Store</div>
+                                            
+                                            <a href="#" class="store-header redirecttopage" id="resturant-view" style="text-decoration: none;">
+                                                <div class="resturant-img">
+                                                    {{-- Loaded via JS --}}
+                                                </div>
+                                                <div class="store-name vendor-title">
+                                                    {{-- Loaded via JS --}}
+                                                </div>
+                                            </a>
 
-                                                    <p id="billing_adrs"><strong>{{ trans('lang.address') }}
-                                                            : </strong><span id="billing_line1"></span> <span id="billing_line2"></span><span id="billing_country"></span></p>
-
-                                                    <p><strong>{{ trans('lang.email_address') }}:</strong>
-                                                        <span id="billing_email"></span>
-                                                    </p>
-                                                    <p><strong>{{ trans('lang.phone') }}:</strong>
-                                                        <span id="billing_phone"></span>
-                                                    </p>
+                                            <div style="border-top: 1px solid #edf2f7; padding-top: 16px; margin-top: 16px;">
+                                                <h6 style="font-weight: 700; color: #4a5568; margin-bottom: 12px; font-size: 13px; text-transform: uppercase;">Contact Info:</h6>
+                                                <div class="info-row">
+                                                    <span class="info-row-label">Phone:</span>
+                                                    <span class="info-row-value" id="vendor_phone"></span>
+                                                </div>
+                                                <div class="info-row">
+                                                    <span class="info-row-label">Address:</span>
+                                                    <span class="info-row-value" id="vendor_address" style="max-width: 250px; text-align: right; word-break: break-word;"></span>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {{-- Driver Details Card (hidden/visible dynamically via container class) --}}
                                         <div class="order_addre-edit mt-2 driver_details_hide">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h4 class="card-header-title">{{ trans('lang.driver_detail') }}</h4>
-                                                </div>
-                                                <div class="card-body">
+                                            <div class="order-page-card">
+                                                <div class="order-page-card-title">{{ trans('lang.driver_detail') }}</div>
+                                                
+                                                <a href="#" class="store-header redirecttopage" id="driver-view" style="text-decoration: none;">
+                                                    <div id="driver-img">
+                                                        {{-- Loaded via JS --}}
+                                                    </div>
+                                                    <div class="store-name" id="driver-name">
+                                                        {{-- Loaded via JS --}}
+                                                    </div>
+                                                </a>
 
-                                                    <div class="address order_detail-top-box">
-                                                        <a href="#" class="row redirecttopage" id="driver-view">
-                                                            <div class="col-4" id="driver-img">
-
-                                                            </div>
-                                                            <div class="col-8">
-                                                                <h4 id="driver-name"></h4>
-                                                            </div>
-                                                        </a>
-                                                        <p>
-                                                            <span id="driver_firstName"></span> <span id="driver_lastName"></span><br>
-                                                        </p>
-                                                        <p><strong>{{ trans('lang.email_address') }}:</strong>
-                                                            <span id="driver_email"></span>
-                                                        </p>
-                                                        <p><strong>{{ trans('lang.phone') }}:</strong>
-                                                            <span id="driver_phone"></span>
-                                                        </p>
-                                                        <p><strong>{{ trans('lang.car_name') }}:</strong>
-                                                            <span id="driver_carName"></span>
-                                                        </p>
-                                                        <p><strong>{{ trans('lang.car_number') }}:</strong>
-                                                            <span id="driver_carNumber"></span>
-                                                        </p>
+                                                <div style="border-top: 1px solid #edf2f7; padding-top: 16px; margin-top: 16px;">
+                                                    <h6 style="font-weight: 700; color: #4a5568; margin-bottom: 12px; font-size: 13px; text-transform: uppercase;">Driver Info:</h6>
+                                                    <div class="info-row">
+                                                        <span class="info-row-label">Email Address:</span>
+                                                        <span class="info-row-value" id="driver_email"></span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-row-label">Phone:</span>
+                                                        <span class="info-row-value" id="driver_phone"></span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-row-label">Car Name:</span>
+                                                        <span class="info-row-value" id="driver_carName"></span>
+                                                    </div>
+                                                    <div class="info-row">
+                                                        <span class="info-row-label">Car Number:</span>
+                                                        <span class="info-row-value" id="driver_carNumber"></span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div class="resturant-detail mt-4">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h4 class="card-header-title">{{ trans('lang.vendor') }}</h4>
-                                                </div>
-
-                                                <div class="card-body">
-                                                    <a href="#" class="row redirecttopage" id="resturant-view">
-                                                        <div class="col-4 resturant-img">
-
-                                                        </div>
-                                                        <div class="col-8">
-                                                            <h4 class="vendor-title"></h4>
-                                                        </div>
-                                                    </a>
-
-                                                    <h5 class="contact-info">{{ trans('lang.contact_info') }}:</h5>
-
-                                                    <p><strong>{{ trans('lang.phone') }}:</strong>
-                                                        <span id="vendor_phone"></span>
-                                                    </p>
-                                                    <p><strong>{{ trans('lang.address') }}:</strong>
-                                                        <span id="vendor_address"></span>
-                                                    </p>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="order_detail-review mt-4">
-                                            <div class="row">
-                                                <div class="rental-review col-md-12">
-                                                    <div class="card">
-                                                        <div class="card-header">
-                                                            <h4 class="card-header-title">{{ trans('lang.customer_reviews') }}</h4>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <div class="review-inner">
-                                                                <div id="customers_rating_and_review">
-
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
+                                        {{-- Customer Reviews Card --}}
+                                        <div class="order-page-card">
+                                            <div class="order-page-card-title">Customer Reviews</div>
+                                            <div id="customers_rating_and_review">
+                                                {{-- Loaded via JS --}}
                                             </div>
                                         </div>
 
                                     </div>
 
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
                     <div role="tabpanel" class="tab-pane" id="review_attributes">
@@ -323,12 +267,11 @@
             </button>
 
             <?php if (isset($_GET['eid']) && $_GET['eid'] != '') { ?>
-            <a href="{{ route('vendors.orders', $_GET['eid']) }}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            <a href="{{ route('vendors.orders', $_GET['eid']) }}" class="cf-btn-back"><i class="fa fa-undo mr-1"></i> Back</a>
             <?php } elseif ($oid != '') { ?>
-            <a href="{!! route('orderReview') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+            <a href="{!! route('orderReview') !!}" class="cf-btn-back"><i class="fa fa-undo mr-1"></i> Back</a>
             <?php } else { ?>
-            <a href="{!! route('orders') !!}" class="btn btn-default"><i class="fa fa-undo"></i>{{ trans('lang.cancel') }}
-            </a>
+            <a href="{!! route('orders') !!}" class="cf-btn-back"><i class="fa fa-undo mr-1"></i> Back</a>
             <?php } ?>
 
         </div>
@@ -558,6 +501,304 @@
 @endsection
 
 @section('style')
+<style>
+/* Page Layout */
+.order-page-card {
+    background: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+.order-page-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2b354e;
+    border-bottom: 1.5px solid #edf2f7;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+/* Payment Method Badge */
+.payment-badge-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+.payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 28px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.order-product {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+}
+.order-product img {
+    border-radius: 8px !important;
+    object-fit: cover !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.orders-tracking h6 {
+    margin: 0 0 4px 0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #2d3748 !important;
+}
+.orders-tracking-item-details {
+    font-size: 12px !important;
+    color: #718096 !important;
+}
+.orders-tracking-item-details .variant-info ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 4px 0 0 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.orders-tracking-item-details .variant-info li {
+    font-size: 11px !important;
+    background: #edf2f7 !important;
+    color: #4a5568 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+}
+.payment-badge img {
+    max-height: 38px !important;
+    width: auto !important;
+    object-fit: contain;
+}
+.payment-badge span {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2b354e;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Info Row */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e2e8f0;
+    font-size: 14px;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-row-label {
+    font-weight: 600;
+    color: #4a5568;
+}
+.info-row-value {
+    font-weight: 700;
+    color: #1a202c;
+}
+.info-row-value a {
+    color: #1a202c;
+    text-decoration: underline;
+}
+
+/* Form Styles */
+.order-status-group {
+    margin-top: 20px;
+}
+.order-status-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2b354e;
+    margin-bottom: 8px;
+    display: block;
+}
+.order-status-select {
+    width: 100%;
+    height: 46px;
+    border: 1.5px solid #cbd5e0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #2b354e;
+    background: #fff;
+    transition: all 0.2s;
+    appearance: auto;
+}
+.order-status-select:focus {
+    border-color: #2b3542;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(43,53,66,0.1);
+}
+.order-update-btn {
+    background: #000;
+    border: 1px solid #000;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+.order-update-btn:hover {
+    background: #222;
+}
+
+/* Items Table */
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.items-table th {
+    background: #f8fafc;
+    padding: 14px 16px;
+    font-weight: 700;
+    color: #4a5568;
+    font-size: 13px;
+    text-transform: uppercase;
+    border-bottom: 1.5px solid #e2e8f0;
+}
+.items-table td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 14px;
+}
+.item-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.item-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+}
+.item-name {
+    font-weight: 600;
+    color: #2d3748;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.item-name:hover {
+    color: #ff5c28;
+    text-decoration: none;
+}
+.text-green {
+    color: #20c997 !important;
+    font-weight: 700;
+}
+.text-red {
+    color: #f03e3e !important;
+    font-weight: 700;
+}
+
+/* Totals Table styling */
+#order_products_total {
+    width: 100%;
+}
+#order_products_total td {
+    padding: 12px 16px;
+    font-size: 14px;
+}
+#order_products_total .seprater {
+    padding: 0;
+}
+#order_products_total .seprater hr {
+    border: 0;
+    border-top: 1px solid #edf2f7;
+    margin: 8px 0;
+}
+#order_products_total .seprater span {
+    display: none;
+}
+#order_products_total tr.final-rate {
+    background: #e6fcf5;
+}
+#order_products_total tr.final-rate td {
+    color: #0ca678 !important;
+    font-weight: 700;
+    padding: 12px 16px;
+}
+#order_products_total tr.final-rate td.sub_total {
+    text-align: right;
+}
+#order_products_total tr td.label {
+    font-weight: 600;
+    color: #4a5568;
+}
+#order_products_total tr td:last-child {
+    text-align: right;
+    font-weight: 700;
+}
+#order_products_total tr.grand-total td {
+    font-size: 17px;
+    font-weight: 800;
+    color: #1a202c;
+    border-top: 2px solid #e2e8f0;
+    padding-top: 16px;
+}
+
+/* Customer / Store Details */
+.contact-detail-card {
+    border-bottom: 1px dashed #e2e8f0;
+    padding: 12px 0;
+}
+.contact-detail-card:last-child {
+    border-bottom: none;
+}
+.store-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.store-img, .resturant-img img, #driver-img img {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid #e2e8f0 !important;
+}
+.store-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2b354e;
+}
+.cf-btn-back {
+    background: #fff;
+    border: 1.5px solid #cbd5e0;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 24px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+.cf-btn-back:hover {
+    background: #edf2f7;
+    color: #2d3748;
+    text-decoration: none;
+}
+</style>
+@endsection
 
 @section('scripts')
 
@@ -598,20 +839,17 @@
         var subscriptionBusinessModel = database.collection('settings').doc("vendor");
         subscriptionBusinessModel.get().then(async function(snapshots) {
             var subscriptionSetting = snapshots.data();
-            if (subscriptionSetting.subscription_model == true) {
+            if (subscriptionSetting && subscriptionSetting.subscription_model == true) {
                 subscriptionModel = true;
             }
         });
-        if (oid != '') {
-            var ref = database.collection('vendor_orders').where("id", "==", oid);
-
-        } else {
-            var ref = database.collection('vendor_orders').where("id", "==", id);
-
-        }
+        var orderDocId = (oid != '') ? oid : id;
+        var orderDocRef = database.collection('vendor_orders').doc(orderDocId);
+        var ref = orderDocRef;
+        var bootstrapOrder = @json($order ?? null);
         var ref_review_attributes = database.collection('review_attributes');
         var selected_review_attributes = '';
-        var refUserReview = database.collection('items_review').where('orderid', '==', oid);
+        var refUserReview = database.collection('items_review').where('orderid', '==', orderDocId);
         var append_procucts_list = '';
         var append_procucts_total = '';
         var total_price = 0;
@@ -628,6 +866,9 @@
         var total_tax_amount = 0;
         var reviewAttributes = {};
         refCurrency.get().then(async function(snapshots) {
+            if (!snapshots.docs || snapshots.docs.length === 0) {
+                return;
+            }
             var currencyData = snapshots.docs[0].data();
             currentCurrency = currencyData.symbol;
             currencyAtRight = currencyData.symbolAtRight;
@@ -637,9 +878,7 @@
             }
         });
 
-        var user_permissions = '<?php echo @session('user_permissions'); ?>';
-
-        user_permissions = JSON.parse(user_permissions);
+        var user_permissions = @json(json_decode(session('user_permissions', '[]'), true) ?: []);
 
         var checkPrintPermission = false;
 
@@ -804,11 +1043,34 @@
 
             jQuery("#data-table_processing").show();
 
-            ref.get().then(async function(snapshots) {
-                vendorOrder = snapshots.docs[0].data();
+            function normalizeBootstrapOrder(order) {
+                if (!order || typeof order !== 'object') {
+                    return order;
+                }
+                ['createdAt', 'scheduleTime', 'updatedAt'].forEach(function(field) {
+                    var value = order[field];
+                    if (!value || typeof value !== 'string') {
+                        return;
+                    }
+                    var parsed = Date.parse(value);
+                    if (!isNaN(parsed)) {
+                        order[field] = kweekDb.Timestamp.fromDate(new Date(parsed));
+                    }
+                });
+                return order;
+            }
+
+            function renderOrderPage(order) {
+                if (!order) {
+                    jQuery("#data-table_processing").hide();
+                    console.error('Order not found:', orderDocId);
+                    return;
+                }
+                order = normalizeBootstrapOrder(order);
+                vendorOrder = order;
+                return (async function() {
                 await getDeliverymanList(vendorOrder.vendorID);
                 getUserReview(vendorOrder);
-                var order = snapshots.docs[0].data();
                 database.collection('zone').where('publish', '==', true)/* .where('sectionId', '==', order.vendor.section_id) */.orderBy('name', 'asc').get().then(async function(snapshots) {
                     snapshots.docs.forEach((listval) => {
                         var data = listval.data();
@@ -1135,11 +1397,9 @@
                 var price = 0;
 
                 if (order.vendorID) {
-                    var vendor = database.collection('vendors').where("id", "==", order.vendorID);
-
-                    await vendor.get().then(async function(snapshotsnew) {
-                        if (snapshotsnew.docs.length > 0) {
-                            var vendordata = snapshotsnew.docs[0].data();
+                    await database.collection('vendors').doc(order.vendorID).get().then(async function(snapshot) {
+                        var vendordata = snapshot.exists ? snapshot.data() : (order.vendor || null);
+                        if (vendordata) {
                             if (vendordata.hasOwnProperty('isSelfDelivery') && vendordata.isSelfDelivery) {
                                 isSelfDeliveryByVendor = true;
                             }
@@ -1236,8 +1496,19 @@
                     $('#review_attributes').html(ra_html);
                 })
 
+                })();
+            }
 
-            })
+            if (bootstrapOrder) {
+                renderOrderPage(bootstrapOrder);
+            } else {
+                orderDocRef.get().then(function(snapshot) {
+                    renderOrderPage(snapshot.exists ? snapshot.data() : null);
+                }).catch(function(error) {
+                    jQuery("#data-table_processing").hide();
+                    console.error('Failed to load order:', error);
+                });
+            }
             async function getDeliverymanList(vendorID) {
 
                 database.collection('users').where('role', '==', 'driver').where('vendorID', '==', vendorID).where('isActive', '==', true).get().then(async function(snapshot) {
@@ -1586,7 +1857,11 @@
                             return false;
                         }
                         ref.get().then(async function(snapshot) {
-                            order = snapshot.docs[0].data();
+                            order = snapshot.exists ? snapshot.data() : null;
+                            if (!order) {
+                                alert('Order not found');
+                                return false;
+                            }
                             id = order.id;
                             var scheduleTime = '';
                             if (order.hasOwnProperty('scheduleTime') && order.scheduleTime != null && order.scheduleTime != '') {
@@ -2494,7 +2769,11 @@ database.collection('users').doc(user_id).set({
             $('#data-table_processing').show();
             ref.get().then(async function(snapshot) {
 
-                orderData = snapshot.docs[0].data();
+                orderData = snapshot.exists ? snapshot.data() : null;
+                if (!orderData) {
+                    $('#data-table_processing').hide();
+                    return;
+                }
                 try {
                     const vendorId = orderData.vendor?.author;
                     const customerId = orderData.author?.id;

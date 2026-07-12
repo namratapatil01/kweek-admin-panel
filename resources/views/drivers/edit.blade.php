@@ -91,7 +91,7 @@
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_latitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" class="form-control user_latitude"
+                                    <input type="number" step="any" class="form-control user_latitude"
                                            onkeypress="return chkAlphabets3(event,'error2')">
                                     <div id="error2" class="err"></div>
                                     <div class="form-text text-muted">{{trans('lang.user_latitude_help')}}</div>
@@ -100,7 +100,7 @@
                             <div class="form-group row width-50">
                                 <label class="col-3 control-label">{{trans('lang.user_longitude')}}</label>
                                 <div class="col-7">
-                                    <input type="number" class="form-control user_longitude"
+                                    <input type="number" step="any" class="form-control user_longitude"
                                            onkeypress="return chkAlphabets3(event,'error3')">
                                     <div id="error3" class="err"></div>
                                     <div class="form-text text-muted">{{trans('lang.user_longitude_help')}}</div>
@@ -615,26 +615,6 @@
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.select_zone_help') }}</p>");
                     window.scrollTo(0, 0);
-                } else if ((carNumber == '' || carNumber == null) && (service_type == "rental-service" || service_type == "cab-service")) {
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>{{trans('lang.car_number_error')}}</p>");
-                    window.scrollTo(0, 0);
-                } else if ((vehicleType == '' || vehicleType == null) && (service_type === "rental-service" || service_type === "cab-service")){
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>{{trans('lang.vehicle_type_error')}}</p>");
-                    window.scrollTo(0, 0);
-                } else if ((carMakeName == '' || carMakeName == null) && (service_type == "rental-service" || service_type == "cab-service")) {
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>{{trans('lang.car_make_error')}}</p>");
-                    window.scrollTo(0, 0);
-                } else if ((carName == '' || carName == null) && (service_type == "rental-service" || service_type == "cab-service")) {
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>{{trans('lang.car_model_error')}}</p>");
-                    window.scrollTo(0, 0);
                 } else {
 
                     jQuery("#data-table_processing").show();
@@ -697,6 +677,21 @@
             })
         })
 
+        $('#vehicle_section_id').on('change', function () {
+        var selected_section_id = $(this).val();
+        var selected_service_type = $('#service_type').val() || service_type;
+        
+        $('.vehicle_type').html('<option value="">{{trans("lang.select")}} {{trans("lang.vehicle_type")}}</option>');
+        
+        if (selected_service_type == "cab-service" || selected_service_type == "rental-service") {
+            $.get("{{ route('drivers.vehicle-types') }}", { service_type: selected_service_type, sectionId: selected_section_id }, function(vRes) {
+                vRes.vehicleTypes && vRes.vehicleTypes.forEach(function(data) {
+                    $('.vehicle_type').append($('<option></option>').attr("value", data.name).attr("data-id", data.id).text(data.name));
+                });
+            });
+        }
+    });
+
         $('.car_make').on('change', function () {
             var cab_make_name = $(this).val();
             var options = '<option value="">{{trans("lang.select")}} {{trans("lang.car_model")}}</option>';
@@ -757,6 +752,8 @@
             })(f);
             reader.readAsDataURL(f);
         }
+
+        window.handleFileSelect = handleFileSelect;
 
         async function storeImageData() {
             var newPhoto = [];

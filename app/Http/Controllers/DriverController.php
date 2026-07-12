@@ -177,10 +177,12 @@ class DriverController extends Controller
 
             // Preload placeholder image
             $placeholderRaw = DB::table('settings')->where('id', 'placeHolderImage')->value('value');
-            $placeholderImage = '';
+            $placeholderImage = asset('images/default_user.png');
             if ($placeholderRaw) {
                 $decoded = json_decode($placeholderRaw, true);
-                $placeholderImage = $decoded['image'] ?? '';
+                if (!empty($decoded['image'])) {
+                    $placeholderImage = $decoded['image'];
+                }
             }
 
             // Preload document verification status for the page
@@ -431,7 +433,7 @@ class DriverController extends Controller
 
         // Driver info column (image + name + verification icon)
         $verified = $this->getDocumentStatusIcon($id, $docVerifications);
-        $photo = $driver->profilePictureURL ?: $placeholderImage;
+        $photo = ($driver->profilePictureURL && $driver->profilePictureURL !== 'undefined' && $driver->profilePictureURL !== 'null') ? $driver->profilePictureURL : $placeholderImage;
         $name  = e($driver->firstName . ' ' . $driver->lastName);
         $row[] = '<img class="rounded" style="width:50px" src="' . e($photo) . '" alt="image" onerror="this.onerror=null;this.src=\'' . e($placeholderImage) . '\'">'
                . '<a data-url="' . $viewUrl . '" href="' . $viewUrl . '" class="redirecttopage left_space">' . $name . '</a>' . $verified;
@@ -484,9 +486,6 @@ class DriverController extends Controller
         }
     }
 
-    /**
-     * Get a single driver by ID.
-     */
     public function getDriver($id)
     {
         $driver = AppUser::find($id);
@@ -495,6 +494,14 @@ class DriverController extends Controller
         }
         $counts = $this->getOrderCounts([$id]);
         $driver->total_orders = $counts[$id] ?? 0;
+        
+        // Fetch zone name from MySQL zones table
+        if ($driver->zoneId) {
+            $driver->zone_name = DB::table('zones')->where('id', $driver->zoneId)->value('name') ?? '';
+        } else {
+            $driver->zone_name = '';
+        }
+
         return response()->json(['data' => $driver]);
     }
 
@@ -553,14 +560,27 @@ class DriverController extends Controller
                 'active', 'profilePictureURL', 'carNumber', 'carMakes',
                 'carName', 'vehicleId', 'sectionId', 'rideType',
                 'serviceType', 'vehicleType', 'userBankDetails', 'zoneId', 'ownerId',
-                'password'
+                'password', 'vendorID', 'countryCode', 'isDocumentVerify', 'isActive',
             ]);
 
             $data['role'] = 'driver';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
             $data['isOwner'] = false;
-            $data['ownerId'] = null;    // Ensure non-fleet drivers have null ownerId
-            $data['isDocumentVerify'] = false;
+            // Keep ownerId if provided (for fleet drivers), otherwise set to null
+            if (!$request->has('ownerId')) {
+                $data['ownerId'] = null;
+            }
+            if ($request->has('isDocumentVerify')) {
+                $data['isDocumentVerify'] = filter_var($request->input('isDocumentVerify'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            } else {
+                $data['isDocumentVerify'] = false;
+            }
+            if ($request->has('isActive')) {
+                $data['isActive'] = filter_var($request->input('isActive'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+            if (!$request->filled('createdAt')) {
+                $data['createdAt'] = now();
+            }
             $data['wallet_amount'] = 0;
             $data['orderCompleted'] = 0;
 
@@ -589,16 +609,16 @@ class DriverController extends Controller
         }
     }
 
-    /**
-     * Get UI meta: placeholder image + active currency from MySQL.
-     */
     public function getMeta()
     {
         try {
-            $placeholder = \DB::table('settings')->where('key', 'placeHolderImage')->value('value');
-            if (!$placeholder) {
-                $row = \DB::table('settings')->where('key', 'like', '%placeholder%')->first();
-                $placeholder = $row ? ($row->value ?? '') : '';
+            $placeholder = asset('images/default_user.png');
+            $placeholderRaw = \DB::table('settings')->where('id', 'placeHolderImage')->value('value');
+            if ($placeholderRaw) {
+                $decoded = json_decode($placeholderRaw, true);
+                if (!empty($decoded['image'])) {
+                    $placeholder = $decoded['image'];
+                }
             }
 
             $currency = \DB::table('currencies')->where('isActive', 1)->first();
@@ -606,9 +626,16 @@ class DriverController extends Controller
             // Try to get defaultCountryCode from settings table
             $countryCodeRow = \DB::table('settings')->where('key', 'defaultCountryCode')->first();
             $defaultCountryCode = $countryCodeRow ? ($countryCodeRow->value ?? '') : '';
+            if (empty($defaultCountryCode)) {
+                $globalRaw = \DB::table('settings')->where('id', 'globalSettings')->value('value');
+                if ($globalRaw) {
+                    $decoded = json_decode($globalRaw, true);
+                    $defaultCountryCode = $decoded['defaultCountryCode'] ?? $decoded['default_country_code'] ?? '';
+                }
+            }
 
             return response()->json([
-                'placeholderImage'   => $placeholder ?? '',
+                'placeholderImage'   => $placeholder,
                 'currencySymbol'     => $currency->symbol        ?? '',
                 'symbolAtRight'      => (bool)($currency->symbolAtRight  ?? false),
                 'decimal_degits'     => $currency->decimal_degits ?? 2,
@@ -617,7 +644,7 @@ class DriverController extends Controller
         } catch (\Exception $e) {
             Log::error('DriverController@getMeta error: ' . $e->getMessage());
             return response()->json([
-                'placeholderImage' => '', 'currencySymbol' => '',
+                'placeholderImage' => asset('images/default_user.png'), 'currencySymbol' => '',
                 'symbolAtRight' => false, 'decimal_degits' => 2, 'defaultCountryCode' => '',
             ]);
         }
@@ -708,7 +735,7 @@ class DriverController extends Controller
             }
             
             if ($sectionId) {
-                $query->where('sectionId', $sectionId);
+                $query->where('payload->sectionId', $sectionId);
             }
             
             $types = $query->orderBy('name')->get(['id', 'name']);

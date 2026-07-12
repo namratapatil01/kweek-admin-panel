@@ -64,246 +64,169 @@
         </div>
     </div>
 @endsection
-@section('scripts')z
+@section('scripts')
 <script>
     var id = "<?php echo $id;?>";
-    var database = kweekDb();
-    var allDriver = database.collection('users').where('role','==','vendor');
-    var ref = database.collection('users').where("id", "==", id);
-    var docsRef = database.collection('documents').where('enable', '==', true).where('type','==','vendor');
-    var docref = database.collection('documents_verify').doc(id);
-    var back_photo = '';
-    var front_photo = '';
-    var backFileName = '';
-    var frontFileName = '';
-    var backFileOld = '';
-    var frontFileOld = '';
     var fcmToken = "";
-    $(document).ready(async function () {
+
+    $(document).ready(function () {
         jQuery("#data-table_processing").show();
+
         $('#exampleModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
             var img = button.data('image');
             var modal = $(this);
             modal.find('#docImage').attr('src', img);
         });
-        ref.get().then(async function (snapshots) {
-            var vendor = snapshots.docs[0].data();
-            if (vendor.hasOwnProperty('fcmToken') && vendor.fcmToken != "" && vendor.fcmToken != null) {
-                fcmToken = vendor.fcmToken;
+
+        var getDocsUrl = "{{ route('vendors.get-documents', ':id') }}".replace(':id', id);
+        $.get(getDocsUrl, function (response) {
+            var driver     = response.driver;
+            var documents  = response.documents;
+            var verified   = response.verified; // array of {documentId, status, frontImage, backImage}
+
+            if (driver.fcmToken && driver.fcmToken !== '') {
+                fcmToken = driver.fcmToken;
             }
-            $(".vendor-name").text(vendor.firstName+' '+vendor.lastName+ "'s" + " {{trans('lang.vendor_document_details')}}")
-        });
-        var html = '';
-        var count = 0;
-        await docsRef.get().then(async function (docSnapshot) {
-            html += '<table id="taxTable" class="display nowrap table table-hover table-striped table-bordered table table-striped" cellspacing="0" width="100%">';
-            html += "<thead>";
-            html += '<tr>';
-            html += '<th>Name</th>';
-            html += '<th>Status</th>';
-            html += '<th>Action</th>';
-            html += '</tr>';
-            html += '</thead>';
+
+            $(".vendor-name").text(driver.firstName + ' ' + driver.lastName + "'s {{trans('lang.vendor_document_details')}}");
+
+            var html = '';
+            html += '<table id="taxTable" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">';
+            html += '<thead><tr><th>Name</th><th>Status</th><th>Action</th></tr></thead>';
             html += '<tbody>';
-            html += '</tbody>';
-            html += '</table>';
-            if (docSnapshot.docs.length) {
-                var documents = docSnapshot.docs;
-                documents.forEach((ele) => {
-                    var doc = ele.data();
-                    var docRefs = database.collection('documents_verify').doc(id);
-                    docRefs.get().then(async function (docrefSnapshot) {
-                        var docRef = docrefSnapshot.data() && docrefSnapshot.data().documents ? docrefSnapshot.data().documents.filter(docId => docId.documentId == doc.id)[0] : [];
-                        var trhtml = '';
-                        trhtml += '<tr>';
-                        if (docRef && docRef.hasOwnProperty('backImage') && docRef.hasOwnProperty('frontImage') ) {
-                            if (docRef.backImage != '' && docRef.frontImage != '' && docRef.backImage!=null && docRef.frontImage != null  && doc.backSide && doc.frontSide  ) {
-                                                            trhtml += '<td>' + doc.title + '&nbsp;&nbsp;<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal" data-image="' + docRef.frontImage + '" data-id="front" class="open-image">{{trans('lang.view_front_image')}}</a>&nbsp;<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal"  data-image="' + docRef.backImage + '" data-id="back" class="open-image">{{trans('lang.view_back_image')}}</a></td>';
-                            } else if (docRef.backImage != '' && docRef.backImage != null  && doc.backSide) {
-                                trhtml += '<td>' + doc.title + '&nbsp;<a href="#" data-toggle="modal" class="badge badge-info" data-target="#exampleModal" data-id="back" data-image="' + docRef.backImage + '" class="open-image">{{trans('lang.view_back_image')}}</a></td>';
-                            } else if (docRef.frontImage != '' && docRef.frontImage != null && doc.frontSide ) {
-                                trhtml += '<td>' + doc.title + '&nbsp;<a href="#" data-toggle="modal" class="badge badge-info" data-target="#exampleModal" data-id="front" class="open-image" data-image="' + docRef.frontImage + '">{{trans('lang.view_front_image')}}</a></td>';
-                            } else {
-                                trhtml += '<td>' + doc.title + '</td>';
+
+            if (documents && documents.length > 0) {
+                documents.forEach(function (doc) {
+                    var docRef = null;
+                    if (verified && verified.length > 0) {
+                        for (var i = 0; i < verified.length; i++) {
+                            if (verified[i].documentId == doc.id) {
+                                docRef = verified[i];
+                                break;
                             }
+                        }
+                    }
+
+                    var trhtml = '<tr>';
+
+                    if (docRef && docRef.backImage !== undefined && docRef.frontImage !== undefined) {
+                        var hasFront = docRef.frontImage && docRef.frontImage !== '';
+                        var hasBack  = docRef.backImage  && docRef.backImage  !== '';
+                        if (hasFront && hasBack && doc.backSide && doc.frontSide) {
+                            trhtml += '<td>' + doc.title + '&nbsp;&nbsp;'
+                                + '<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal" data-image="' + docRef.frontImage + '" data-id="front">{{trans('lang.view_front_image')}}</a>&nbsp;'
+                                + '<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal" data-image="' + docRef.backImage  + '" data-id="back">{{trans('lang.view_back_image')}}</a>'
+                                + '</td>';
+                        } else if (hasBack && doc.backSide) {
+                            trhtml += '<td>' + doc.title + '&nbsp;<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal" data-id="back" data-image="' + docRef.backImage + '">{{trans('lang.view_back_image')}}</a></td>';
+                        } else if (hasFront && doc.frontSide) {
+                            trhtml += '<td>' + doc.title + '&nbsp;<a href="#" class="badge badge-info" data-toggle="modal" data-target="#exampleModal" data-id="front" data-image="' + docRef.frontImage + '">{{trans('lang.view_front_image')}}</a></td>';
                         } else {
                             trhtml += '<td>' + doc.title + '</td>';
                         }
-                        var status = docRef  && docRef.status == "approved" ? 'approved' : ((docRef  && docRef.status == "rejected") ? "rejected" : ((docRef && docRef.status == "uploaded") ? 'uploaded' : 'pending'));
-                        var display_status = '';
-                        if (status == "approved") {
-                            display_status = '<span class="badge badge-success py-2 px-3">' + status + '</span>';
-                        } else if (status == "rejected") {
-                            display_status = '<span class="badge badge-danger py-2 px-3">' + status + '</span>';
-                        } else if (status == "uploaded") {
-                            display_status = '<span class="badge badge-primary py-2 px-3">' + status + '</span>';
-                        } else if (status == "pending") {
-                            display_status = '<span class="badge badge-warning py-2 px-3">' + status + '</span>';
+                    } else {
+                        trhtml += '<td>' + doc.title + '</td>';
+                    }
+
+                    var status = 'pending';
+                    if (docRef) {
+                        if (docRef.status === 'approved')  status = 'approved';
+                        else if (docRef.status === 'rejected') status = 'rejected';
+                        else if (docRef.status === 'uploaded') status = 'uploaded';
+                    }
+                    var display_status = '';
+                    if (status === 'approved')  display_status = '<span class="badge badge-success py-2 px-3">approved</span>';
+                    else if (status === 'rejected') display_status = '<span class="badge badge-danger py-2 px-3">rejected</span>';
+                    else if (status === 'uploaded') display_status = '<span class="badge badge-primary py-2 px-3">uploaded</span>';
+                    else                            display_status = '<span class="badge badge-warning py-2 px-3">pending</span>';
+                    trhtml += '<td>' + display_status + '</td>';
+
+                    trhtml += '<td class="action-btn">';
+                    trhtml += '<a href="/vendors/document/upload/' + id.trim() + '/' + doc.id + '" data-id="' + doc.id + '"><i class="mdi mdi-lead-pencil" title="Edit"></i></a>&nbsp;';
+
+                    var hasUploaded = docRef && ((docRef.frontImage && docRef.frontImage !== '') || (docRef.backImage && docRef.backImage !== ''));
+                    if (hasUploaded || status === 'approved' || status === 'rejected' || status === 'uploaded') {
+                        if (status === 'approved') {
+                            trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-danger direct-click-btn verify-doc" id="disapprove-doc" data-title="' + doc.title + '" data-id="' + doc.id + '">{{trans('lang.reject')}}</a>';
+                        } else if (status === 'rejected') {
+                            trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-success direct-click-btn verify-doc" id="approve-doc" data-title="' + doc.title + '" data-id="' + doc.id + '">{{trans('lang.approve')}}</a>';
+                        } else {
+                            trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-success direct-click-btn verify-doc" id="approve-doc" data-title="' + doc.title + '" data-id="' + doc.id + '">{{trans('lang.approve')}}</a>'
+                                   + '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-danger verify-doc" id="disapprove-doc" data-title="' + doc.title + '" data-id="' + doc.id + '">{{trans('lang.reject')}}</a>';
                         }
-                        trhtml += '<td>' + display_status + '</td>';
-                        trhtml += '<td class="action-btn">';
-                        trhtml += '<a href="' + (`/vendors/document/upload/` + id.trim() + `/` + doc.id.trim()) + '" data-id="' + doc.id + '"><i class="mdi mdi-lead-pencil" title="Edit"></i></a>&nbsp;';
-                        if (status !== 'pending') {
-                            if (status == "rejected") {
-                                trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-success direct-click-btn verify-doc" id="approve-doc" data-title="' + doc.title + '"  data-id="' + doc.id + '">{{trans('lang.approve')}}</a>';
-                            } else if (status == "approved") {
-                                trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-danger direct-click-btn verify-doc" id="disapprove-doc" data-title="' + doc.title + '"  data-id="' + doc.id + '">{{trans('lang.reject')}}</a>';
-                            } else {
-                                trhtml += '&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-success direct-click-btn verify-doc" id="approve-doc" data-title="' + doc.title + '"  data-id="' + doc.id + '">{{trans('lang.approve')}}</a>&nbsp;<a href="javascript:void(0);" class="btn btn-sm btn-danger verify-doc" id="disapprove-doc" data-title="' + doc.title + '"  data-id="' + doc.id + '">{{trans('lang.reject')}}</a>';
-                            }
-                        }
-                        trhtml += '</td>';
-                        trhtml += '</tr>';
-                        $("tbody").append(trhtml);
-                        count = count + 1;
-                        if (count == docSnapshot.docs.length) {
-                            $('#taxTable').DataTable({
-                                order: [[0, 'asc']],
-                                columnDefs: [
-                                    {orderable: false, targets: [1, 2]}
-                                ],
-                            });
-                        }
-                    })
+                    }
+                    trhtml += '</td></tr>';
+                    html += trhtml;
                 });
             }
+
+            html += '</tbody></table>';
             $(".doc-body").append(html);
+
+            $('#taxTable').DataTable({
+                order: [[0, 'asc']],
+                columnDefs: [{ orderable: false, targets: [1, 2] }],
+            });
+
             jQuery("#data-table_processing").hide();
+        }).fail(function (xhr) {
+            jQuery("#data-table_processing").hide();
+            console.error('Error loading documents:', xhr.responseJSON);
         });
     });
+
     $(document.body).on('click', '.redirecttopage', function () {
-        var url = $(this).attr('data-url');
-        window.location.href = url;
+        window.location.href = $(this).attr('data-url');
     });
+
     $(document).on('click', '.verify-doc', function () {
         jQuery("#data-table_processing").show();
-        var status = $(this).attr('id') == "approve-doc" ? "approved" : "rejected";
-        var docId = $(this).attr('data-id');
+        var status   = $(this).attr('id') === "approve-doc" ? "approved" : "rejected";
+        var docId    = $(this).attr('data-id');
         var docTitle = $(this).attr('data-title');
-        var docRefsTmp = database.collection('documents_verify').doc(id);
-        docRefsTmp.get().then(async function (docrefSnapshot) {
-            var keydataId = docrefSnapshot.data() && docrefSnapshot.data().documents ? docrefSnapshot.data().documents.findIndex((doc) => doc.documentId == docId) : 0;
-            database.collection('documents_verify').doc(id)
-                .get().then((doc) => {
-                var objects = doc.data().documents;
-                var objectToupdate = objects[keydataId];
-                objectToupdate.status = status;
-                objects[keydataId] = objectToupdate;
-                database.collection('documents_verify').doc(id).update({
-                    documents: objects
-                }).then(async function () {
-                    var enableDocIds = await getDocId();
-                    await ref.get().then( async function(snapshotsVendor){
-                        if (snapshotsVendor.docs.length > 0) {
-                            var verification = await vendorDocVerification(enableDocIds, snapshotsVendor);
-                            if(verification){
-                                if (status == "rejected") {
-                                   
-                                    if (fcmToken && fcmToken != '') {
-                                        $.ajax({
-                                            url: "{{ route('advertisement.sendnotification') }}",
-                                            type: "POST",
-                                            data: {
-                                                _token: "{{ csrf_token() }}",
-                                                fcm: fcmToken,
-                                                title:  'Rejected  your document',
-                                                message: 'Admin has Rejected your ' + docTitle + ' . Please submit again.',
-                                            },
-                                            success: function (response) {
-                                                console.log("Notification sent successfully:", response);
-                                                jQuery("#data-table_processing").hide();
-                                                window.location.reload();
-                                            },
-                                            error: function (xhr, status, error) {
-                                                console.error("Error sending notification:", error);
-                                                jQuery("#data-table_processing").hide();
-                                                window.location.reload();
-                                            }
-                                        });
-                                    }else{
-                                        jQuery("#data-table_processing").hide();
-                                        window.location.reload();
-                                    }
-                                }else if(status == "approved"){
-                                    if (fcmToken && fcmToken != '') {
-                                        $.ajax({
-                                            url: "{{ route('advertisement.sendnotification') }}",
-                                            type: "POST",
-                                            data: {
-                                                _token: "{{ csrf_token() }}",
-                                                fcm: fcmToken,
-                                                title:  'Approved  your document',
-                                                message: 'Admin has Approved your ' + docTitle,
-                                            },
-                                            success: function (response) {
-                                                console.log("Notification sent successfully:", response);
-                                                jQuery("#data-table_processing").hide();
-                                                window.location.reload();
-                                            },
-                                            error: function (xhr, status, error) {
-                                                console.error("Error sending notification:", error);
-                                                jQuery("#data-table_processing").hide();
-                                                window.location.reload();
-                                            }
-                                        });
-                                    }else{
-                                        jQuery("#data-table_processing").hide();
-                                        window.location.reload();
-                                    }
-                                }else{
-                                    jQuery("#data-table_processing").hide();
-                                    window.location.reload();
-                                }
-                            }
-                        }else{
+
+        $.ajax({
+            url: "{{ route('vendors.verify-document') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id:     id,
+                docId:  docId,
+                status: status
+            },
+            success: function (response) {
+                var notifTitle   = status === 'approved' ? 'Approved your document'  : 'Rejected your document';
+                var notifMessage = status === 'approved'
+                    ? 'Admin has Approved your ' + docTitle
+                    : 'Admin has Rejected your ' + docTitle + '. Please submit again.';
+
+                if (fcmToken && fcmToken !== '') {
+                    $.ajax({
+                        url: "{{ route('advertisement.sendnotification') }}",
+                        type: "POST",
+                        data: {
+                            _token:  "{{ csrf_token() }}",
+                            fcm:     fcmToken,
+                            title:   notifTitle,
+                            message: notifMessage
+                        },
+                        complete: function () {
                             jQuery("#data-table_processing").hide();
                             window.location.reload();
                         }
-                    })
-                    $('li').removeClass('active');
-                    $("#documents-tab").addClass('active');
-                    $("#documents-tab").click();
-                    $(".error_top").html("");
-                }).catch(function (error) {
-                    $(".error_top").show();
-                    $(".error_top").html("");
-                    $(".error_top").append("<p>" + error + "</p>");
-                });
-            })
+                    });
+                } else {
+                    jQuery("#data-table_processing").hide();
+                    window.location.reload();
+                }
+            },
+            error: function (xhr) {
+                jQuery("#data-table_processing").hide();
+                var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Verification failed';
+                $(".error_top").show().html("<p>" + err + "</p>");
+            }
         });
     });
-    async function getDocId(){
-        var enableDocIds = [];
-        await database.collection('documents').where('enable', "==", true).where('type', '==', 'vendor').get().then(async function (snapshots) {
-            await snapshots.forEach((doc) => {
-                enableDocIds.push(doc.data().id);
-            });
-        });
-        return enableDocIds;
-    }
-    async function vendorDocVerification(enableDocIds, snapshotsVendor){
-        var isCompleted = false;
-        await Promise.all(snapshotsVendor.docs.map(async (vendor) => {
-            await database.collection('documents_verify').doc(vendor.id).get().then( async function(docrefSnapshot){
-                if(docrefSnapshot.data() && docrefSnapshot.data().documents.length > 0){
-                    var vendorDocId = await docrefSnapshot.data().documents.filter((doc) => doc.status == 'approved').map((docData) => docData.documentId);
-                    if(vendorDocId.length >= enableDocIds.length){
-                        await database.collection('users').doc(vendor.id).update({'isDocumentVerify': true, isActive: true });
-                    }else{
-                        await enableDocIds.forEach(async(docId) => {
-                            if(!vendorDocId.includes(docId)){
-                                await database.collection('users').doc(vendor.id).update({'isDocumentVerify': false, isActive: false });
-                            }
-                        });
-                    }
-                }else{
-                    await database.collection('users').doc(vendor.id).update({'isDocumentVerify': false, isActive: false });
-                }
-            });
-            isCompleted = true;
-        }));
-        return isCompleted;
-    }
 </script>
 @endsection

@@ -56,7 +56,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-5">
+                        <div class="col-sm-5 zone-map-column">
                             <input type="text" placeholder="{{ trans('lang.search_location') }}" id="search-box" class="form-control controls" />
                             <div id="autocomplete-list"></div>
                             <div id="map"></div>
@@ -140,8 +140,18 @@
         border: 1px solid #d4d4d4;
         z-index: 9999;
         position: absolute;
+        top: 42px;
+        left: 0;
+        right: 0;
+        display: none;
         background-color: white;
         cursor: pointer;
+        max-height: 240px;
+        overflow-y: auto;
+    }
+
+    .zone-map-column {
+        position: relative;
     }
 
     .autocomplete-item {
@@ -183,84 +193,126 @@
         var ref = database.collection('zone').where("id", "==", id);
         var default_lat = getCookie('default_latitude');
         var default_lng = getCookie('default_longitude');
-        var geopoints = '';
+        var geopoints = [];
         let drawnItems = new L.FeatureGroup();
         let deleteButton, dragMap;
         let selectedPolygon = null;
         var mapType = 'ONLINE';
 
-
-        database.collection('settings').doc('DriverNearBy').get().then(async function(snapshots) {
-            var data = snapshots.data();
-            if (data && data.selectedMapType && data.selectedMapType == "osm") {
-                mapType = "OFFLINE"
+        function mapCenterCoords() {
+            var lat = parseFloat(getCookie('default_latitude'));
+            var lng = parseFloat(getCookie('default_longitude'));
+            if (isNaN(lat) || isNaN(lng)) {
+                lat = 23.022505;
+                lng = 72.571365;
             }
-            var onclick = '',
-                polygon = '',
-                deletearea = '';
-            if (mapType == "OFFLINE") {
-                onclick = function() {
-                    console.log("Offline mode, no drawing available.");
+            return { lat: lat, lng: lng };
+        }
+
+        function normalizeAreaPoints(area) {
+            if (!area) {
+                return [];
+            }
+            if (typeof area === 'string') {
+                try {
+                    area = JSON.parse(area);
+                } catch (e) {
+                    return [];
+                }
+            }
+            if (!Array.isArray(area)) {
+                return [];
+            }
+            var points = [];
+            area.forEach(function (item) {
+                if (!item || typeof item !== 'object') {
+                    return;
+                }
+                var lat = item.latitude ?? item.lat ?? item._lat ?? item.c_;
+                var lon = item.longitude ?? item.lng ?? item.lon ?? item._long ?? item.h_;
+                lat = parseFloat(lat);
+                lon = parseFloat(lon);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    points.push({ lat: lat, lon: lon, latitude: lat, longitude: lon });
+                }
+            });
+            return points;
+        }
+
+        function areaToCoordinatesValue(points, isOnline) {
+            if (!points.length) {
+                return '';
+            }
+            if (isOnline) {
+                var googlePoints = points.map(function (p) {
+                    return { lat: p.lat, lng: p.lon };
+                });
+                googlePoints.push(googlePoints[0]);
+                return JSON.stringify(googlePoints);
+            }
+            return JSON.stringify(points.map(function (p) {
+                return { lat: p.lat, lon: p.lon };
+            }));
+        }
+
+        function bindZoneMapButtons() {
+            var onclick, polygon, deletearea;
+            if (mapType === 'OFFLINE') {
+                onclick = function () {
+                    DragMap();
                 };
-                polygon = function() {
+                polygon = function () {
                     enablePolygonDrawing(map);
                 };
+                deletearea = function () {
+                    deleteSelectedPolygon();
+                };
             } else {
-                onclick = function() {
+                onclick = function () {
                     drawingManager.setDrawingMode(null);
                 };
-                polygon = function() {
+                polygon = function () {
                     drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
                 };
-                deletearea = function() {
+                deletearea = function () {
                     clearMap();
                 };
             }
-            document.getElementById("select-button").onclick = onclick;
-            document.getElementById("add-button").onclick = polygon;
-            document.getElementById("delete-all-button").onclick = deletearea;
-        });
+            document.getElementById('select-button').onclick = onclick;
+            document.getElementById('add-button').onclick = polygon;
+            document.getElementById('delete-all-button').onclick = deletearea;
+        }
+
         $(document).ready(function() {
-            ref.get().then(async function(snapshots) {
-                if (snapshots.docs) {
+            database.collection('settings').doc('DriverNearBy').get().then(function (snapshots) {
+                var data = snapshots.data();
+                if (data && data.selectedMapType === 'osm') {
+                    mapType = 'OFFLINE';
+                }
+                bindZoneMapButtons();
+                return ref.get();
+            }).then(async function(snapshots) {
+                if (snapshots.docs && snapshots.docs.length) {
                     var zone = snapshots.docs[0].data();
-                    $("#name").val(zone.name);
-                    $("#coordinates").val(zone.area);
-                    let coordinates = zone.area.map(item => [item.c_, item.h_]);
-                    document.getElementById('area').value = coordinates;
-                    var AREA = document.getElementById('area').value;
-                    const values = AREA.split(',');
-                    const latLonArray = [];
-                    for (let i = 0; i < values.length; i += 2) {
-                        const lat = parseFloat(values[i + 1]); // Latitude is the second value in the pair
-                        const lon = parseFloat(values[i]); // Longitude is the first value in the pair
-                        latLonArray.push([lat, lon]); // Add [lat, lon] pair to the array
-                    }
-                    if (mapType == "ONLINE") {
-                        latLonArray.push(latLonArray[0]);
-                        document.getElementById('coordinates').value = latLonArray;
-                    } else {
-                        // latLonArray.push(latLonArray);
-                        // Convert to desired format
-                        var coordinatesUpdated = latLonArray.map(function(coord) {
-                            return {
-                                lat: coord[0], // latitude from the first element of the array
-                                lon: coord[1] // longitude from the second element of the array
-                            };
-                        });
-                        document.getElementById('coordinates').value = JSON.stringify(coordinatesUpdated);
-                    }
+                    $("#name").val(zone.name || '');
+                    geopoints = normalizeAreaPoints(zone.area);
+                    document.getElementById('coordinates').value = areaToCoordinatesValue(geopoints, mapType === 'ONLINE');
+                    document.getElementById('area').value = geopoints.map(function (p) {
+                        return p.lon + ',' + p.lat;
+                    }).join(',');
                     if (zone.publish) {
                         $("#publish").prop('checked', true);
                     }
-                    default_lat = zone.latitude;
-                    default_lng = zone.longitude;
-                    geopoints = zone.area;
+                    default_lat = parseFloat(zone.latitude) || mapCenterCoords().lat;
+                    default_lng = parseFloat(zone.longitude) || mapCenterCoords().lng;
                 }
+                waitForMaps(initMap);
+            }).catch(function (error) {
+                console.error('Failed to load zone:', error);
+                bindZoneMapButtons();
+                waitForMaps(initMap);
             });
-            setTimeout(function() {
-                initMap();
-            }, 2500);
+
             $(".edit-setting-btn").click(function() {
                 var name = $("#name").val();
                 var publish = $("#publish").is(":checked");
@@ -695,141 +747,133 @@
             }
         }
 
-        function searchBox() {
-            if (mapType == "OFFLINE") {
-                var input = document.getElementById('search-box');
-                let marker, newLat, newLon;
-                var autocompleteList = document.getElementById('autocomplete-list');
-                input.addEventListener('keydown', function() {
-                    if (event.key === 'Enter') {
-                        var query = this.value.trim();
-                        if (query) {
-                            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    autocompleteList.innerHTML = '';
-                                    data.forEach(place => {
-                                        var item = document.createElement('div');
-                                        item.classList.add('autocomplete-item');
-                                        item.innerText = place.display_name;
-                                        item.onclick = function() {
-                                            input.value = place.display_name;
-                                            input.setAttribute('data-latitude', place.lat);
-                                            input.setAttribute('data-longitude', place.lon);
-                                            marker = L.marker([place.lat, place.lon], {
-                                                draggable: true
-                                            }).addTo(map);
-                                            marker.dragging.enable();
-                                            map.setView([place.lat, place.lon], 13);
-                                            if (marker) {
-                                                map.removeLayer(marker);
-                                            }
-                                            newLat = place.lat;
-                                            newLon = place.lon;
-                                            // Initially update coordinates display
-                                            updateCoordinatesDisplay(newLat, newLon);
-                                            marker.on('dragend', function(e) {
-                                                newLat = e.target.getLatLng().lat;
-                                                newLon = e.target.getLatLng().lng;
-                                                updateCoordinatesDisplay(newLat, newLon);
-                                            });
-                                            marker.on('drag', function(e) {
-                                                newLat = e.target.getLatLng().lat;
-                                                newLon = e.target.getLatLng().lng;
-                                                updateCoordinatesDisplay(newLat, newLon);
-                                            });
-                                            marker.on('moveend', function() {
-                                                updateCoordinatesDisplay(newLat, newLon);
-                                            });
-                                            if (place.address) {
-                                                var city = place.address.city || place.address.town || place.address.village || 'N/A';
-                                                var state = place.address.state || 'N/A';
-                                                var country = place.address.country || 'N/A';
-                                                input.setAttribute('data-city', city);
-                                                input.setAttribute('data-state', state);
-                                                input.setAttribute('data-country', country);
-                                            }
-                                            autocompleteList.innerHTML = ''; // Clear the autocomplete list
-                                        };
-                                        autocompleteList.appendChild(item);
-                                    });
-                                    if (data && data.length > 0) {
-                                        const lat = parseFloat(data[0].lat);
-                                        const lon = parseFloat(data[0].lon);
-                                        // Set the map view to the new coordinates
-                                        map.setView([lat, lon], 13);
-                                        // If a marker already exists, remove it
-                                        if (marker) {
-                                            map.removeLayer(marker);
-                                        }
-                                        // Add a new marker at the new location
-                                        marker = L.marker([lat, lon], {
-                                            draggable: true
-                                        }).addTo(map);
-                                        marker.dragging.enable();
-                                        marker.on('dragend', function(e) {
-                                            newLat = e.target.getLatLng().lat;
-                                            newLon = e.target.getLatLng().lng;
-                                            updateCoordinatesDisplay(newLat, newLon);
-                                        });
-                                    } else {
-                                        alert("Location not found. Please try again.");
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                });
-                        }
+        function updateCoordinatesDisplay(lat, lon) {
+            fetch('{{ route('zone.location-reverse') }}?lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon))
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data && data.display_name) {
+                        document.getElementById('search-box').value = data.display_name;
                     }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
                 });
-                document.addEventListener('click', function(e) {
-                    let latitude = input.dataset.latitude;
-                    let longitude = input.dataset.longitude;
-                    if (e.target !== input) {
-                        autocompleteList.innerHTML = '';
-                    }
-                });
+        }
 
-                function updateCoordinatesDisplay(lat, lon) {
-                    var url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
-                    // Fetch data from Nominatim API
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Display location details
-                            if (data && data.address) {
-                                var address = data.display_name;
-                                document.getElementById('search-box').value = address;
-                            }
-                        })
-                        .catch(error => {
-                            document.getElementById('search-box').innerHTML = "Error fetching data.";
-                            console.error('Error:', error);
-                        });
+        function searchBox() {
+            var input = document.getElementById('search-box');
+            var autocompleteList = document.getElementById('autocomplete-list');
+            var locationMarker = null;
+            var searchTimeout = null;
+
+            function selectPlace(place) {
+                var lat = parseFloat(place.lat);
+                var lon = parseFloat(place.lon || place.lng);
+                input.value = place.display_name || place.formatted_address || input.value;
+                input.setAttribute('data-latitude', lat);
+                input.setAttribute('data-longitude', lon);
+
+                if (mapType === 'OFFLINE') {
+                    if (locationMarker && map.hasLayer(locationMarker)) {
+                        map.removeLayer(locationMarker);
+                    }
+                    locationMarker = L.marker([lat, lon], { draggable: true }).addTo(map);
+                    map.setView([lat, lon], 13);
+                    locationMarker.on('dragend', function (e) {
+                        var pos = e.target.getLatLng();
+                        updateCoordinatesDisplay(pos.lat, pos.lng);
+                    });
+                } else if (place.geometry) {
+                    if (place.geometry.viewport) {
+                        map.fitBounds(place.geometry.viewport);
+                    } else {
+                        map.panTo(place.geometry.location);
+                        map.setZoom(13);
+                    }
+                } else if (!isNaN(lat) && !isNaN(lon)) {
+                    map.panTo({ lat: lat, lng: lon });
+                    map.setZoom(13);
                 }
-            } else {
-                var input = document.getElementById('search-box');
-                var searchBox = new google.maps.places.SearchBox(input);
-                map.addListener('bounds_changed', function() {
-                    searchBox.setBounds(map.getBounds());
+
+                autocompleteList.innerHTML = '';
+                autocompleteList.style.display = 'none';
+            }
+
+            function renderResults(results) {
+                autocompleteList.innerHTML = '';
+                if (!results || !results.length) {
+                    autocompleteList.style.display = 'none';
+                    return;
+                }
+                autocompleteList.style.display = 'block';
+                results.forEach(function (place) {
+                    var item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.textContent = place.display_name || place.formatted_address || '';
+                    item.onclick = function () {
+                        selectPlace(place);
+                    };
+                    autocompleteList.appendChild(item);
                 });
-                searchBox.addListener('places_changed', function() {
-                    var places = searchBox.getPlaces();
-                    if (places.length == 0) {
+            }
+
+            function runOfflineSearch(query) {
+                if (!query || query.length < 3) {
+                    autocompleteList.innerHTML = '';
+                    autocompleteList.style.display = 'none';
+                    return;
+                }
+                fetch('{{ route('zone.location-search') }}?q=' + encodeURIComponent(query), {
+                    headers: { 'Accept': 'application/json' },
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(renderResults)
+                    .catch(function (error) {
+                        console.error('Location search failed:', error);
+                    });
+            }
+
+            input.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    if (mapType === 'OFFLINE') {
+                        runOfflineSearch(input.value.trim());
+                    }
+                }, 350);
+            });
+
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    clearTimeout(searchTimeout);
+                    if (mapType === 'OFFLINE') {
+                        runOfflineSearch(input.value.trim());
+                    }
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target !== input && !autocompleteList.contains(e.target)) {
+                    autocompleteList.innerHTML = '';
+                    autocompleteList.style.display = 'none';
+                }
+            });
+
+            if (mapType !== 'OFFLINE' && typeof google !== 'undefined' && google.maps && google.maps.places) {
+                var searchBoxControl = new google.maps.places.SearchBox(input);
+                map.addListener('bounds_changed', function () {
+                    searchBoxControl.setBounds(map.getBounds());
+                });
+                searchBoxControl.addListener('places_changed', function () {
+                    var places = searchBoxControl.getPlaces();
+                    if (!places || !places.length) {
                         return;
                     }
                     var bounds = new google.maps.LatLngBounds();
-                    places.forEach(function(place) {
+                    places.forEach(function (place) {
                         if (!place.geometry) {
                             return;
                         }
-                        var icon = {
-                            url: place.icon,
-                            size: new google.maps.Size(71, 71),
-                            origin: new google.maps.Point(0, 0),
-                            anchor: new google.maps.Point(17, 34),
-                            scaledSize: new google.maps.Size(25, 25)
-                        };
                         if (place.geometry.viewport) {
                             bounds.union(place.geometry.viewport);
                         } else {
@@ -839,20 +883,46 @@
                     map.fitBounds(bounds);
                 });
                 var autocomplete = new google.maps.places.Autocomplete(input);
-                autocomplete.addListener('place_changed', function() {
+                autocomplete.bindTo('bounds', map);
+                autocomplete.addListener('place_changed', function () {
                     var place = autocomplete.getPlace();
-                    if (place && place.address_components) {
-                        var placeaddress = autocomplete.getPlace().address_components;
-                        var city = place.address_components.filter(f => JSON.stringify(f.types) === JSON.stringify(['locality', 'political']))[0].long_name;
-                        var state = place.address_components.filter(f => JSON.stringify(f.types) === JSON.stringify(['administrative_area_level_1', 'political']))[0].long_name;
-                        var country = place.address_components.filter(f => JSON.stringify(f.types) === JSON.stringify(['country', 'political']))[0].long_name;
-                        $("#search-box").val(place.formatted_address).attr('data-latitude', place.geometry.location.lat()).attr('data-longitude', place.geometry.location.lng()).attr('data-city', city).attr('data-state', state).attr('data-country', country)
+                    if (!place || !place.geometry) {
+                        return;
                     }
+                    selectPlace({
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        formatted_address: place.formatted_address,
+                        geometry: place.geometry,
+                    });
                 });
             }
         }
 
+        function waitForMaps(callback, attempts) {
+            attempts = attempts || 0;
+            var ready = false;
+            if (mapType === 'OFFLINE') {
+                ready = typeof L !== 'undefined' && typeof L.map === 'function';
+            } else {
+                ready = typeof google !== 'undefined' && google.maps && google.maps.Map && google.maps.places;
+            }
+            if (ready || attempts > 80) {
+                callback();
+                return;
+            }
+            setTimeout(function () {
+                waitForMaps(callback, attempts + 1);
+            }, 100);
+        }
+
         function initMap() {
+            var center = {
+                lat: parseFloat(default_lat) || mapCenterCoords().lat,
+                lng: parseFloat(default_lng) || mapCenterCoords().lng,
+            };
+            var areaPoints = normalizeAreaPoints(geopoints);
+
             if (mapType == "ONLINE") {
                 var infowindow = new google.maps.InfoWindow({
                     size: new google.maps.Size(150, 50)
@@ -860,7 +930,7 @@
                 $(".mapType").show();
                 map = new google.maps.Map(document.getElementById('map'), {
                     zoom: 8,
-                    center: new google.maps.LatLng(default_lat, default_lng),
+                    center: new google.maps.LatLng(center.lat, center.lng),
                     mapTypeControl: false,
                     mapTypeControlOptions: {
                         style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
@@ -879,11 +949,11 @@
                 });
                 var zones = [];
                 var zones_area = [];
-                for (i = 0; i < geopoints.length; i++) {
+                for (var pointIndex = 0; pointIndex < areaPoints.length; pointIndex++) {
                     zones_area.push({
-                        'lat': geopoints[i].latitude,
-                        'lng': geopoints[i].longitude
-                    })
+                        'lat': areaPoints[pointIndex].lat,
+                        'lng': areaPoints[pointIndex].lon
+                    });
                 }
                 zones.push(zones_area);
                 var i;
@@ -1006,60 +1076,41 @@
             } else {
                 $(".mapType").hide();
                 searchBox();
-                map = L.map('map').setView([default_lat, default_lng], 10);
+                map = L.map('map').setView([center.lat, center.lng], areaPoints.length ? 12 : 10);
                 map.dragging.disable();
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
-                // Create a feature group to store drawn items (polygons, lines, etc.)
                 drawnItems = new L.FeatureGroup();
                 map.addLayer(drawnItems);
-                const AREA = document.getElementById('area').value;
-                const values = AREA.split(',');
-                const latLonArray = [];
-                for (let i = 0; i < values.length; i += 2) {
-                    const lat = parseFloat(values[i + 1]); // Latitude is the second value in the pair
-                    const lon = parseFloat(values[i]); // Longitude is the first value in the pair
-                    latLonArray.push([lat, lon]); // Add [lat, lon] pair to the array
-                }
-                const cooo = [
-                    latLonArray.map(coord => ({
-                        lat: coord[0],
-                        lon: coord[1]
-                    }))
-                ];
-                if (mapType == "ONLINE") {
-                    document.getElementById('coordinates').value = JSON.stringify(cooo);
-                } else {
-                    var coordinatesString = JSON.stringify(cooo);
-                    // Check if the string starts with '[[' and remove the first '[' if true
-                    if (coordinatesString.startsWith('[[')) {
-                        coordinatesString = coordinatesString.slice(1); // Remove the first '['
-                    }
-                    if (coordinatesString.endsWith(']]')) {
-                        coordinatesString = coordinatesString.slice(0, -1); // Remove the last ']'
-                    }
-                    // Set the cleaned string as the value of the input field
-                    document.getElementById('coordinates').value = coordinatesString;
-                }
-                // Create a polygon and add it to the map
-                var polygon = L.polygon(latLonArray, {
-                    color: 'blue'
-                }).addTo(drawnItems);
-                polygon.on('click', function() {
-                    if (selectedPolygon) {
-                        selectedPolygon.setStyle({
-                            color: 'blue',
+
+                var latLonArray = areaPoints.map(function (p) {
+                    return [p.lat, p.lon];
+                });
+
+                if (latLonArray.length) {
+                    document.getElementById('coordinates').value = JSON.stringify(latLonArray.map(function (coord) {
+                        return { lat: coord[0], lon: coord[1] };
+                    }));
+                    var polygon = L.polygon(latLonArray, {
+                        color: 'blue'
+                    }).addTo(drawnItems);
+                    map.fitBounds(polygon.getBounds());
+                    polygon.on('click', function() {
+                        if (selectedPolygon) {
+                            selectedPolygon.setStyle({
+                                color: 'blue',
+                                weight: 3
+                            });
+                        }
+                        polygon.setStyle({
+                            color: 'red',
                             weight: 3
                         });
-                    }
-                    polygon.setStyle({
-                        color: 'red',
-                        weight: 3
+                        selectedPolygon = polygon;
                     });
-                    selectedPolygon = polygon;
-                });
+                }
                 map.addControl(new L.Control.Draw({
                     draw: { // Disable drawing functionality
                         polygon: true, // Enable drawing of polygons

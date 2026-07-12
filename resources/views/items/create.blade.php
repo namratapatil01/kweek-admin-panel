@@ -132,9 +132,12 @@
                             <div class="form-group row width-100" id="attributes_div" style="display:none">
                                 <label class="col-3 control-label">{{ trans('lang.item_attribute_id') }}</label>
                                 <div class="col-7">
-                                    <select id='item_attribute' class="form-control chosen-select" required
+                                    <select id="item_attribute" class="form-control chosen-select"
                                         multiple="multiple" style="display: none;"
                                         onchange="selectAttribute();"></select>
+                                    <div class="form-text text-muted">
+                                        Select attributes from Item Attributes List (Size, Color, Type, etc.)
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group row width-100">
@@ -356,8 +359,8 @@
         var sectionData = '';
         var sectionRef = database.collection('sections').doc(section_id);
         sectionRef.get().then(async function(snapshots) {
-            sectionData = snapshots.data();
-            if (sectionData.adminCommision.enable == true) {
+            sectionData = snapshots.data() || {};
+            if (sectionData.adminCommision && sectionData.adminCommision.enable == true) {
                 commissionModel = true;
             }
             if(sectionData.serviceTypeFlag == "ecommerce-service"){
@@ -382,10 +385,8 @@
 
             if (sectionData.serviceTypeFlag == "ecommerce-service" || sectionData.serviceTypeFlag == "delivery-service") {
                 $("#attributes_div").show();
-                $("#item_attribute_chosen").css({
-                    'width': '100%'
-                });
-            }else{
+                $("#item_attribute_chosen").css({ 'width': '100%' });
+            } else {
                 $("#item_attribute").val('').trigger("chosen:updated");
                 $("#attributes_div").hide();
                 $("#item_attributes").html('');
@@ -459,66 +460,101 @@
             });
 
             jQuery("#data-table_processing").show();
-            
-            database.collection('vendors').where('section_id', '==', section_id).orderBy('title').where('title','!=', '').get().then(async function(snapshots) {
 
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    vendor_list.push(data);
+            async function loadVendorsForItemForm() {
+                var snapshots = section_id
+                    ? await database.collection('vendors').where('section_id', '==', section_id).get()
+                    : { docs: [], empty: true };
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('vendors').get();
+                }
+
+                var vendors = (snapshots.docs || [])
+                    .map(function (listval) {
+                        var data = listval.data() || {};
+                        data.id = listval.id;
+                        return data;
+                    })
+                    .filter(function (data) { return !!(data.title && String(data.title).trim()); })
+                    .sort(function (a, b) {
+                        return String(a.title).localeCompare(String(b.title));
+                    });
+
+                vendor_list = vendors;
+                $('#item_vendor').find('option:not(:first)').remove();
+
+                vendors.forEach(function (data) {
                     $('#item_vendor').append($("<option></option>")
                         .attr("value", data.id)
-                        .attr("data-section-id", data.section_id)
-                        .attr("data-user-id", data.author)
+                        .attr("data-section-id", data.section_id || '')
+                        .attr("data-user-id", data.author || '')
                         .text(data.title));
 
                     if (reataurantIDDirec == data.id) {
-
-                        vendor_section_id = data.section_id;
+                        vendor_section_id = data.section_id || '';
                         localStorage.setItem('vendor_section_id', vendor_section_id);
-
                         $(".vendor_name_heading").html(data.title);
-                        var section_info = $.map(sections_list, function(section, i) {
-                            if (section.id == data.section_id) {
+                        var section_info = $.map(sections_list, function (section) {
+                            if (section.id == data.section_id || section.id == section_id) {
                                 return section;
                             }
                         });
                         if (section_info.length > 0 && (section_info[0].serviceTypeFlag == "ecommerce-service" || section_info[0].serviceTypeFlag == "delivery-service")) {
                             $("#attributes_div").show();
-                            $("#item_attribute_chosen").css({
-                                'width': '100%'
-                            });
+                            $("#item_attribute_chosen").css({ 'width': '100%' });
                         }
                         if (section_info.length > 0 && (section_info[0].serviceTypeFlag == "ecommerce-service")) {
                             $("#is_digital_div").show();
                         }
                     }
-                    if (reataurantIDDirec && reataurantIDDirec !== '') {
-                        console.log('Pre-selected vendor ID:', reataurantIDDirec);
-                        change_categories(reataurantIDDirec);
-                        // Also set the vendor name in heading
-                        $(".vendor_name_heading").html($('#item_vendor option[value="' + reataurantIDDirec + '"]').text());
-                    }
-                })
-            });
+                });
 
-            var vendorsCatRef = database.collection('vendor_categories').where('section_id', '==', section_id);
-            vendorsCatRef.where('publish', '==', true).get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    categories_list.push(data);
-                })
-            });
-            
-            var brandRef = database.collection('brands').where('sectionId', '==', section_id);
-            brandRef.get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
+                if (reataurantIDDirec && reataurantIDDirec !== '') {
+                    $('#item_vendor').val(reataurantIDDirec);
+                    change_categories(reataurantIDDirec);
+                    $(".vendor_name_heading").html($('#item_vendor option[value="' + reataurantIDDirec + '"]').text());
+                }
+            }
+
+            async function loadCategoriesForItemForm() {
+                var snapshots = section_id
+                    ? await database.collection('vendor_categories').where('section_id', '==', section_id).where('publish', '==', true).get()
+                    : { docs: [], empty: true };
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('vendor_categories').where('publish', '==', true).get();
+                }
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('vendor_categories').get();
+                }
+
+                categories_list = (snapshots.docs || []).map(function (listval) {
+                    var data = listval.data() || {};
+                    data.id = listval.id;
+                    return data;
+                });
+            }
+
+            async function loadBrandsForItemForm() {
+                var snapshots = section_id
+                    ? await database.collection('brands').where('sectionId', '==', section_id).get()
+                    : { docs: [], empty: true };
+                if (!snapshots.docs || snapshots.docs.length === 0) {
+                    snapshots = await database.collection('brands').get();
+                }
+                brand_list = [];
+                (snapshots.docs || []).forEach(function (listval) {
+                    var data = listval.data() || {};
+                    data.id = listval.id;
                     brand_list.push(data);
                     $('#brand').append($("<option></option>")
                         .attr("value", data.id)
-                        .text(data.title));
-                })
-            });
+                        .text(data.title || data.name || data.id));
+                });
+            }
+
+            await loadCategoriesForItemForm();
+            await loadVendorsForItemForm();
+            await loadBrandsForItemForm();
 
             var digitalProductRef = database.collection('settings').doc("digitalProduct");
             digitalProductRef.get().then(async function(snapshots) {
@@ -531,27 +567,41 @@
             var attributes = database.collection('vendor_attributes');
             attributes.get().then(async function(snapshots) {
                 snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
+                    var data = listval.data() || {};
+                    data.id = listval.id;
                     attributes_list.push(data);
                     $('#item_attribute').append($("<option></option>")
                         .attr("value", data.id)
-                        .text(data.title));
-                })
-                $("#item_attribute").show().chosen({
-                    "placeholder_text": "{{ trans('lang.select_attribute') }}"
+                        .text(data.title || data.name || data.id));
                 });
+                $("#item_attribute").show().chosen({
+                    "placeholder_text": "{{ trans('lang.select_attribute') }}",
+                    "allow_single_deselect": true
+                }).off('change.itemAttrChosen').on('change.itemAttrChosen', function () {
+                    selectAttribute();
+                });
+                // Food / delivery & ecommerce should show attributes
+                if (!sectionData || sectionData.serviceTypeFlag == "delivery-service" || sectionData.serviceTypeFlag == "ecommerce-service" || !sectionData.serviceTypeFlag) {
+                    $("#attributes_div").show();
+                    $("#item_attribute_chosen").css({ 'width': '100%' });
+                }
             });
 
             jQuery("#data-table_processing").hide();
 
             $(".save-form-btn").click(async function() {
-                
+                try {
+                jQuery("#data-table_processing").show();
+
                 var name = $(".item_name").val();
                 var price = $(".item_price").val();
                 var item_quantity = $(".item_quantity").val();
                 var set_vendor_id = vendor_id ? vendor_id : $("#item_vendor option:selected").val();
                 var category = $("#item_category").val();
-                var section_id = $('#item_category').find('option:selected').attr('section_id');
+                var section_id = $('#item_category').find('option:selected').attr('section_id')
+                    || $('#item_vendor').find('option:selected').attr('data-section-id')
+                    || getCookie('section_id')
+                    || '';
                 var brand = $("#brand").val() || '';
                 var itemCalories = parseInt($(".item_calories").val());
                 var itemGrams = parseInt($(".item_grams").val());
@@ -587,21 +637,28 @@
                 var id = database.collection('temp').doc().id;
                 
                 if (name == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.enter_item_name_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (price == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.enter_item_price_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (price <= 0) {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.enter_positive_price_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (item_quantity == '' || item_quantity < -1) {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     if (item_quantity == '') {
@@ -610,59 +667,102 @@
                         $(".error_top").append("<p>{{ trans('lang.invalid_item_quantity_error') }}</p>");
                     }
                     window.scrollTo(0, 0);
+                    return;
                 } else if (set_vendor_id == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.select_vendor_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (category == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.select_item_category_error') }}</p>");
                     window.scrollTo(0, 0);
-                } else if (brand == '' && sectionData.serviceTypeFlag == "ecommerce-service") {
+                    return;
+                } else if (brand == '' && sectionData && sectionData.serviceTypeFlag == "ecommerce-service") {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.select_brand_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (parseInt(price) < parseInt(discount)) {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.price_should_not_less_then_discount_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (description == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.enter_item_description_error') }}</p>");
                     window.scrollTo(0, 0);
+                    return;
                 } else if (is_digital_product == true && digital_product_file == '') {
+                    jQuery("#data-table_processing").hide();
                     $(".error_top").show();
                     $(".error_top").html("");
                     $(".error_top").append("<p>{{ trans('lang.upload_digital_file_error') }}</p>");
                     window.scrollTo(0, 0);
-                } else {
+                    return;
+                }
 
                     var vendorRef = await database.collection('vendors').doc(set_vendor_id).get();
-                    var vendorData = vendorRef.data();
-                    var userId = vendorData.author;
+                    var vendorData = vendorRef.exists ? (vendorRef.data() || {}) : {};
+                    if (!section_id) {
+                        section_id = vendorData.section_id || getCookie('section_id') || '';
+                    }
 
-                    database.collection('vendor_products').where('vendorID', '==', set_vendor_id).get().then(async function(snapshot) {
-                        createdItem = snapshot.docs.length;
-                    })
-
-                    await database.collection('users').where('id', '==', userId).get().then(async function(snapshots) {
-                        var data = snapshots.docs[0].data();
-                        if (subscriptionModel || commissionModel) {
-                            if (data.hasOwnProperty('subscription_plan') && data
-                                .subscription_plan != null && data
-                                .subscription_plan != '') {
-                                itemLimit = data.subscription_plan.itemLimit;
+                    // Migrated vendors often have no author field — resolve safely
+                    var userId = vendorData.author || vendorData.authorID || vendorData.userId || '';
+                    if (!userId) {
+                        try {
+                            var ownerSnap = await database.collection('users')
+                                .where('role', '==', 'vendor')
+                                .where('vendorID', '==', set_vendor_id)
+                                .limit(1)
+                                .get();
+                            if (ownerSnap.docs && ownerSnap.docs.length) {
+                                userId = ownerSnap.docs[0].id;
                             }
+                        } catch (e) {
+                            console.warn('Vendor owner lookup failed', e);
                         }
-                    });
+                    }
+
+                    createdItem = 0;
+                    try {
+                        var productCountSnap = await database.collection('vendor_products')
+                            .where('vendorID', '==', set_vendor_id)
+                            .get();
+                        createdItem = productCountSnap.docs ? productCountSnap.docs.length : 0;
+                    } catch (e) {
+                        console.warn('Product count lookup failed', e);
+                    }
+
+                    itemLimit = '-1';
+                    if (userId && (subscriptionModel || commissionModel)) {
+                        try {
+                            var userSnap = await database.collection('users').doc(userId).get();
+                            if (userSnap.exists) {
+                                var data = userSnap.data() || {};
+                                if (data.subscription_plan && data.subscription_plan.itemLimit != null && data.subscription_plan.itemLimit !== '') {
+                                    itemLimit = data.subscription_plan.itemLimit;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Subscription lookup failed', e);
+                        }
+                    }
 
                     if (!(parseInt(itemLimit) == -1 || parseInt(createdItem) < parseInt(itemLimit))) {
-                      $(".error_top").show();
+                        jQuery("#data-table_processing").hide();
+                        $(".error_top").show();
                         $(".error_top").html("");
                         $(".error_top").append(
                             "<p>{{ trans('lang.create_item_limit_exceed') }}</p>"
@@ -677,15 +777,23 @@
                     var variants = [];
                     var quantityerror = 0;
                     var priceerror = 0;
-                    
-                    if ($("#item_attribute").val().length > 0) {
-                        if ($('#attributes').val().length > 0) {
-                            var attributes = $.parseJSON($('#attributes').val());
+
+                    // Optional attributes from Item Attributes List
+                    var selectedAttrs = $("#item_attribute").val() || [];
+                    if (!Array.isArray(selectedAttrs)) {
+                        selectedAttrs = selectedAttrs ? [selectedAttrs] : [];
+                    }
+
+                    if (selectedAttrs.length > 0) {
+                        if (($('#attributes').val() || '').length > 0) {
+                            attributes = $.parseJSON($('#attributes').val());
                         } else {
+                            jQuery("#data-table_processing").hide();
                             alert('Please add your attribute value');
                             return false;
                         }
-                        if ($("#item_attribute").val().length !== attributes.length) {
+                        if (selectedAttrs.length !== attributes.length) {
+                            jQuery("#data-table_processing").hide();
                             alert('Please add your attribute value');
                             return false;
                         }
@@ -719,7 +827,7 @@
                                         'variant_quantity': variant_quantity
                                     });
                                 }
-                                if (variant_quantity = '' ||
+                                if (variant_quantity == '' ||
                                     variant_quantity < -1 ||
                                     variant_quantity == 0) {
                                     quantityerror++;
@@ -741,12 +849,14 @@
                     var item_attribute = null;
                     if (attributes.length > 0 && variants.length > 0) {
                         if (quantityerror > 0) {
+                            jQuery("#data-table_processing").hide();
                             alert(
                                 'Please add your variants quantity it should be -1 or greater than -1'
                             );
                             return false;
                         }
                         if (priceerror > 0) {
+                            jQuery("#data-table_processing").hide();
                             alert('Please add your variants  Price');
                             return false;
                         }
@@ -765,6 +875,7 @@
                             }
                             var objects = {
                                 'name': name,
+                                'title': name,
                                 'price': price.toString(),
                                 'quantity': parseInt(item_quantity),
                                 'disPrice': discount.toString(),
@@ -772,7 +883,7 @@
                                 'categoryID': category,
                                 'brandID': brand,
                                 'section_id': section_id,
-                                'photo': photo,
+                                'photo': photo || '',
                                 'calories': itemCalories,
                                 "grams": itemGrams,
                                 'proteins': itemProteins,
@@ -787,9 +898,9 @@
                                 'product_specification': product_specification,
                                 'id': id,
                                 'item_attribute': item_attribute,
-                                'photos': IMG,
+                                'photos': IMG || [],
                                 'isDigitalProduct': is_digital_product,
-                                'digitalProduct': DigitalImg,
+                                'digitalProduct': DigitalImg || '',
                                 'createdAt': kweekDb.FieldValue.serverTimestamp()
                             };
                             database.collection('vendor_products').doc(id)
@@ -801,6 +912,12 @@
                                         window.location.href =
                                             '{{ route('items') }}';
                                     }
+                                }).catch(function (err) {
+                                    jQuery("#data-table_processing").hide();
+                                    $(".error_top").show();
+                                    $(".error_top").html("");
+                                    $(".error_top").append("<p>Failed to save item: " + (err && err.message ? err.message : err) + "</p>");
+                                    window.scrollTo(0, 0);
                                 });
                         }).catch(err => {
                             jQuery("#data-table_processing").hide();
@@ -816,6 +933,13 @@
                         $(".error_top").append("<p>" + err + "</p>");
                         window.scrollTo(0, 0);
                     });
+                } catch (err) {
+                    console.error('Item save failed', err);
+                    jQuery("#data-table_processing").hide();
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>Failed to save item: " + (err && err.message ? err.message : err) + "</p>");
+                    window.scrollTo(0, 0);
                 }
                 
             })
@@ -1054,80 +1178,153 @@
         
         function change_categories(selected_vendor) {
             database.collection('vendors').doc(selected_vendor).get().then(async function(snapshot) {
-                if (snapshot.exists) {
-                    var data = snapshot.data();
-                    // var categoryIDs = [];
-                    // categoryIDs = data.categoryID;
-                    var categoryIDs = data.categoryID || [];
-                    $('#item_category').empty();
-                    $('#item_category').append($("<option></option>")
-                        .attr("value", "").text("{{ trans('lang.select_category') }}")); //new line added
-                    var matched = 0; //new line added
-                    categories_list.forEach((val) => {
-                        if (categoryIDs.includes(val.id)) {
-                            $('#item_category').append($("<option></option>")
-                                .attr("value", val.id)
-                                .attr("section_id", val.section_id)
-                                .text(val.title));
-                            matched++; //new line added
-                        }
-                    })
-                    if (matched === 0) {
-                        $('#item_category').append($("<option disabled></option>")
-                            .text("{{ trans('lang.no_categories_found') }}"));
-                    } //new line added
-                    $('#item_category').trigger('change');
+                if (!snapshot.exists) {
+                    return;
                 }
-            })
+                var data = snapshot.data() || {};
+                var categoryIDs = data.categoryID || [];
+                if (typeof categoryIDs === 'string') {
+                    try { categoryIDs = JSON.parse(categoryIDs); } catch (e) { categoryIDs = []; }
+                }
+                if (!Array.isArray(categoryIDs)) {
+                    categoryIDs = [];
+                }
+
+                $('#item_category').empty();
+                $('#item_category').append($("<option></option>")
+                    .attr("value", "").text("{{ trans('lang.select_category') }}"));
+
+                var matched = 0;
+                var vendorSection = data.section_id || '';
+
+                function appendCategory(val) {
+                    $('#item_category').append($("<option></option>")
+                        .attr("value", val.id)
+                        .attr("section_id", val.section_id || '')
+                        .text(val.title || val.name || val.id));
+                    matched++;
+                }
+
+                // Prefer categories linked on the store
+                categories_list.forEach(function (val) {
+                    if (categoryIDs.length && categoryIDs.includes(val.id)) {
+                        appendCategory(val);
+                    }
+                });
+
+                // Migrated stores often have empty categoryID — fall back by store section, then all
+                if (matched === 0 && vendorSection) {
+                    categories_list.forEach(function (val) {
+                        if (val.section_id == vendorSection) {
+                            appendCategory(val);
+                        }
+                    });
+                }
+                if (matched === 0) {
+                    categories_list.forEach(function (val) {
+                        appendCategory(val);
+                    });
+                }
+                if (matched === 0) {
+                    $('#item_category').append($("<option disabled></option>")
+                        .text("{{ trans('lang.no_categories_found') }}"));
+                }
+                $('#item_category').trigger('change');
+            });
         }
        
         function selectAttribute() {
+            // Preserve current tag values before rebuild
+            var previousValues = {};
+            $("#item_attributes input[data-role=tagsinput]").each(function () {
+                previousValues[this.id] = $(this).val() || '';
+                try { $(this).tagsinput('destroy'); } catch (e) {}
+            });
+
             var html = '';
-            $("#item_attribute").find('option:selected').each(function() {
-                html += '<div class="row">';
+            var selected = $("#item_attribute").val() || [];
+            if (!Array.isArray(selected)) {
+                selected = selected ? [selected] : [];
+            }
+
+            $("#item_attribute").find('option:selected').each(function () {
+                var attrId = $(this).val();
+                var inputId = 'attribute_options_' + attrId;
+                var existing = previousValues[inputId] || '';
+                html += '<div class="row mb-2" id="attr_' + attrId + '">';
                 html += '<div class="col-md-3">';
                 html += '<label>' + $(this).text() + '</label>';
                 html += '</div>';
                 html += '<div class="col-lg-9">';
-                html += '<input type="text" class="form-control" id="attribute_options_' + $(this).val() +
-                    '" placeholder="Add attribute values" data-role="tagsinput" onchange="variants_update()">';
+                html += '<input type="text" class="form-control" id="' + inputId +
+                    '" value="' + existing.replace(/"/g, '&quot;') +
+                    '" placeholder="Add attribute values" data-role="tagsinput">';
                 html += '</div>';
                 html += '</div>';
             });
+
             $("#item_attributes").html(html);
-            $("#item_attributes input[data-role=tagsinput]").tagsinput();
-            $("#attributes").val('');
-            $("#variants").val('');
-            $("#item_variants").html('');
+            bindAttributeTagsInputs();
+
+            if (selected.length === 0) {
+                $("#attributes").val('');
+                $("#variants").val('');
+                $("#item_variants").html('');
+                return;
+            }
+
+            variants_update();
         }
+
+        function bindAttributeTagsInputs() {
+            $("#item_attributes input[data-role=tagsinput]").each(function () {
+                var $input = $(this);
+                try { $input.tagsinput('destroy'); } catch (e) {}
+                $input.tagsinput();
+                $input.off('itemAdded.itemAttr itemRemoved.itemAttr change.itemAttr')
+                    .on('itemAdded.itemAttr itemRemoved.itemAttr', function () {
+                        variants_update();
+                    })
+                    .on('change.itemAttr', function () {
+                        variants_update();
+                    });
+            });
+        }
+
         function variants_update() {
             var html = '';
             variant_photos = [];
             variant_vIds = [];
             variant_filename = [];
-            var item_attribute = $("#item_attribute").map(function(idx, ele) {
-                return $(ele).val();
-            }).get();
+            var item_attribute = $("#item_attribute").val() || [];
+            if (!Array.isArray(item_attribute)) {
+                item_attribute = item_attribute ? [item_attribute] : [];
+            }
+
             if (item_attribute.length > 0) {
                 var attributes = [];
                 var attributeSet = [];
-                $.each(item_attribute, function(index, attribute) {
-                    var attribute_options = $("#attribute_options_" + attribute).val();
+                $.each(item_attribute, function (index, attribute) {
+                    var $opt = $("#attribute_options_" + attribute);
+                    var attribute_options = $opt.length ? ($opt.val() || '') : '';
                     if (attribute_options) {
-                        var attribute_options = attribute_options.split(',');
-                        attribute_options = $.map(attribute_options, function(value) {
-                            return value.replace(/[^a-zA-Z0-9]/g, '');
+                        attribute_options = attribute_options.split(',').map(function (value) {
+                            return String(value || '').replace(/[^a-zA-Z0-9]/g, '');
+                        }).filter(function (value) {
+                            return value.length > 0;
                         });
-                        attributeSet.push(attribute_options);
-                        attributes.push({
-                            'attribute_id': attribute,
-                            'attribute_options': attribute_options
-                        });
+                        if (attribute_options.length) {
+                            attributeSet.push(attribute_options);
+                            attributes.push({
+                                'attribute_id': attribute,
+                                'attribute_options': attribute_options
+                            });
+                        }
                     }
                 });
                 if (attributeSet.length > 0) {
                     $('#attributes').val(JSON.stringify(attributes));
-                    var variants = getCombinations(attributeSet);
+                    var variants = getCombinations(attributeSet) || [];
                     $('#variants').val(JSON.stringify(variants));
                     html += '<table class="table table-bordered">';
                     html += '<thead class="thead-light">';
@@ -1139,7 +1336,7 @@
                     html += '</tr>';
                     html += '</thead>';
                     html += '<tbody>';
-                    $.each(variants, function(index, variant) {
+                    $.each(variants, function (index, variant) {
                         html += '<tr>';
                         html += '<td><label for="" class="control-label">' + variant + '</label></td>';
                         html += '<td>';
@@ -1148,7 +1345,9 @@
                             '" min="0" class="form-control">';
                         html += '</td>';
                         html += '<td>';
-                        var check_variant_qty = $('#price_' + variant).val() ? $('#price_' + variant).val() : -1;
+                        var check_variant_qty = $('#qty_' + variant).val() !== undefined && $('#qty_' + variant).length
+                            ? $('#qty_' + variant).val()
+                            : -1;
                         html += '<input type="number" id="qty_' + variant + '" value="' + check_variant_qty +
                             '" min="-1" class="form-control">';
                         html += '</td>';
@@ -1172,7 +1371,13 @@
                     });
                     html += '</tbody>';
                     html += '</table>';
+                } else {
+                    $('#attributes').val('');
+                    $('#variants').val('');
                 }
+            } else {
+                $('#attributes').val('');
+                $('#variants').val('');
             }
             $("#item_variants").html(html);
         }

@@ -63,7 +63,7 @@ return [
         'check_endpoint' => env('ARROPAY_MAYA_QR_CHECK_ENDPOINT', '/api/v1/maya/paymentcheck'),
         'request_timeout' => (int) env('ARROPAY_MAYA_QR_TIMEOUT', 30),
     ],
-     'arropay_auth' => [
+    'arropay_auth' => [
         'base_url' => env('ARROPAY_AUTH_BASE_URL') ?: 'https://arropay.app',
         'api_key' => env('ARROPAY_AUTH_API_KEY', ''),
         'api_secret' => env('ARROPAY_AUTH_API_SECRET', ''),
@@ -72,7 +72,13 @@ return [
         'request_timeout' => (int) env('ARROPAY_AUTH_TIMEOUT', 30),
         'payments_table' => env('ARROPAY_PAYMENTS_TABLE', 'arropay_v2_payments'),
     ],
-    'arropay_disbursement' => [
+    'google' => [
+        'client_ids' => env('GOOGLE_CLIENT_IDS', env('GOOGLE_CLIENT_ID', '')),
+    ],
+    'apple' => [
+        'client_ids' => env('APPLE_CLIENT_IDS', env('APPLE_CLIENT_ID', '')),
+    ],
+     'arropay_disbursement' => [
         'mode' => env('ARROPAY_DISBURSEMENT_MODE', 'local'),
         'base_url' => env('ARROPAY_DISBURSEMENT_BASE_URL')
             ?: (env('ARROPAY_AUTH_BASE_URL') ?: 'https://arropay.app'),

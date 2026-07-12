@@ -1,3 +1,7 @@
+@php
+    $globalSettings = \App\Models\Setting::query()->find('globalSettings')?->value ?? [];
+    $appLogo = $globalSettings['appLogo'] ?? asset('images/kweek-logo.png');
+@endphp
 <!doctype html>
 
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -8,7 +12,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel') }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/kweek-logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ $appLogo }}">
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
@@ -150,7 +154,7 @@
 
             <div class="auth-wrapper-left">
                 <div class="login-left-logo text-center">
-                    <img src="{{ asset('images/kweek-logo.png') }}" alt="KWEEK"
+                    <img src="{{ $appLogo }}" alt="KWEEK"
                         onerror="this.onerror=null; this.src='{{ asset('images/logo_web.png') }}';">
                 </div>
             </div>
@@ -159,7 +163,7 @@
 
                 <div class="auth-wrapper-form">
                     <div class="admin-logo mb-5">
-                        <img src="{{ asset('images/kweek-logo.png') }}" alt="KWEEK"
+                        <img src="{{ $appLogo }}" alt="KWEEK"
                             onerror="this.onerror=null; this.src='{{ asset('images/logo_web.png') }}';">
                     </div>
 
@@ -176,7 +180,7 @@
                         @csrf
 
                         <div class="auth-header">
-                            <div class="text-center mb-logo"><img src="{{ asset('images/kweek-logo.png') }}" alt="KWEEK"
+                            <div class="text-center mb-logo"><img src="{{ $appLogo }}" alt="KWEEK"
                                     onerror="this.onerror=null; this.src='{{ asset('images/logo_web.png') }}';"></div>
                             <div class="mb-4">
                                 <h2 class="title text-dark mb-3">{{ __('Admin Login') }}</h2>

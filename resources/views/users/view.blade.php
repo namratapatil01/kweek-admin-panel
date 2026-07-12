@@ -185,12 +185,16 @@
         var ref = database.collection('users').where("id", "==", id);
 
         var photo = "";
-        var placeholderImage = '';
+        var placeholderImage = "{{ asset('images/default_user.png') }}";
         var placeholder = database.collection('settings').doc('placeHolderImage');
 
         placeholder.get().then(async function (snapshotsimage) {
-            var placeholderImageData = snapshotsimage.data();
-            placeholderImage = placeholderImageData.image;
+            if (snapshotsimage.exists) {
+                var placeholderImageData = snapshotsimage.data();
+                if (placeholderImageData && placeholderImageData.image) {
+                    placeholderImage = placeholderImageData.image;
+                }
+            }
         });
         var currency = database.collection('settings');
 

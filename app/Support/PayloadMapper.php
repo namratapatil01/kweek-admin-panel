@@ -21,6 +21,23 @@ class PayloadMapper
                 $value = null;
             }
 
+            if ($value === true) {
+                $value = 1;
+            } elseif ($value === false) {
+                $value = 0;
+            } elseif (in_array(strtolower($key), [
+                'isactive', 'active', 'is_publish', 'publish', 'isenable', 'isenabled',
+                'istopup', 'takeaway', 'reststatus', 'dine_in_active', 'is_product_details',
+                'enablecashbackoffer', 'issendtoadmin', 'symbolatright', 'allcustomer',
+                'allpayment', 'isowner', 'isdocumentverify'
+            ], true)) {
+                if ($value === 'true' || $value === '1' || $value === 1) {
+                    $value = 1;
+                } elseif ($value === 'false' || $value === '0' || $value === 0 || $value === null) {
+                    $value = 0;
+                }
+            }
+
             if (in_array($key, $fillableColumns, true)) {
                 if (is_array($value) && ! in_array($key, $jsonColumns, true)) {
                     $overflow[$key] = $value;

@@ -66,7 +66,7 @@ Route::middleware(['permission:pending_vendors,pending.vendors.list'])->group(fu
     Route::get('/vendors/pending', [App\Http\Controllers\VendorController::class, 'index'])->name('vendors.pending');
 });
 Route::middleware(['permission:vendors,vendors.create'])->group(function () {
-    Route::get('/vendors/create', [App\Http\Controllers\VendorController::class, 'create'])->name('vendors.create'); 
+    Route::get('/vendors/create', [App\Http\Controllers\VendorController::class, 'create'])->name('vendors.create');
 });
 Route::middleware(['permission:vendors,vendors.edit'])->group(function () {
     Route::get('/vendor/edit/{id}', [App\Http\Controllers\VendorController::class, 'edit'])->name('vendors.edit');
@@ -78,11 +78,30 @@ Route::middleware(['permission:vendors-document,vendor.document.edit'])->group(f
     Route::get('/vendors/document/upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'DocumentUpload'])->name('vendors.document.upload');
 });
 
+// Vendors MySQL AJAX endpoints
+Route::middleware(['auth'])->group(function () {
+    Route::get('/vendors/datatable', [App\Http\Controllers\VendorController::class, 'datatable'])->name('vendors.datatable');
+    Route::post('/vendors/toggle-status', [App\Http\Controllers\VendorController::class, 'toggleStatus'])->name('vendors.toggle-status');
+    Route::post('/vendors/destroy', [App\Http\Controllers\VendorController::class, 'destroy'])->name('vendors.destroy');
+    Route::post('/vendors/bulk-destroy', [App\Http\Controllers\VendorController::class, 'bulkDestroy'])->name('vendors.bulk-destroy');
+    Route::get('/vendors/api/get-vendor/{id}', [App\Http\Controllers\VendorController::class, 'getVendor'])->name('vendors.get-vendor');
+    Route::post('/vendors/api/store-vendor', [App\Http\Controllers\VendorController::class, 'storeVendor'])->name('vendors.store-vendor');
+    Route::post('/vendors/api/update-vendor/{id}', [App\Http\Controllers\VendorController::class, 'updateVendor'])->name('vendors.update-vendor');
+    Route::get('/vendors/api/meta', [App\Http\Controllers\VendorController::class, 'getMeta'])->name('vendors.meta');
+    Route::get('/vendors/api/subscription-plans', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlans'])->name('vendors.subscription-plans');
+    Route::get('/vendors/api/subscription-plan/{id}', [App\Http\Controllers\VendorController::class, 'getSubscriptionPlan'])->name('vendors.subscription-plan');
+    Route::get('/vendors/api/stores-list', [App\Http\Controllers\VendorController::class, 'getStoresList'])->name('vendors.stores-list');
+    Route::get('/vendors/api/get-documents/{id}', [App\Http\Controllers\VendorController::class, 'getDocuments'])->name('vendors.get-documents');
+    Route::post('/vendors/api/verify-document', [App\Http\Controllers\VendorController::class, 'verifyDocument'])->name('vendors.verify-document');
+    Route::get('/vendors/api/get-document-upload/{ownerId}/{id}', [App\Http\Controllers\VendorController::class, 'getDocumentUploadDetails'])->name('vendors.get-document-upload');
+    Route::post('/vendors/api/save-document-upload', [App\Http\Controllers\VendorController::class, 'saveDocumentUpload'])->name('vendors.save-document-upload');
+});
+
 
 Route::middleware(['permission:stores,stores'])->group(function () {
     Route::get('/stores', [App\Http\Controllers\StoreController::class, 'index'])->name('stores');
 });
-Route::middleware(['permission:stores,stores.create'])->group(function () { 
+Route::middleware(['permission:stores,stores.create'])->group(function () {
     Route::get('/stores/create', [App\Http\Controllers\StoreController::class, 'create'])->name('stores.create');
 });
 Route::middleware(['permission:stores,stores.edit'])->group(function () {
@@ -90,6 +109,15 @@ Route::middleware(['permission:stores,stores.edit'])->group(function () {
 });
 Route::middleware(['permission:stores,stores.view'])->group(function () {
     Route::get('/stores/view/{id}', [App\Http\Controllers\StoreController::class, 'view'])->name('stores.view');
+});
+Route::middleware(['permission:stores,stores.copy'])->group(function () {
+    Route::post('/stores/clone', [App\Http\Controllers\StoreController::class, 'clone'])->name('stores.clone');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/stores/datatable', [App\Http\Controllers\StoreController::class, 'datatable'])->name('stores.datatable');
+    Route::post('/stores/store', [App\Http\Controllers\StoreController::class, 'store'])->name('stores.store');
+    Route::post('/stores/update/{id}', [App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');
+    Route::get('/stores/get-vendor/{id}', [App\Http\Controllers\StoreController::class, 'getVendor'])->name('stores.get-vendor');
 });
 
 //drivers
@@ -135,7 +163,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/drivers/api/meta', [App\Http\Controllers\DriverController::class, 'getMeta'])->name('drivers.meta');
     Route::get('/drivers/api/services', [App\Http\Controllers\DriverController::class, 'getServices'])->name('drivers.services');
     Route::get('/drivers/api/sections', [App\Http\Controllers\DriverController::class, 'getSections'])->name('drivers.sections');
-    
+
     // New Dropdown API endpoints
     Route::get('/drivers/api/zones', [App\Http\Controllers\DriverController::class, 'getZones'])->name('drivers.zones');
     Route::get('/drivers/api/car-makes', [App\Http\Controllers\DriverController::class, 'getCarMakes'])->name('drivers.car-makes');
@@ -193,6 +221,7 @@ Route::get('/vendorFilters/edit/{id}', [App\Http\Controllers\VendorFiltersContro
 
 Route::middleware(['permission:categories,categories'])->group(function () {
     Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index'])->name('categories');
+    Route::patch('/categories/{id}/toggle-publish', [App\Http\Controllers\CategoryController::class, 'togglePublish'])->name('categories.toggle-publish');
 });
 Route::middleware(['permission:categories,categories.edit'])->group(function () {
     Route::get('/categories/edit/{id}', [App\Http\Controllers\CategoryController::class, 'edit'])->name('categories.edit');
@@ -275,6 +304,12 @@ Route::get('/orderReview/edit/{id}', [App\Http\Controllers\OrderReviewController
 
 Route::middleware(['permission:coupons,coupons'])->group(function () {
     Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->name('coupons');
+    Route::get('/coupons/datatable', [App\Http\Controllers\CouponController::class, 'datatable'])->name('coupons.datatable');
+    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->name('coupons.store');
+    Route::post('/coupons/bulk-delete', [App\Http\Controllers\CouponController::class, 'bulkDestroy'])->name('coupons.bulk-destroy');
+    Route::post('/coupons/toggle/{id}', [App\Http\Controllers\CouponController::class, 'toggle'])->name('coupons.toggle');
+    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->name('coupons.destroy');
 });
 Route::middleware(['permission:coupons,coupons.edit'])->group(function () {
     Route::get('/coupons/edit/{id}', [App\Http\Controllers\CouponController::class, 'edit'])->name('coupons.edit');
@@ -317,7 +352,7 @@ Route::middleware(['permission:drivers-payout,drivers.payout'])->group(function 
     Route::post('driversPayouts/destroy', [App\Http\Controllers\DriversPayoutController::class, 'destroy'])->name('driversPayouts.destroy');
     Route::post('driversPayouts/bulk-destroy', [App\Http\Controllers\DriversPayoutController::class, 'bulkDestroy'])->name('driversPayouts.bulk-destroy');
     Route::get('driversPayouts_get-drivers', [App\Http\Controllers\DriversPayoutController::class, 'getDrivers'])->name('driversPayouts.get-drivers');
-}); 
+});
 Route::middleware(['permission:drivers-payout,drivers.payout'])->group(function () {
     Route::get('driversPayouts/{id}', [App\Http\Controllers\DriversPayoutController::class, 'index'])->name('driver.payouts');
 });
@@ -344,6 +379,7 @@ Route::post('order-status-notification', [App\Http\Controllers\OrderController::
 
 Route::middleware(['permission:god-eye,map'])->group(function () {
     Route::get('/map/multivendor', [App\Http\Controllers\MapController::class, 'multivendor'])->name('map.multivendor');
+    Route::get('/map/multivendor/data', [App\Http\Controllers\MapController::class, 'getMultivendorData'])->name('map.multivendor.data');
 });
 Route::middleware(['permission:parcel-service-god-eye,parcel-service-map'])->group(function () {
     Route::get('/map/parcel', [App\Http\Controllers\MapController::class, 'parcel'])->name('map.parcel');
@@ -353,20 +389,28 @@ Route::middleware(['permission:rental-plural-god-eye,rental-plural-map'])->group
 });
 Route::middleware(['permission:cab-service-god-eye,cab-service-map'])->group(function () {
     Route::get('/map/cab', [App\Http\Controllers\MapController::class, 'cab'])->name('map.cab');
+    Route::get('/map/cab/data', [App\Http\Controllers\MapController::class, 'getCabData'])->name('map.cab.data');
 });
 
 Route::prefix('settings')->group(function () {
     Route::middleware(['permission:currency,currencies'])->group(function () {
         Route::get('/currencies', [App\Http\Controllers\CurrencyController::class, 'index'])->name('currencies');
+        Route::get('/currencies/datatable', [App\Http\Controllers\CurrencyController::class, 'datatable'])->name('settings.currencies.datatable');
+        Route::post('/currencies/store', [App\Http\Controllers\CurrencyController::class, 'store'])->name('settings.currencies.store');
+        Route::post('/currencies/destroy', [App\Http\Controllers\CurrencyController::class, 'destroy'])->name('settings.currencies.destroy');
+        Route::post('/currencies/toggle-status', [App\Http\Controllers\CurrencyController::class, 'toggleStatus'])->name('settings.currencies.toggle-status');
     });
     Route::middleware(['permission:currency,currencies.edit'])->group(function () {
-        Route::get('/currencies/edit/{id}', [App\Http\Controllers\CurrencyController::class, 'edit'])->name('currencies.edit');
+        Route::get('/currencies/edit/{id}', [App\Http\Controllers\CurrencyController::class, 'edit'])->name('settings.currencies.edit');
+        Route::put('/currencies/update/{id}', [App\Http\Controllers\CurrencyController::class, 'update'])->name('settings.currencies.update');
     });
     Route::middleware(['permission:currency,currencies.create'])->group(function () {
-        Route::get('/currencies/create', [App\Http\Controllers\CurrencyController::class, 'create'])->name('currencies.create');
+        Route::get('/currencies/create', [App\Http\Controllers\CurrencyController::class, 'create'])->name('settings.currencies.create');
     });
     Route::middleware(['permission:global-setting,settings.app.globals'])->group(function () {
         Route::get('app/globals', [App\Http\Controllers\SettingsController::class, 'globals'])->name('settings.app.globals');
+        Route::get('app/sections-list', [App\Http\Controllers\SettingsController::class, 'getSectionsList'])->name('settings.sections.list');
+        Route::get('app/vendors-by-section', [App\Http\Controllers\SettingsController::class, 'getVendorsBySection'])->name('settings.vendors.by-section');
     });
     Route::middleware(['permission:app-banners-setting,settings.app.banners'])->group(function () {
         Route::get('app/banners', [App\Http\Controllers\SettingsController::class, 'banners'])->name('settings.app.banners');
@@ -466,12 +510,17 @@ Route::middleware(['permission:model,model.delete'])->group(function () {
 
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type'])->group(function () {
     Route::get('vehicleType', [App\Http\Controllers\VehicleController::class, 'vehicleType'])->name('vehicleType');
+    Route::get('vehicleType/datatable', [App\Http\Controllers\VehicleController::class, 'vehicleTypeDatatable'])->name('vehicleType.datatable');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.create'])->group(function () {
     Route::get('vehicleType/create', [App\Http\Controllers\VehicleController::class, 'vehicleTypeCreate'])->name('vehicleType.create');
 });
 Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.edit'])->group(function () {
     Route::get('vehicleType/edit/{id}', [App\Http\Controllers\VehicleController::class, 'vehicleTypeEdit'])->name('vehicleType.edit');
+    Route::post('vehicleType/update/{id}', [App\Http\Controllers\VehicleController::class, 'updateVehicleType'])->name('vehicleType.update');
+});
+Route::middleware(['permission:cab-vehicle-type,cab-vehicle-type.delete'])->group(function () {
+    Route::post('vehicleType/delete', [App\Http\Controllers\VehicleController::class, 'destroyVehicleType'])->name('vehicleType.delete');
 });
 
 Route::middleware(['permission:terms,termsAndConditions'])->group(function () {
@@ -564,13 +613,21 @@ Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->g
 });
 
 Route::middleware(['permission:payout-request-vendor,payout-request.vendor'])->group(function () {
-    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');   
+    Route::get('/disbursements/vendor', [App\Http\Controllers\PayoutRequestController::class, 'vendorDisbursements'])->name('payoutRequests.vendor.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/vendor/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableVendorDisbursement'])->name('payoutRequests.vendor.disbursement.datatable');
+    Route::post('/disbursements/vendor/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyVendorPayout'])->name('payoutRequests.vendor.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-driver,payout-request.driver'])->group(function () {
-    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');   
+    Route::get('/disbursements/drivers', [App\Http\Controllers\PayoutRequestController::class, 'driverDisbursements'])->name('payoutRequests.driver.disbursement');
+});
+Route::middleware(['auth'])->group(function () {
+    Route::get('/disbursements/drivers/datatable', [App\Http\Controllers\PayoutRequestController::class, 'datatableDriverDisbursement'])->name('payoutRequests.driver.disbursement.datatable');
+    Route::post('/disbursements/drivers/delete', [App\Http\Controllers\PayoutRequestController::class, 'destroyDriverPayout'])->name('payoutRequests.driver.disbursement.destroy');
 });
 Route::middleware(['permission:payout-request-owner,payout-request.owner'])->group(function () {
-    Route::get('/disbursements/owners', [App\Http\Controllers\PayoutRequestController::class, 'ownerDisbursements'])->name('payoutRequests.owner.disbursement');   
+    Route::get('/disbursements/owners', [App\Http\Controllers\PayoutRequestController::class, 'ownerDisbursements'])->name('payoutRequests.owner.disbursement');
 });
 Route::middleware(['permission:payout-request-provider,payout-request.provider'])->group(function () {
     Route::get('/disbursements/providers', [App\Http\Controllers\PayoutRequestController::class, 'providerDisbursements'])->name('payoutRequests.providers.disbursement');
@@ -592,6 +649,12 @@ Route::middleware(['permission:item-attributes,item.attributes.create'])->group(
 
 Route::middleware(['permission:review-attributes,review.attributes'])->group(function () {
     Route::get('/reviewattributes', [App\Http\Controllers\ReviewAttributeController::class, 'index'])->name('reviewattributes');
+    Route::get('/reviewattributes/datatable', [App\Http\Controllers\ReviewAttributeController::class, 'datatable'])->name('reviewattributes.datatable');
+    Route::post('/reviewattributes', [App\Http\Controllers\ReviewAttributeController::class, 'store'])->name('reviewattributes.store');
+    Route::post('/reviewattributes/bulk-delete', [App\Http\Controllers\ReviewAttributeController::class, 'bulkDestroy'])->name('reviewattributes.bulk-destroy');
+    Route::post('/reviewattributes/toggle/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'toggle'])->name('reviewattributes.toggle');
+    Route::put('/reviewattributes/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'update'])->name('reviewattributes.update');
+    Route::delete('/reviewattributes/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'destroy'])->name('reviewattributes.destroy');
 });
 Route::middleware(['permission:review-attributes,review.attributes.edit'])->group(function () {
     Route::get('/reviewattributes/edit/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'edit'])->name('reviewattributes.edit');
@@ -599,6 +662,7 @@ Route::middleware(['permission:review-attributes,review.attributes.edit'])->grou
 Route::middleware(['permission:review-attributes,review.attributes.create'])->group(function () {
     Route::get('/reviewattributes/create', [App\Http\Controllers\ReviewAttributeController::class, 'create'])->name('reviewattributes.create');
 });
+
 
 Route::middleware(['permission:rental-discount,rental-discount'])->group(function () {
     Route::get('/rentaldiscount', [App\Http\Controllers\SettingsController::class, 'rentalDiscount'])->name('rentaldiscount');
@@ -612,13 +676,13 @@ Route::middleware(['permission:rental-discount,rental-discount.create'])->group(
 
 Route::middleware(['permission:rental-package,rental-package'])->group(function () {
     Route::get('rental-package', [App\Http\Controllers\RentalController::class, 'rentalPackage'])->name('rental-package');
-});    
+});
 Route::middleware(['permission:rental-package,rental-package.create'])->group(function () {
     Route::get('rental-package/create', [App\Http\Controllers\RentalController::class, 'rentalPackageCreate'])->name('rental-package.create');
-});    
+});
 Route::middleware(['permission:rental-package,rental-package.edit'])->group(function () {
     Route::get('rental-package/edit/{id}', [App\Http\Controllers\RentalController::class, 'rentalPackageEdit'])->name('rental-package.edit');
-});    
+});
 
 Route::middleware(['permission:rental-orders,rental-orders'])->group(function () {
     Route::get('/rental_orders', [App\Http\Controllers\RentalController::class, 'rentalOrders'])->name('rental_orders');
@@ -740,6 +804,13 @@ Route::middleware(['permission:ondemand-categories,ondemand.categories.edit'])->
 
 Route::middleware(['permission:providers,providers'])->group(function () {
     Route::get('/providers', [App\Http\Controllers\ProvidersController::class, 'index'])->name('providers');
+    Route::get('/providers/datatable', [App\Http\Controllers\ProvidersController::class, 'datatable'])->name('providers.datatable');
+    Route::post('/providers/toggle-status', [App\Http\Controllers\ProvidersController::class, 'toggleStatus'])->name('providers.toggle-status');
+    Route::post('/providers/destroy', [App\Http\Controllers\ProvidersController::class, 'destroy'])->name('providers.destroy');
+    Route::post('/providers/bulk-destroy', [App\Http\Controllers\ProvidersController::class, 'bulkDestroy'])->name('providers.bulk-destroy');
+    Route::get('/providers/api/meta', [App\Http\Controllers\ProvidersController::class, 'getMeta'])->name('providers.meta');
+    Route::get('/providers/api/subscription-plans', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlans'])->name('providers.subscription-plans');
+    Route::get('/providers/api/subscription-plan/{id}', [App\Http\Controllers\ProvidersController::class, 'getSubscriptionPlan'])->name('providers.subscription-plan');
 });
 Route::middleware(['permission:providers,providers.create'])->group(function () {
     Route::get('/providers/create', [App\Http\Controllers\ProvidersController::class, 'create'])->name('providers.create');
@@ -754,12 +825,17 @@ Route::middleware(['permission:providers,providers.view'])->group(function () {
 
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons'])->group(function () {
     Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
+    Route::get('/ondemand-coupons-data', [App\Http\Controllers\OnDemandServiceController::class, 'couponsDatatable'])->name('ondemand.coupons.datatable');
+    Route::post('/ondemand-coupons/toggle/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponToggle'])->name('ondemand.coupons.toggle');
+    Route::post('/ondemand-coupons/delete', [App\Http\Controllers\OnDemandServiceController::class, 'couponDestroy'])->name('ondemand.coupons.destroy');
 });
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons.create'])->group(function () {
     Route::get('/ondemand-coupon/create', [App\Http\Controllers\OnDemandServiceController::class, 'CouponCreate'])->name('ondemand.coupons.create');
+    Route::post('/ondemand-coupons', [App\Http\Controllers\OnDemandServiceController::class, 'couponStore'])->name('ondemand.coupons.store');
 });
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons.edit'])->group(function () {
     Route::get('/ondemand-coupons/edit/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'CouponEdit'])->name('ondemand.coupons.edit');
+    Route::put('/ondemand-coupons/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponUpdate'])->name('ondemand.coupons.update');
 });
 Route::middleware(['permission:ondemand-services,ondemand.services.index'])->group(function () {
     Route::get('/ondemand-services/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Services'])->name('ondemand.services.index');
@@ -780,13 +856,20 @@ Route::middleware(['permission:ondemand-bookings,ondemand.bookings.print'])->gro
     Route::get('/ondemand-bookings/print/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'BookingsPrint'])->name('ondemand.bookings.print');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.index'])->group(function () {
+    Route::get('/ondemand-workers-data', [App\Http\Controllers\OnDemandServiceController::class, 'workersDatatable'])->name('ondemand.workers.datatable');
+    Route::get('/ondemand-providers-list', [App\Http\Controllers\OnDemandServiceController::class, 'providersList'])->name('ondemand.providers.list');
+    Route::post('/ondemand-workers/toggle-status', [App\Http\Controllers\OnDemandServiceController::class, 'workersToggleStatus'])->name('ondemand.workers.toggle-status');
+    Route::post('/ondemand-workers/delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersDestroy'])->name('ondemand.workers.destroy');
+    Route::post('/ondemand-workers/bulk-delete', [App\Http\Controllers\OnDemandServiceController::class, 'workersBulkDestroy'])->name('ondemand.workers.bulk-destroy');
     Route::get('/ondemand-workers/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Workers'])->name('ondemand.workers.index');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.create'])->group(function () {
     Route::get('/ondemand-worker/create', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersCreate'])->name('ondemand.workers.create');
+    Route::post('/ondemand-workers/store', [App\Http\Controllers\OnDemandServiceController::class, 'workersStore'])->name('ondemand.workers.store');
 });
 Route::middleware(['permission:ondemand-workers,ondemand.workers.edit'])->group(function () {
     Route::get('/ondemand-worker/edit/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'WorkersEdit'])->name('ondemand.workers.edit');
+    Route::post('/ondemand-workers/update/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'workersUpdate'])->name('ondemand.workers.update');
 });
 
 Route::middleware(['permission:on-board,onboard.list'])->group(function () {
@@ -815,8 +898,8 @@ Route::middleware(['permission:payout-request-provider,payout-request.provider']
     Route::get('/payoutRequests/providers/{id?}', [App\Http\Controllers\PayoutRequestController::class, 'provider'])->name('payoutRequests.providers');
 });
 
-Route::post('pay-to-user', [App\Http\Controllers\UserController::class,'payToUser'])->name('pay.user');
-Route::post('check-payout-status', [App\Http\Controllers\UserController::class,'checkPayoutStatus'])->name('check.payout.status');
+Route::post('pay-to-user', [App\Http\Controllers\UserController::class, 'payToUser'])->name('pay.user');
+Route::post('check-payout-status', [App\Http\Controllers\UserController::class, 'checkPayoutStatus'])->name('check.payout.status');
 
 // MySQL-backed sections endpoint
 Route::get('api/sections', [App\Http\Controllers\HomeController::class, 'getSections'])->name('api.sections');
@@ -834,29 +917,46 @@ Route::middleware(['web'])->prefix('admin-data')->group(function () {
 Route::middleware(['permission:subscription-plans,subscription-plans'])->group(function () {
     Route::get('/subscription-plans', [App\Http\Controllers\SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
     Route::get('/current-subscriber/{id}', [App\Http\Controllers\SubscriptionPlanController::class, 'currentSubscriberList'])->name('current-subscriber.list');
+    Route::get('/subscription-plans/datatable', [App\Http\Controllers\SubscriptionPlanController::class, 'datatable'])->name('subscription-plans.datatable');
+    Route::post('/subscription-plans/store', [App\Http\Controllers\SubscriptionPlanController::class, 'storeModel'])->name('subscription-plans.store');
+    Route::post('/subscription-plans/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyModel'])->name('subscription-plans.delete');
+    Route::post('/subscription-plans/bulk-delete', [App\Http\Controllers\SubscriptionPlanController::class, 'bulkDestroyModel'])->name('subscription-plans.bulk-delete');
+    Route::get('/subscription-plans/get-plan/{id}', [App\Http\Controllers\SubscriptionPlanController::class, 'getPlan'])->name('subscription-plans.get-plan');
+    Route::get('/subscription-plans/overview', [App\Http\Controllers\SubscriptionPlanController::class, 'overview'])->name('subscription-plans.overview');
 });
-Route::middleware(['permission:subscription-plans,subscription-plans.'.((str_contains(Request::url(), 'save')) ? (explode("save", Request::url())[1] ? "edit" : "create") : Request::url())])->group(function () {
+Route::middleware(['permission:subscription-plans,subscription-plans.' . ((str_contains(Request::url(), 'save')) ? (explode("save", Request::url())[1] ? "edit" : "create") : Request::url())])->group(function () {
     Route::get('/subscription-plans/save/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'save'])->name('subscription-plans.save');
 });
 Route::middleware(['permission:subscription-history,subscription.history'])->group(function () {
+    Route::get('/subscription-plan/history/datatable/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'historyDatatable'])->name('subscription.subscriptionPlanHistory.datatable');
     Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
+    Route::post('/subscription-plan/history/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyHistory'])->name('subscription.subscriptionPlanHistory.delete');
 });
 
-Route::middleware(['permission:advertisements,advertisements.edit'])->group(function () {
-    Route::get('/advertisements/edit/{id}', [App\Http\Controllers\AdvertisementsController::class, 'edit'])->name('advertisements.edit');
-});
-Route::middleware(['permission:advertisements,advertisements.create'])->group(function () {
-    Route::get('/advertisements/create', [App\Http\Controllers\AdvertisementsController::class, 'create'])->name('advertisements.create');
-});
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {
     Route::get('advertisements', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('advertisements');
 });
-Route::middleware(['permission:advertisements,advertisements'])->group(function () {
-    Route::get('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('restaurants.advertisements');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/advertisements/datatable', [App\Http\Controllers\AdvertisementsController::class, 'datatable'])->name('advertisements.datatable');
+    Route::post('/advertisements/delete', [App\Http\Controllers\AdvertisementsController::class, 'destroy'])->name('advertisements.destroy');
+    Route::post('/advertisements/toggle-pause', [App\Http\Controllers\AdvertisementsController::class, 'togglePause'])->name('advertisements.toggle-pause');
+    Route::post('/advertisements/copy', [App\Http\Controllers\AdvertisementsController::class, 'copy'])->name('advertisements.copy');
+    Route::post('/advertisements/toggle-payment', [App\Http\Controllers\AdvertisementsController::class, 'togglePayment'])->name('advertisements.toggle-payment');
+});
+Route::middleware(['permission:advertisements,advertisements.create'])->group(function () {
+    Route::get('/advertisements/create', [App\Http\Controllers\AdvertisementsController::class, 'create'])->name('advertisements.create');
+    Route::post('/advertisements', [App\Http\Controllers\AdvertisementsController::class, 'store'])->name('advertisements.store');
+});
+Route::middleware(['permission:advertisements,advertisements.edit'])->group(function () {
+    Route::get('/advertisements/edit/{id}', [App\Http\Controllers\AdvertisementsController::class, 'edit'])->name('advertisements.edit');
+    Route::put('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'update'])->name('advertisements.update');
 });
 Route::middleware(['permission:advertisements,advertisements.view'])->group(function () {
     Route::get('/advertisements/view/{id}', [App\Http\Controllers\AdvertisementsController::class, 'view'])->name('advertisements.view');
     Route::get('/advertisement/chat/{id}', [App\Http\Controllers\AdvertisementsController::class, 'chat'])->name('advertisement.chat');
+});
+Route::middleware(['permission:advertisements,advertisements'])->group(function () {
+    Route::get('/advertisements/{id}', [App\Http\Controllers\AdvertisementsController::class, 'index'])->name('restaurants.advertisements');
 });
 Route::middleware(['permission:advertisements-list,advertisements.request'])->group(function () {
     Route::get('advertisements-list/requestes', [App\Http\Controllers\AdvertisementsController::class, 'requested'])->name('advertisements.request');
@@ -886,6 +986,8 @@ Route::post('/send-ad-notification', [App\Http\Controllers\AdvertisementsControl
 
 Route::middleware(['permission:zone,zone.list'])->group(function () {
     Route::get('zone', [App\Http\Controllers\ZoneController::class, 'index'])->name('zone');
+    Route::get('/zone/location-search', [App\Http\Controllers\ZoneController::class, 'locationSearch'])->name('zone.location-search');
+    Route::get('/zone/location-reverse', [App\Http\Controllers\ZoneController::class, 'locationReverse'])->name('zone.location-reverse');
 });
 Route::middleware(['permission:zone,zone.create'])->group(function () {
     Route::get('/zone/create', [App\Http\Controllers\ZoneController::class, 'create'])->name('zone.create');
@@ -896,6 +998,7 @@ Route::middleware(['permission:zone,zone.edit'])->group(function () {
 
 Route::middleware(['permission:documents,documents.list'])->group(function () {
     Route::get('documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents');
+    Route::post('documents/status/{id}', [App\Http\Controllers\DocumentController::class, 'updateStatus'])->name('documents.update_status');
 });
 Route::middleware(['permission:documents,documents.create'])->group(function () {
     Route::get('/documents/create', [App\Http\Controllers\DocumentController::class, 'create'])->name('documents.create');
@@ -950,5 +1053,7 @@ Route::get('owner/parcelorders/{id}', [App\Http\Controllers\ParcelController::cl
 Route::middleware(['permission:drivers,drivers'])->group(function () {
     Route::get('/owner/drivers/{id}', [App\Http\Controllers\OwnerController::class, 'driverList'])->name('owner.driver.list');
 });
+
+require __DIR__ . '/admin_modules.php';
 
 require __DIR__ . '/admin_modules.php';

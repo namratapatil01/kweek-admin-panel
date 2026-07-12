@@ -10,7 +10,7 @@ $(function () {
                 d.sectionId = getCookie('section_id') || '';
             }
         },
-        order: [[2, 'desc']],
+        order: [[{{ $defaultSortColumnIndex ?? 2 }}, '{{ $defaultSortDirection ?? 'desc' }}']],
         pageLength: 10,
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",

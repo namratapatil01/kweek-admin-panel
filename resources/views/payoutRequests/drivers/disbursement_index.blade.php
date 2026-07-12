@@ -22,7 +22,7 @@
                     <div class="d-flex top-title-left align-self-center">
                         <span class="icon mr-3"><img src="{{ asset('images/payment.png') }}"></span>
                         <h3 class="mb-0">{{trans('lang.driver_disburesement')}}</h3>
-                        <span class="counter ml-3 total_count"></span>
+                        <span class="counter ml-3 total_count">{{ $totalPayouts ?? 0 }}</span>
                     </div>
                 </div>
             </div>
@@ -199,58 +199,17 @@
 @endsection
 @section('scripts')
 <script type="text/javascript">
-    var id = '<?php echo $id; ?>';
+    var id = @json($id ?? '');
     var database = kweekDb();
-    var offest = 1;
-    var pagesize = 10;
-    var end = null;
-    var selectedSectionId = getCookie('section_id');
-    var endarray = [];
-    var intRegex = /^\d+$/;
-    var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
-    var start = null;
-    var user_number = [];
-    if (id != "") {
-        var wallet_route = "{{route('users.walletstransaction','id')}}";
-        $(".wallet_transaction").attr("href", wallet_route.replace('id', 'driverID='+id));
-        var refData = database.collection('driver_payouts').where('driverID', '==', id);
-        database.collection('users').where("id", "==", id).get().then(async function (snapshotss) {
-            if (snapshotss.docs[0]) {
-                var driver_data = snapshotss.docs[0].data();
-                if (driver_data.serviceType != "parcel_delivery") {
-                    $('.parcel-driver').removeClass('d-none');
-                } else {
-                    $('.parcel-driver').html('');
-                }
-            }
-        });
-        getDriverName(id);
-    } else {
-        var refData = database.collection('driver_payouts');
-    }
-    var ref = refData.orderBy('paidDate', 'desc');
-    var append_list = '';
+    var table;
     var email_templates = database.collection('email_templates').where('type', '==', 'payout_request_status');
     var emailTemplatesData = null;
-    var currentCurrency = '';
-    var currencyAtRight = false;
-    var decimal_degits = 0;
-    var refCurrency = database.collection('currencies').where('isActive', '==', true);
-    refCurrency.get().then(async function (snapshots) {
-        var currencyData = snapshots.docs[0].data();
-        currentCurrency = currencyData.symbol;
-        currencyAtRight = currencyData.symbolAtRight;
-        if (currencyData.decimal_degits) {
-            decimal_degits = currencyData.decimal_degits;
-        }
-    });
     $(document).ready(function () {
         email_templates.get().then(async function (snapshots) {
             emailTemplatesData = snapshots.docs[0].data();
         });
         $(document.body).on('click', '.redirecttopage', function () {
-            var url = $(this).attr('data-url');
-            window.location.href = url;
+            window.location.href = $(this).attr('href');
         });
         $(document).on('click', '.dt-button-collection .dt-button', function () {
             $('.dt-button-collection').hide();
@@ -262,212 +221,70 @@
                 $('.dt-button-background').hide();
             }
         });
-        var fieldConfig = {
-            columns: [
-                <?php if ($id == '') { ?>
-                    { key: 'title', header: "{{ trans('lang.driver')}}" },
-                <?php } ?>  
-                { key: 'amount', header: "{{ trans('lang.total_amount')}}" },
-                { key: 'note', header: "{{trans('lang.note')}}" },
-                { key: 'paidDate', header: "{{trans('lang.date')}}" },
-                { key: 'paymentStatus', header: "{{trans('lang.payment_status')}}" },
-                { key: 'withdrawMethod', header: "{{trans('lang.withdraw_method')}}" },
-            ],
-            fileName: "{{trans('lang.driver')}}  {{trans('lang.payment_plural')}}",
-        };
-        jQuery("#data-table_processing").show();
-           const table = $('#example24').DataTable({
-            pageLength: 10, // Number of rows per page
-            processing: false, // Show processing indicator
-            serverSide: true, // Enable server-side processing
+
+        if (id) {
+            var wallet_route = "{{ route('users.walletstransaction', 'id') }}";
+            $(".wallet_transaction").attr("href", wallet_route.replace('id', 'driverID=' + id));
+            getDriverName(id);
+        }
+
+        table = $('#example24').DataTable({
+            pageLength: 10,
+            processing: true,
+            serverSide: true,
             responsive: true,
-            ajax: async function (data, callback, settings) {
-                const start = data.start;
-                const length = data.length;
-                const searchValue = data.search.value.toLowerCase();
-                const orderColumnIndex = data.order[0].column;
-                const orderDirection = data.order[0].dir;
-                @if($id == '')
-                    const orderableColumns =  ['','title', 'amount', 'note', 'paidDate', 'paymentStatus','withdrawMethod','']; // Ensure this matches the actual column names
-                @else
-                    const orderableColumns =  ['','', 'amount', 'note', 'paidDate', 'paymentStatus','withdrawMethod',''];
-                @endif
-                const orderByField = orderableColumns[orderColumnIndex]; // Adjust the index to match your table
-                if (searchValue.length >= 3 || searchValue.length === 0) {
-                    $('#data-table_processing').show();
-                }
-            await ref.get().then(async function (querySnapshot) {
-                if (querySnapshot.empty) {
-                    $('.total_count').text(0); 
-                    console.error("No data found in database.");
-                    $('#data-table_processing').hide(); // Hide loader
-                    callback({
-                        draw: data.draw,
-                        recordsTotal: 0,
-                        recordsFiltered: 0,
-                        data: [] // No data
-                    });
-                    return;
-                }
-            let records = [];
-            let filteredRecords = [];
-            await Promise.all(querySnapshot.docs.map(async (doc) => {
-                let childData = doc.data();
-                childData.recid=doc.id;
-                var driver = null;
-                if(childData.hasOwnProperty('driverID')){
-                    driver = await payoutDriverfunction(childData.driverID);
-                }
-                if (!driver) {
-                    return;
-                }
-                if (selectedSectionId &&  driver.sectionId && driver.sectionId !== selectedSectionId) {
-                    return; 
-                }
-                if (driver.isOwner == true) {
-                    return; 
-                }
-                childData.title = driver.name;
-                var date = '';
-                var time = '';
-                if (childData.hasOwnProperty("paidDate") && childData.paidDate != '') {
-                    try {
-                        date = childData.paidDate.toDate().toDateString();
-                        time = childData.paidDate.toDate().toLocaleTimeString('en-US');
-                    } catch (err) {
+            ajax: {
+                url: @json(route('payoutRequests.driver.disbursement.datatable')),
+                type: 'GET',
+                data: function (d) {
+                    d._token = '{{ csrf_token() }}';
+                    if (id) {
+                        d.driver_id = id;
                     }
-                }
-                var paidDate = date + ' ' + time;
-                if (searchValue) {
-                    if (
-                        (childData.title && childData.title.toString().toLowerCase().includes(searchValue)) ||
-                        (childData.amount && childData.amount.toString().toLowerCase().includes(searchValue)) ||
-                        (paidDate && paidDate.toString().toLowerCase().indexOf(searchValue) > -1) ||
-                        (childData.note && childData.note.toString().toLowerCase().includes(searchValue)) ||
-                        (
-                            (childData.paymentStatus && childData.paymentStatus.toString().toLowerCase().includes(searchValue)) || (childData.withdrawMethod && childData.withdrawMethod.toString().toLowerCase().includes(searchValue))
-                        )
-                    ) {
-                        filteredRecords.push(childData);
+                },
+                dataSrc: function (json) {
+                    if (json.error) {
+                        console.error('Driver disbursements datatable error', json.error);
                     }
-                } else {
-                    filteredRecords.push(childData);
-                }
-            }));
-            filteredRecords.sort((a, b) => {
-                let aValue = a[orderByField] ? a[orderByField].toString().toLowerCase().trim() : '';
-                let bValue = b[orderByField] ? b[orderByField].toString().toLowerCase().trim() : '';
-                 if (orderByField === 'paidDate' && a[orderByField] != '' && b[orderByField] != '') {
-                    try {
-                        aValue = a[orderByField] ? new Date(a[orderByField].toDate()).getTime() : 0;
-                        bValue = b[orderByField] ? new Date(b[orderByField].toDate()).getTime() : 0;
-                    } catch (err) {
+                    if (typeof json.recordsTotal !== 'undefined') {
+                        $('.total_count').text(json.recordsTotal);
                     }
+                    return json.data || [];
+                },
+                error: function (xhr) {
+                    console.error('Driver disbursements datatable error', xhr.status, xhr.responseText);
+                    $('#data-table_processing').hide();
                 }
-                if (orderByField === 'amount') {
-                    aValue = a[orderByField] ? parseInt(a[orderByField]) : 0;
-                    bValue = b[orderByField] ? parseInt(b[orderByField]) : 0;
-                }
-                if (orderDirection === 'asc') {
-                    return (aValue > bValue) ? 1 : -1;
-                } else {
-                    return (aValue < bValue) ? 1 : -1;
-                }
-            });
-            const totalRecords = filteredRecords.length;
-            $('.total_count').text(totalRecords); 
-            const paginatedRecords = filteredRecords.slice(start, start + length);
-            await Promise.all(paginatedRecords.map(async (childData) => {
-                if(childData.hasOwnProperty('title') || childData.title != null || childData.title!=''){
-                    var getData = await buildHTML(childData);
-                    records.push(getData);
-                }
-            }));
-            $(function () {
-                $('[data-toggle="tooltip"]').tooltip();
-            });
-            $('#data-table_processing').hide(); // Hide loader
-            callback({
-                draw: data.draw,
-                recordsTotal: totalRecords, // Total number of records in database
-                recordsFiltered: totalRecords, // Number of records after filtering (if any)
-                filteredData: filteredRecords,
-                data: records // The actual data to display in the table
-            });
-        }).catch(function (error) {
-            console.error("Error fetching data from database:", error);
-            $('#data-table_processing').hide(); // Hide loader
-            callback({
-                draw: data.draw,
-                recordsTotal: 0,
-                recordsFiltered: 0,
-                data: [] // No data due to error
-            });
-        });
-    },
-    <?php if($id == '') { ?>
-    columnDefs: [
-        {orderable: false, targets: [0,5,6,7]},
-    ],
-    order: [4, "desc"],
-    <?php } else { ?>
-        columnDefs: [
-            {orderable: false, targets: [0,4,5,6]},
-            ],
-            order: [3, "desc"],
-        <?php } ?>
-        "language": {
-            "zeroRecords": "{{trans("lang.no_record_found")}}",
-            "emptyTable": "{{trans("lang.no_record_found")}}",
-            "processing": "" // Remove default loader
-        },
-        dom: 'lfrtipB',
-            buttons: [
-                    {
-                        extend: 'collection',
-                        text: '<i class="mdi mdi-cloud-download"></i> {{ trans('lang.export_as')}}',
-                        className: 'btn btn-info',
-                        buttons: [
-                            {
-                                extend: 'excelHtml5',
-                                text: '{{ trans('lang.export_excel') }}',
-                                action: function (e, dt, button, config) {
-                                    exportData(dt, 'excel',fieldConfig);
-                                }
-                            },
-                            {
-                                extend: 'pdfHtml5',
-                                text: '{{ trans('lang.export_pdf') }}',
-                                action: function (e, dt, button, config) {
-                                    exportData(dt, 'pdf',fieldConfig);
-                                }
-                            },   
-                            {
-                                extend: 'csvHtml5',
-                                text: '{{ trans('lang.export_csv') }}',
-                                action: function (e, dt, button, config) {
-                                    exportData(dt, 'csv',fieldConfig);
-                                }
-                            }
-                        ]
-                    }
-            ],
+            },
+            order: [[id ? 3 : 4, 'desc']],
+            columnDefs: [{
+                orderable: false,
+                targets: id ? [0, 5, 6] : [0, 7]
+            }],
+            language: {
+                zeroRecords: '{{ trans("lang.no_record_found") }}',
+                emptyTable: '{{ trans("lang.no_record_found") }}',
+                processing: ''
+            },
+            dom: 'lfrtipB',
+            buttons: [{
+                extend: 'collection',
+                text: '<i class="mdi mdi-cloud-download"></i> {{ trans("lang.export_as") }}',
+                className: 'btn btn-info',
+                buttons: [
+                    { extend: 'excelHtml5', text: '{{ trans("lang.export_excel") }}' },
+                    { extend: 'pdfHtml5', text: '{{ trans("lang.export_pdf") }}' },
+                    { extend: 'csvHtml5', text: '{{ trans("lang.export_csv") }}' }
+                ]
+            }],
             initComplete: function() {
                 $(".dataTables_filter").append($(".dt-buttons").detach());
-                $('.dataTables_filter input').attr('placeholder', 'Search here...').attr('autocomplete','new-password').val('');
+                $('.dataTables_filter input').attr('placeholder', 'Search here...').val('');
                 $('.dataTables_filter label').contents().filter(function() {
-                    return this.nodeType === 3; 
+                    return this.nodeType === 3;
                 }).remove();
             }
         });
-        function debounce(func, wait) {
-            let timeout;
-            const context = this;
-            return function (...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), wait);
-            };
-        }
     });
     async function getDriverName(driverId) {
         var snapshots = await database.collection('users').doc(driverId).get();
@@ -835,26 +652,34 @@
         $("#example24 .is_open").prop('checked', $(this).prop('checked'));
     });
     $("#deleteAll").click(function () {
-        if ($('#example24 .is_open:checked').length) {
-            if (confirm("{{trans('lang.selected_delete_alert')}}")) {
-                jQuery("#data-table_processing").show();
-                $('#example24 .is_open:checked').each(function () {
-                    var dataId = $(this).attr('dataId');
-                    database.collection('driver_payouts').doc(dataId).delete().then(function () {
-                        setTimeout(function () {
-                            window.location.reload();
-                        }, 5000);
-                    });
-                });
-            }
-        } else {
-            alert("{{trans('lang.select_delete_alert')}}");
+        if (!$('#example24 .is_open:checked').length) {
+            alert("{{ trans('lang.select_delete_alert') }}");
+            return;
         }
+        if (!confirm("{{ trans('lang.selected_delete_alert') }}")) {
+            return;
+        }
+        var ids = [];
+        $('#example24 .is_open:checked').each(function () {
+            ids.push($(this).attr('dataId'));
+        });
+        $.post('{{ route("payoutRequests.driver.disbursement.destroy") }}', {
+            _token: '{{ csrf_token() }}',
+            ids: ids
+        }).done(function () {
+            table.ajax.reload();
+        });
     });
-    $(document).on("click", "a[name='driver_payouts-delete']", function (e) {
-        var id = this.id;
-        database.collection('driver_payouts').doc(id).delete().then(function () {
-            window.location.reload();
+    $(document).on('click', '.btn-delete-driver-payout', function () {
+        if (!confirm('{{ trans("lang.delete_alert") }}')) {
+            return;
+        }
+        var payoutId = $(this).attr('id');
+        $.post('{{ route("payoutRequests.driver.disbursement.destroy") }}', {
+            _token: '{{ csrf_token() }}',
+            id: payoutId
+        }).done(function () {
+            table.ajax.reload();
         });
     });
 </script>

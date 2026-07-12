@@ -226,18 +226,13 @@
                         console.warn("Driver missing or has invalid location:", driverId);
                         continue; // Skip this entry entirely
                     }
-                    if (mapType == "OFFLINE" ){
-                        html += '<div class="live-tracking-box track-from" data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
-                    }
                     if (val.flag == "in_transit") {
                         if(val.hasOwnProperty('author')){
                             userId=val.author.id;
                         }
                         let user = await getUserDetail(val.author.id);
                         if (user != undefined && user!='') {
-                            if (mapType != "OFFLINE" ){
-                                html += '<div class="live-tracking-box track-from" data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
-                            }
+                            html += '<div class="live-tracking-box track-from" data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
                             html += '<div class="live-tracking-inner">';
                             html += '<span class="listicon"></span>';
                             html += '<h3 class="drier-name">{{trans("lang.driver_name")}} : ' + driver.firstName + ' ' + driver.lastName + '</h3>';
@@ -250,20 +245,18 @@
                                 html += '<div class="to-ride"><span>' + val.dropAddress + '</span></div>';
                                 html += '</div>';
                             }
-                            html += '<span class="badge badge-danger">In Tranist</span>';
+                            html += '<span class="badge badge-danger">In Transit</span>';
                             html += '&nbsp;&nbsp;<a href="/rental_orders/edit/' + val.id + '" class="badge badge-info" target="_blank">{{trans("lang.order_id")}} : ' + val.id.substring(0, 7) + '</a>';
                             html += '</div>';
                             html += '</div>';
                         }
                     } else {
                         if (driver.firstName || driver.lastName) {
-                            if (mapType != "OFFLINE" ){
-                               html += '<div class="live-tracking-box track-from" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
-                            }
+                            html += '<div class="live-tracking-box track-from" data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
                             html += '<div class="live-tracking-inner">';
                             html += '<span class="listicon"></span>';
                             html += '<h3 class="drier-name">{{trans("lang.driver_name")}} : ' + driver.firstName + ' ' + driver.lastName + '</h3>';
-                            html += '<span class="badge badge-success">Available<span>';
+                            html += '<span class="badge badge-success">Available</span>';
                             html += '</div>';
                             html += '</div>';
                         }

@@ -2,12 +2,14 @@
 
 namespace App\Services\Admin;
 
+use App\Services\Storage\FileStorageService;
 use App\Support\PayloadMapper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class AdminCrudService
@@ -66,8 +68,55 @@ class AdminCrudService
             });
         }
 
+        if (isset($filters['sectionId']) || isset($filters['section_id'])) {
+            $sId = $filters['sectionId'] ?? $filters['section_id'];
+            $isSectionScoped = $this->hasColumn('section_id') || $this->hasColumn('sectionId');
+
+            // Only filter by section when the table is section-scoped.
+            // Global modules (e.g. notifications) store data in payload and must not
+            // be hidden by the active section cookie.
+            if ($isSectionScoped && $sId !== null && $sId !== '' && $sId !== 'all') {
+                $query->where(function ($q) use ($sId) {
+                    if ($this->hasColumn('section_id')) {
+                        $q->orWhere('section_id', $sId)
+                            ->orWhereNull('section_id')
+                            ->orWhere('section_id', '');
+                    }
+                    if ($this->hasColumn('sectionId')) {
+                        $q->orWhere('sectionId', $sId)
+                            ->orWhereNull('sectionId')
+                            ->orWhere('sectionId', '');
+                    }
+                    // Fallback: section_id stored in JSON payload column
+                    if ($this->hasColumn('payload')) {
+                        $q->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.section_id')) = ?", [$sId]);
+                        $q->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.sectionId')) = ?", [$sId]);
+                    }
+                });
+
+                // Migrated data often still uses legacy Firebase section IDs.
+                // If the active admin section matches nothing, show all records.
+                if ((clone $query)->count() === 0) {
+                    $query = $this->baseQuery();
+
+                    if (! empty($filters['search'])) {
+                        $search = (string) $filters['search'];
+                        $columns = $this->config['searchable'] ?? ['title', 'name'];
+                        $query->where(function (Builder $q) use ($search, $columns) {
+                            foreach ($columns as $column) {
+                                if ($this->hasColumn($column)) {
+                                    $q->orWhere($column, 'like', '%' . $search . '%');
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+            unset($filters['sectionId'], $filters['section_id']);
+        }
+
         foreach ($filters as $field => $value) {
-            if ($value === null || $value === '' || in_array($field, ['search'], true)) {
+            if ($value === null || $value === '' || $value === 'all' || in_array($field, ['search'], true)) {
                 continue;
             }
             if ($this->hasColumn($field)) {
@@ -79,7 +128,13 @@ class AdminCrudService
         $sortColumn = $this->hasColumn($sortBy) ? $sortBy : 'created_at';
         $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
-        $items = $query->orderBy($sortColumn, $direction)
+        if ($sortColumn === 'created_at' && $this->hasColumn('createdAt')) {
+            $query->orderByRaw('COALESCE(created_at, createdAt) ' . $direction);
+        } else {
+            $query->orderBy($sortColumn, $direction);
+        }
+
+        $items = $query
             ->skip($start)
             ->take($length > 0 ? $length : 15)
             ->get();
@@ -103,6 +158,12 @@ class AdminCrudService
     {
         $record = $this->findOrFail($id);
         $attributes = $this->normalize($data, false);
+
+        if (isset($attributes['payload']) && is_array($attributes['payload'])) {
+            $existingPayload = is_array($record->payload) ? $record->payload : [];
+            $attributes['payload'] = array_merge($existingPayload, $attributes['payload']);
+        }
+
         $record->fill($attributes);
         $record->save();
 
@@ -144,6 +205,8 @@ class AdminCrudService
             $data['role'] = 'customer';
         }
 
+        $data = $this->storeUploadedFiles($data);
+
         $columns = Schema::getColumnListing($this->model->getTable());
         $mapped = PayloadMapper::map($data, $columns, ['payload', 'value', 'options', 'documents']);
 
@@ -157,6 +220,24 @@ class AdminCrudService
         }
 
         return $mapped['attributes'];
+    }
+
+    /**
+     * Persist uploaded files and replace UploadedFile values with public URLs.
+     */
+    protected function storeUploadedFiles(array $data): array
+    {
+        $storage = app(FileStorageService::class);
+        $directory = 'uploads/' . ($this->config['route'] ?? $this->config['view'] ?? 'modules');
+
+        foreach ($data as $key => $value) {
+            if ($value instanceof UploadedFile) {
+                $uploaded = $storage->upload($value, $directory);
+                $data[$key] = $uploaded['url'] ?? ('/storage/' . ltrim($uploaded['path'], '/'));
+            }
+        }
+
+        return $data;
     }
 
     protected function hasColumn(string $column): bool

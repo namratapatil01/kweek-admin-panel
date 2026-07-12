@@ -22,7 +22,7 @@
                             <div class="d-flex top-title-left align-self-center">
                                 <span class="icon mr-3"><img src="{{ asset('images/payment.png') }}"></span>
                                 <h3 class="mb-0">{{ trans('lang.store_disburesement') }}</h3>
-                                <span class="counter ml-3 total_count"></span>
+                                <span class="counter ml-3 total_count">{{ $totalPayouts ?? 0 }}</span>
                             </div>
                         </div>
                     </div>
@@ -191,49 +191,18 @@
 
     <script type="text/javascript">
 
-        var id = '<?php echo $id; ?>';
+        var id = @json($id ?? '');
         var database = kweekDb();
-        var offest = 1;
-        var pagesize = 10;
-        var end = null;
-        var endarray = [];
-        var start = null;
-        var user_number = [];
-        var selectedSectionId = getCookie('section_id');
-        var intRegex = /^\d+$/;
-        var floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/;
-        if (id != "") {
-            var refData = database.collection('payouts').where('vendorID', '==', id);
-            getStoreName(id);
-        } else {
-            var refData = database.collection('payouts');
-        }
         var email_templates = database.collection('email_templates').where('type', '==', 'payout_request_status');
         var emailTemplatesData = null;
-        var ref = refData.orderBy('paidDate', 'desc');
-        var currentCurrency = '';
-        var currencyAtRight = false;
-        var decimal_degits = 0;
-        var refCurrency = database.collection('currencies').where('isActive', '==', true);
-        refCurrency.get().then(async function(snapshots) {
-            var currencyData = snapshots.docs[0].data();
-            currentCurrency = currencyData.symbol;
-            currencyAtRight = currencyData.symbolAtRight;
-            if (currencyData.decimal_degits) {
-                decimal_degits = currencyData.decimal_degits;
-            }
-        });
-        var append_list = '';
+        var table;
         $(document).ready(function() {
             email_templates.get().then(async function(snapshots) {
                 emailTemplatesData = snapshots.docs[0].data();
             });
             $(document.body).on('click', '.redirecttopage', function() {
-                var url = $(this).attr('data-url');
-                window.location.href = url;
+                window.location.href = $(this).attr('href');
             });
-            var inx = parseInt(offest) * parseInt(pagesize);
-            jQuery("#data-table_processing").show();
             $(document).on('click', '.dt-button-collection .dt-button', function() {
                 $('.dt-button-collection').hide();
                 $('.dt-button-background').hide();
@@ -244,226 +213,67 @@
                     $('.dt-button-background').hide();
                 }
             });
-            var fieldConfig = {
-                columns: [
-                    <?php if ($id == '') { ?> {
-                        key: 'title',
-                        header: "{{ trans('lang.vendor') }}"
-                    },
-                    <?php } ?>
-                    {
-                        key: 'amount',
-                        header: "{{ trans('lang.total_amount') }}"
-                    },
-                    {
-                        key: 'note',
-                        header: "{{ trans('lang.note') }}"
-                    },
-                    {
-                        key: 'paidDate',
-                        header: "{{ trans('lang.date') }}"
-                    },
-                    {
-                        key: 'paymentStatus',
-                        header: "{{ trans('lang.payment_status') }}"
-                    },
-                    {
-                        key: 'withdrawMethod',
-                        header: "{{ trans('lang.withdraw_method') }}"
-                    },
-                ],
-                fileName: "{{ trans('lang.vendor') }}  {{ trans('lang.payment_plural') }}",
-            };
-            const table = $('#example24').DataTable({
-                pageLength: 10, // Number of rows per page
-                processing: false, // Show processing indicator
-                serverSide: true, // Enable server-side processing
+
+            table = $('#example24').DataTable({
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
                 responsive: true,
-                ajax: async function(data, callback, settings) {
-                    const start = data.start;
-                    const length = data.length;
-                    const searchValue = data.search.value.toLowerCase();
-                    const orderColumnIndex = data.order[0].column;
-                    const orderDirection = data.order[0].dir;
-                    @if ($id == '')
-                        const orderableColumns = ['', 'title', 'amount', 'note', 'paidDate', 'paymentStatus', 'withdrawMethod', '']; // Ensure this matches the actual column names
-                    @else
-                        const orderableColumns = ['', '', 'amount', 'note', 'paidDate', 'paymentStatus', 'withdrawMethod', ''];
-                    @endif
-                    const orderByField = orderableColumns[orderColumnIndex]; // Adjust the index to match your table
-                    if (searchValue.length >= 3 || searchValue.length === 0) {
-                        $('#data-table_processing').show();
-                    }
-                    await ref.get().then(async function(querySnapshot) {
-                        if (querySnapshot.empty) {
-                            $('.total_count').text(0);
-                            console.error("No data found in database.");
-                            $('#data-table_processing').hide(); // Hide loader
-                            callback({
-                                draw: data.draw,
-                                recordsTotal: 0,
-                                recordsFiltered: 0,
-                                data: [] // No data
-                            });
-                            return;
+                ajax: {
+                    url: @json(route('payoutRequests.vendor.disbursement.datatable')),
+                    type: 'GET',
+                    data: function (d) {
+                        d._token = '{{ csrf_token() }}';
+                        if (id) {
+                            d.vendor_id = id;
                         }
-                        let records = [];
-                        let filteredRecords = [];
-                        await Promise.all(querySnapshot.docs.map(async (doc) => {
-                            let childData = doc.data();
-                            childData.recid = doc.id;
-                            // const vendor = await payoutVendor(childData.vendorID);
-                            // if (!vendor) {
-                            //     return;
-                            // }
-                            var vendor = null;
-                            if(childData.hasOwnProperty('vendorID')){
-                                vendor = await payoutVendor(childData.vendorID);
-                            }
-                            if (!vendor) {
-                                return;
-                            }
-                            if (selectedSectionId && vendor.section_id && vendor.section_id !== selectedSectionId) {
-                                return; 
-                            }
-                            childData.title = vendor;
-                            var date = '';
-                            var time = '';
-                            if (childData.hasOwnProperty("paidDate") && childData.paidDate != '') {
-                                try {
-                                    date = childData.paidDate.toDate().toDateString();
-                                    time = childData.paidDate.toDate().toLocaleTimeString('en-US');
-                                } catch (err) {
-                                }
-                            }
-                            var paidDate = date + '<br> ' + time;
-                            if (searchValue) {
-                                if (
-                                    (childData.title && childData.title.toString().toLowerCase().includes(searchValue)) ||
-                                    (childData.amount && childData.amount.toString().toLowerCase().includes(searchValue)) ||
-                                    (paidDate && paidDate.toString().toLowerCase().indexOf(searchValue) > -1) ||
-                                    (childData.note && childData.note.toString().toLowerCase().includes(searchValue)) ||
-                                    (
-                                        (childData.paymentStatus && childData.paymentStatus.toString().toLowerCase().includes(searchValue))
-                                        ||
-                                        (childData.withdrawMethod && childData.withdrawMethod.toString().toLowerCase().includes(searchValue))
-                                    )
-                                ) {
-                                    filteredRecords.push(childData);
-                                }
-                            } else {
-                                filteredRecords.push(childData);
-                            }
-                        }));
-                        filteredRecords.sort((a, b) => {
-                            let aValue = a[orderByField] ? a[orderByField].toString().toLowerCase().trim() : '';
-                            let bValue = b[orderByField] ? b[orderByField].toString().toLowerCase().trim() : '';
-                            if (orderByField === 'paidDate' && a[orderByField] != '' && b[orderByField] != '') {
-                                try {
-                                    aValue = a[orderByField] ? new Date(a[orderByField].toDate()).getTime() : 0;
-                                    bValue = b[orderByField] ? new Date(b[orderByField].toDate()).getTime() : 0;
-                                } catch (err) {
-                                }
-                            }
-                            if (orderByField === 'amount') {
-                                aValue = a[orderByField] ? parseInt(a[orderByField]) : 0;
-                                bValue = b[orderByField] ? parseInt(b[orderByField]) : 0;
-                            }
-                            if (orderDirection === 'asc') {
-                                return (aValue > bValue) ? 1 : -1;
-                            } else {
-                                return (aValue < bValue) ? 1 : -1;
-                            }
-                        });
-                        const totalRecords = filteredRecords.length;
-                        $('.total_count').text(totalRecords);
-                        const paginatedRecords = filteredRecords.slice(start, start + length);
-                        await Promise.all(paginatedRecords.map(async (childData) => {
-                            if (childData.hasOwnProperty('title') || childData.title != null || childData.title != '') {
-                                var getData = await buildHTML(childData);
-                                records.push(getData);
-                            }
-                        }));
-$(function () {
-                                $('[data-toggle="tooltip"]').tooltip();
-                            });
-                            $(function () {
-                                $('[data-bs-toggle="tooltip"]').tooltip();
-                            });
-                        $('#data-table_processing').hide(); // Hide loader
-                        callback({
-                            draw: data.draw,
-                            recordsTotal: totalRecords, // Total number of records in database
-                            recordsFiltered: totalRecords, // Number of records after filtering (if any)
-                            filteredData: filteredRecords,
-                            data: records // The actual data to display in the table
-                        });
-                    }).catch(function(error) {
-                        console.error("Error fetching data from database:", error);
-                        $('#data-table_processing').hide(); // Hide loader
-                        callback({
-                            draw: data.draw,
-                            recordsTotal: 0,
-                            recordsFiltered: 0,
-                            data: [] // No data due to error
-                        });
-                    });
-                },
-                columnDefs: [
-                    {
-                        orderable: false,
-                        targets: (id === "" ? [0, 6, 7] : [0, 5, 6])
                     },
-                ],
-                order: [4, "desc"],
-                "language": {
-                    "zeroRecords": "{{ trans('lang.no_record_found') }}",
-                    "emptyTable": "{{ trans('lang.no_record_found') }}",
-                    "processing": "" // Remove default loader
+                    dataSrc: function (json) {
+                        if (json.error) {
+                            console.error('Vendor disbursements datatable error', json.error);
+                        }
+                        if (typeof json.recordsTotal !== 'undefined') {
+                            $('.total_count').text(json.recordsTotal);
+                        }
+                        return json.data || [];
+                    },
+                    error: function (xhr) {
+                        console.error('Vendor disbursements datatable error', xhr.status, xhr.responseText);
+                        $('#data-table_processing').hide();
+                    }
+                },
+                order: [[id ? 3 : 4, 'desc']],
+                columnDefs: [{
+                    orderable: false,
+                    targets: id ? [0, 5, 6] : [0, 7]
+                }],
+                language: {
+                    zeroRecords: '{{ trans("lang.no_record_found") }}',
+                    emptyTable: '{{ trans("lang.no_record_found") }}',
+                    processing: ''
                 },
                 dom: 'lfrtipB',
                 buttons: [{
                     extend: 'collection',
-                    text: '<i class="mdi mdi-cloud-download"></i> {{ trans('lang.export_as') }}',
+                    text: '<i class="mdi mdi-cloud-download"></i> {{ trans("lang.export_as") }}',
                     className: 'btn btn-info',
-                    buttons: [{
-                            extend: 'excelHtml5',
-                            text: '{{ trans('lang.export_excel') }}',
-                            action: function(e, dt, button, config) {
-                                exportData(dt, 'excel', fieldConfig);
-                            }
-                        },
-                        {
-                            extend: 'pdfHtml5',
-                            text: '{{ trans('lang.export_pdf') }}',
-                            action: function(e, dt, button, config) {
-                                exportData(dt, 'pdf', fieldConfig);
-                            }
-                        },
-                        {
-                            extend: 'csvHtml5',
-                            text: '{{ trans('lang.export_csv') }}',
-                            action: function(e, dt, button, config) {
-                                exportData(dt, 'csv', fieldConfig);
-                            }
-                        }
+                    buttons: [
+                        { extend: 'excelHtml5', text: '{{ trans("lang.export_excel") }}' },
+                        { extend: 'pdfHtml5', text: '{{ trans("lang.export_pdf") }}' },
+                        { extend: 'csvHtml5', text: '{{ trans("lang.export_csv") }}' }
                     ]
                 }],
                 initComplete: function() {
                     $(".dataTables_filter").append($(".dt-buttons").detach());
-                    $('.dataTables_filter input').attr('placeholder', 'Search here...').attr('autocomplete', 'new-password').val('');
+                    $('.dataTables_filter input').attr('placeholder', 'Search here...').val('');
                     $('.dataTables_filter label').contents().filter(function() {
                         return this.nodeType === 3;
                     }).remove();
                 }
             });
-            function debounce(func, wait) {
-                let timeout;
-                const context = this;
-                return function(...args) {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func.apply(context, args), wait);
-                };
+
+            if (id) {
+                getStoreName(id);
             }
         });
         async function getStoreName(vendorId) {
@@ -476,68 +286,6 @@ $(function () {
                     $(".wallet_transaction").attr("href", wallet_route.replace('id', 'storeID=' + vendorData.author));
                 }
             });
-        }
-        async function buildHTML(val) {
-            var html = [];
-            var count = 0;
-            var number = [];
-            var amount = '';
-            var price = val.amount;
-            if (intRegex.test(price) || floatRegex.test(price)) {
-                price = parseFloat(price).toFixed(decimal_degits);
-            } else {
-                price = 0;
-            }
-            if (currencyAtRight) {
-                amount = parseFloat(price).toFixed(decimal_degits) + "" + currentCurrency;
-            } else {
-                amount = currentCurrency + "" + parseFloat(price).toFixed(decimal_degits);
-            }
-            html.push('<input type="checkbox" id="is_open_' + val.recid + '" class="is_open" dataId="' + val.recid + '"><label class="col-3 control-label"\n' +
-                'for="is_open_' + val.recid + '" ></label>');
-            if (id == "") {
-                var route_url = '{{ route('stores.view', ':id') }}';
-                route_url = route_url.replace(':id', val.vendorID);
-                html.push('<td><a href="' + route_url + '" class="redirecttopage ">' + val.title + '</a></td>');
-            }
-            html.push('<td>' + amount + '</td>');
-            var date = val.paidDate.toDate().toDateString();
-            var time = val.paidDate.toDate().toLocaleTimeString('en-US');
-            html.push('<td>' + val.note + '</td>');
-            html.push('<td>' + date + '<br> ' + time + '</td>');
-            if (val.paymentStatus == 'Pending' || val.paymentStatus == 'In Process') {
-                html.push('<span class="order_placed badge badge-info"><span>' + val.paymentStatus + '</span></span>');
-            } else if (val.paymentStatus == 'Reject' || val.paymentStatus == 'Failed') {
-                html.push('<span class="order_rejected badge badge-danger"><span>' + val.paymentStatus + '</span></span>');
-            } else if (val.paymentStatus == 'Success') {
-                html.push('<span class="order_completed badge badge-success"><span>' + val.paymentStatus + '</span></span>');
-            } else {
-                html.push('');
-            }
-            if (val.withdrawMethod) {
-                var selectedwithdrawMethod = (val.withdrawMethod == "bank") ? "Bank Transfer" : val.withdrawMethod;
-                html.push('<td><span style="text-transform:capitalize">' + selectedwithdrawMethod + '</span></td>');
-            } else {
-                html.push('');
-            }
-            actionHtml = '';
-            actionHtml = actionHtml + '<td><span class="action-btn">';
-            if (val.paymentStatus != "Reject" && val.paymentStatus != "Success") {
-                actionHtml = actionHtml + '<a id="' + val.id + '" name="vendor_view" data-auth="' + val.vendorID + '" data-amount = "' + amount + '" href="javascript:void(0)" data-toggle="modal" data-target="#bankdetailsModal"  class="btn  mb-2" data-bs-toggle="tooltip" data-bs-original-title="Manual Pay"><i class="mdi mdi-bank"></i></a>';
-            }
-            if (val.withdrawMethod && val.withdrawMethod != "bank" && val.paymentStatus != "Reject" && val.paymentStatus != "Success") {
-                actionHtml = actionHtml + '<a id="' + val.id + '" name="vendor_pay"  data-auth="' + val.vendorID + '" data-amount="' + price + '" data-method="' + val.withdrawMethod + '" href="javascript:void(0)" class="btn  mb-2 direct-click-btn" data-bs-toggle="tooltip" data-bs-original-title="Pay Online"><i class="mdi mdi-credit-card"></i></a>';
-            }
-            if (val.paymentStatus != "Reject" && val.paymentStatus != "Success") {
-                actionHtml = actionHtml + '<a id="' + val.id + '" name="vendor_reject_request" data-toggle="modal" data-target="#cancelRequestModal" data-auth="' + val.vendorID + '" data-amount = "' + amount + '" data-price="' + price + '" data-bs-toggle="tooltip"  href="javascript:void(0)" class="btn  mb-2" data-bs-original-title="Cancel Request"><i class="mdi mdi-close-circle"></i></a>';
-            }
-            if (val.paymentStatus == "In Process") {
-                actionHtml = actionHtml + '<a id="' + val.id + '" name="vendor_check_status" data-auth="' + val.vendorID + '" data-amount="' + price + '" data-method="' + val.withdrawMethod + '" href="javascript:void(0)" class="" data-toggle="tooltip" title="Check Payment Status"><i class="mdi mdi-comment-question-outline"></i></a>';
-            }
-            actionHtml = actionHtml + '<a id="' + val.recid + '" class="delete-btn" name="vendor_payouts-delete" href="javascript:void(0)" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
-            actionHtml = actionHtml + '</span></td>';
-            html.push(actionHtml);
-            return html;
         }
         async function getVendorBankDetails() {
             var vendorId = $('#vendorId').val();
@@ -816,50 +564,38 @@ $(function () {
                 }
             });
         });
-        async function payoutVendor(vendor) {
-            var payoutVendor = '';
-            var route = '{{ route('stores.view', ':id') }}';
-            route = route.replace(':id', vendor);
-            let vendorInfo = null;
-            await database.collection('vendors').where("id", "==", vendor).get().then(async function(snapshotss) {
-                if (snapshotss.docs[0]) {
-                    var vendor_data = snapshotss.docs[0].data();
-                    vendorInfo = vendor_data.title;
-                    driverInfo = {
-                        name: vendor_data.title,
-                        sectionId: vendor_data.section_id || null
-                    };
-                    jQuery(".vendor_" + vendor).attr("data-url", route).html(payoutVendor);
-                } else {
-                    jQuery(".vendor_" + vendor).attr("data-url", route).html('');
-                }
-            });
-            return vendorInfo;
-        }
         $("#is_active").click(function() {
             $("#example24 .is_open").prop('checked', $(this).prop('checked'));
         });
         $("#deleteAll").click(function() {
-            if ($('#example24 .is_open:checked').length) {
-                if (confirm("{{ trans('lang.selected_delete_alert') }}")) {
-                    jQuery("#data-table_processing").show();
-                    $('#example24 .is_open:checked').each(function() {
-                        var dataId = $(this).attr('dataId');
-                        database.collection('payouts').doc(dataId).delete().then(function() {
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 5000);
-                        });
-                    });
-                }
-            } else {
+            if (!$('#example24 .is_open:checked').length) {
                 alert("{{ trans('lang.select_delete_alert') }}");
+                return;
             }
+            if (!confirm("{{ trans('lang.selected_delete_alert') }}")) {
+                return;
+            }
+            var ids = [];
+            $('#example24 .is_open:checked').each(function() {
+                ids.push($(this).attr('dataId'));
+            });
+            $.post('{{ route("payoutRequests.vendor.disbursement.destroy") }}', {
+                _token: '{{ csrf_token() }}',
+                ids: ids
+            }).done(function () {
+                table.ajax.reload();
+            });
         });
-        $(document).on("click", "a[name='vendor_payouts-delete']", function(e) {
-            var id = this.id;
-            database.collection('payouts').doc(id).delete().then(function() {
-                window.location.reload();
+        $(document).on('click', '.btn-delete-payout', function () {
+            if (!confirm('{{ trans("lang.delete_alert") }}')) {
+                return;
+            }
+            var payoutId = $(this).attr('id');
+            $.post('{{ route("payoutRequests.vendor.disbursement.destroy") }}', {
+                _token: '{{ csrf_token() }}',
+                id: payoutId
+            }).done(function () {
+                table.ajax.reload();
             });
         });
     </script>

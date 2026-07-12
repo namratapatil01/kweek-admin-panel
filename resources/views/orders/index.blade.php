@@ -1,4 +1,50 @@
 @extends('layouts.app')
+
+@section('style')
+<style>
+/* Custom Table Checkbox styling */
+#orderTable input[type="checkbox"] {
+    position: relative !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid #cbd5e0 !important;
+    border-radius: 4px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    background-color: #fff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+}
+#orderTable input[type="checkbox"]:checked {
+    background-color: #ff5c28 !important;
+    border-color: #ff5c28 !important;
+}
+#orderTable input[type="checkbox"]:checked::after {
+    content: '' !important;
+    width: 5px !important;
+    height: 9px !important;
+    border: solid white !important;
+    border-width: 0 2.5px 2.5px 0 !important;
+    transform: rotate(45deg) !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+}
+.action-btn a {
+    transition: all 0.2s ease-in-out !important;
+}
+.action-btn a:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+}
+</style>
+@endsection
+
 @section('content')
     <div class="page-wrapper">
         <div class="row page-titles">
@@ -212,7 +258,14 @@
                                         <thead>
                                             <tr>
                                                 <?php if (in_array('orders.delete', json_decode(@session('user_permissions'), true))) { ?>
-                                                <th class="delete-all"><input type="checkbox" id="is_active"><label class="col-3 control-label" for="is_active"><a id="deleteAll" class="do_not_delete" href="javascript:void(0)"><i class="mdi mdi-delete"></i> {{ trans('lang.all') }}</a></label></th>
+                                                <th class="delete-all" style="width: 100px; vertical-align: middle;">
+                                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                                        <input type="checkbox" id="is_active" style="margin: 0;">
+                                                        <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 700; font-size: 13.5px; text-decoration: none; gap: 4px;">
+                                                            <i class="mdi mdi-delete" style="font-size: 16px;"></i> {{ trans('lang.all') }}
+                                                        </a>
+                                                    </div>
+                                                </th>
                                                 <?php } ?>
                                                 <th>{{ trans('lang.order_id') }}</th>
                                                 
@@ -919,8 +972,7 @@
             var id = val.id;
             
             var user_id = val.authorID;
-            var route1 = '{{ route('orders.edit', ':id') }}';
-            route1 = route1.replace(':id', id);
+            var route1 = '{{ url('orders/edit') }}/' + id;
             var printRoute = '{{ route('vendors.orderprint', ':id') }}';
             printRoute = printRoute.replace(':id', id);
             
@@ -934,8 +986,7 @@
             var customer_view = '{{ route('users.view', ':id') }}';
             customer_view = customer_view.replace(':id', user_id);
             if (checkDeletePermission) {
-                html.push('<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
-                    'for="is_open_' + id + '" ></label></td>');
+                html.push('<td class="delete-all" style="vertical-align: middle;"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '" style="margin: 0;"></td>');
             }
             
             html.push('<a href="' + route1 + '" class="redirecttopage"  data-toggle="tooltip" data-bs-original-title="' + val.id + '">' + (val.id.length > 8 ? val.id.substring(0, 8) + '...' : val.id) + '</a>');
@@ -1099,9 +1150,13 @@
             }
 
             var actionHtml = '';
-            actionHtml = actionHtml + '<span class="action-btn"><?php if (in_array('orders.print', json_decode(@session('user_permissions')))) { ?><a href="' + printRoute + '" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.print') }}"><i class="mdi mdi-printer" style="font-size:20px;"></i></a><?php } ?><a href="' + route1 + '" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a> ';
+            actionHtml = actionHtml + '<span class="action-btn">';
+            <?php if (in_array('orders.print', json_decode(@session('user_permissions')))) { ?>
+            actionHtml = actionHtml + '<a href="' + printRoute + '" class="btn-ad-action" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.print') }}" style="border: 1.5px solid #00c08b; background: #fff; color: #00c08b; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-printer"></i></a>';
+            <?php } ?>
+            actionHtml = actionHtml + '<a href="' + route1 + '" class="btn-ad-action" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.edit') }}" style="border: 1.5px solid #00b0ff; background: #fff; color: #00b0ff; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-lead-pencil"></i></a>';
             if (checkDeletePermission) {
-                actionHtml = actionHtml + '<a id="' + val.id + '" class="delete-btn" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.delete') }}" name="order-delete" href="javascript:void(0)" ><i class="mdi mdi-delete"></i></a>';
+                actionHtml = actionHtml + '<a id="' + val.id + '" class="delete-btn btn-ad-action" data-toggle="tooltip" data-bs-original-title="{{ trans('lang.delete') }}" name="order-delete" href="javascript:void(0)" style="border: 1.5px solid #ef5350; background: #fff; color: #ef5350; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-delete"></i></a>';
             }
             actionHtml = actionHtml + '</span>';
             html.push(actionHtml);

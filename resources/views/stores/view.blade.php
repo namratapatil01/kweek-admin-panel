@@ -715,7 +715,55 @@
         var id = "{{ $id }}";
         var serviceType = getCookie('service_type');
         var database = kweekDb();
-        var ref = database.collection('vendors').where("id", "==", id);
+        
+        var vendorDataFromMySql = {!! isset($vendor) ? json_encode(array_merge($vendor->toArray(), $vendor->payload ?? [])) : 'null' !!};
+        if (vendorDataFromMySql) {
+            if (vendorDataFromMySql.subscription_plan && typeof vendorDataFromMySql.subscription_plan === 'string') {
+                try {
+                    vendorDataFromMySql.subscription_plan = JSON.parse(vendorDataFromMySql.subscription_plan);
+                } catch(e) {}
+            }
+            if (!vendorDataFromMySql.subscriptionPlanId && vendorDataFromMySql.subscription_plan_id) {
+                vendorDataFromMySql.subscriptionPlanId = vendorDataFromMySql.subscription_plan_id;
+            }
+            if (!vendorDataFromMySql.subscriptionExpiryDate && vendorDataFromMySql.hasOwnProperty('subscription_expiry_date')) {
+                if (vendorDataFromMySql.subscription_expiry_date) {
+                    var expiryDateStr = vendorDataFromMySql.subscription_expiry_date;
+                    vendorDataFromMySql.subscriptionExpiryDate = {
+                        toDate: function() { return new Date(expiryDateStr); }
+                    };
+                } else {
+                    vendorDataFromMySql.subscriptionExpiryDate = null;
+                }
+            }
+            // Sometimes it's unlimited and expiry date is omitted, but we need the property to exist
+            if (!vendorDataFromMySql.hasOwnProperty('subscriptionExpiryDate')) {
+                vendorDataFromMySql.subscriptionExpiryDate = null;
+            }
+            
+            if (!vendorDataFromMySql.subscriptionTotalOrders && vendorDataFromMySql.subscription_total_orders) {
+                vendorDataFromMySql.subscriptionTotalOrders = vendorDataFromMySql.subscription_total_orders;
+            }
+        }
+        var ref = {
+            get: function() {
+                return new Promise(function(resolve, reject) {
+                    if (vendorDataFromMySql) {
+                        resolve({
+                            docs: [
+                                {
+                                    data: function() {
+                                        return vendorDataFromMySql;
+                                    }
+                                }
+                            ]
+                        });
+                    } else {
+                        resolve({ docs: [] });
+                    }
+                });
+            }
+        };
         var photo = "";
         var vendorOwnerId = "";
         var vendorOwnerOnline = false;
@@ -809,7 +857,9 @@
             jQuery("#data-table_processing").show();
 
             await email_templates.get().then(async function(snapshots) {
-                emailTemplatesData = snapshots.docs[0].data();
+                if (snapshots.docs.length > 0) {
+                    emailTemplatesData = snapshots.docs[0].data();
+                }
             });
 
             if(serviceType !== 'ecommerce-service'){
@@ -1019,7 +1069,7 @@
                     }
 
                     var photos = '';
-                    if (vendor.photos.length > 0) {
+                    if (vendor.photos && vendor.photos.length > 0) {
                         vendor.photos.forEach((photo) => {
                             photos = photos +
                                 '<span class="image-item"><img width="100px" id="" height="auto" src="' +
@@ -1050,9 +1100,11 @@
                     $(".reviewhtml").html(review);
 
                     filtershtml = '';
-                    for (var key in vendor.filters) {
-                        filtershtml = filtershtml + '<li>' + key + ': ' + vendor.filters[key] +
-                            '</li>';
+                    if (vendor.filters && typeof vendor.filters === 'object') {
+                        for (var key in vendor.filters) {
+                            filtershtml = filtershtml + '<li>' + key + ': ' + vendor.filters[key] +
+                                '</li>';
+                        }
                     }
                     if (filtershtml != '') {
                         $("#filtershtml").html(filtershtml);
@@ -1163,13 +1215,15 @@
                                 var user = listval.data();
 
                                 $(".vendor_email").html(shortEmail(user.email));
-                                if (user.phoneNumber.includes('+')) {
-                                    $(".vendor_phoneNumber").html('+' +
-                                        EditPhoneNumber(user.phoneNumber.slice(
-                                            1)));
-                                } else {
-                                    $(".vendor_phoneNumber").html(EditPhoneNumber(
-                                        user.phoneNumber));
+                                if (user.phoneNumber) {
+                                    if (user.phoneNumber.includes('+')) {
+                                        $(".vendor_phoneNumber").html('+' +
+                                            EditPhoneNumber(user.phoneNumber.slice(
+                                                1)));
+                                    } else {
+                                        $(".vendor_phoneNumber").html(EditPhoneNumber(
+                                            user.phoneNumber));
+                                    }
                                 }
 
                             })
@@ -1208,7 +1262,10 @@
                         )
                 }
                 jQuery("#data-table_processing").hide();
-            })
+            }).catch(function(error) {
+                console.error("Error loading vendor details:", error);
+                jQuery("#data-table_processing").hide();
+            });
 
 
             $(".save_vendor_btn").click(function() {
@@ -1300,85 +1357,35 @@
         }
 
         async function getTotalOrders() {
-
-            await database.collection('vendor_orders').where('vendorID', '==', '<?php echo $id; ?>').get().then(
-            async function(orderSnapshots) {
-                    var paymentData = orderSnapshots.docs;
-                    $("#total_orders").text(paymentData.length);
-                })
+            var total_orders = {{ $total_orders }};
+            $("#total_orders").text(total_orders);
+            return total_orders;
         }
 
         async function getTotalItems() {
-
-            await database.collection('vendor_products').where('vendorID', '==', '<?php echo $id; ?>').get().then(
-            async function(orderSnapshots) {
-                    var itemsData = orderSnapshots.docs;
-                    $("#total_items").text(itemsData.length);
-                })
+            var total_items = {{ $total_items }};
+            $("#total_items").text(total_items);
+            return total_items;
         }
 
         async function getTotalEarnings() {
-            var totalEarning = 0;
-            var adminCommission = 0;
-            await database.collection('vendor_orders').where('vendorID', '==', '<?php echo $id; ?>').where('status',
-                'in', ["Order Completed"]).get().then(async function(orderSnapshots) {
-                var paymentData = orderSnapshots.docs;
-                paymentData.forEach((order) => {
-                    var orderData = order.data();
-                    var price = 0;
-                    if (orderData.adminCommission != undefined) {
-                        var commission = parseInt(orderData.adminCommission);
-                        adminCommission = commission + adminCommission;
-                    }
-                    orderData.products.forEach((product) => {
-
-                        if (product.price && product.quantity != 0) {
-                            var productTotal = parseInt(product.price) * parseInt(product
-                                .quantity);
-                            price = price + productTotal;
-                        }
-                    })
-                    totalEarning = totalEarning + price;
-                })
-
-                if (currencyAtRight) {
-                    totalEarningwithCurrency = parseFloat(totalEarning).toFixed(decimal_degits) + "" +
-                        currentCurrency;
-                } else {
-                    totalEarningwithCurrency = currentCurrency + "" + parseFloat(totalEarning).toFixed(
-                        decimal_degits);
-                }
-
-                $("#total_earnings").text(totalEarningwithCurrency);
-
-            })
+            var totalEarning = {{ $total_earnings }};
+            if (currencyAtRight) {
+                totalEarningwithCurrency = parseFloat(totalEarning).toFixed(decimal_degits) + "" + currentCurrency;
+            } else {
+                totalEarningwithCurrency = currentCurrency + "" + parseFloat(totalEarning).toFixed(decimal_degits);
+            }
+            $("#total_earnings").text(totalEarningwithCurrency);
             return totalEarning;
         }
 
-
         async function getTotalpayment(driverID) {
-            var paid_price = 0;
-            var total_price = 0;
-            var remaining = 0;
-            await database.collection('payouts').where('vendorID', '==', '<?php echo $id; ?>').get().then(
-            async function(payoutSnapshots) {
-                    payoutSnapshots.docs.forEach((payout) => {
-                        var payoutData = payout.data();
-                        if (payoutData.amount && parseFloat(payoutData.amount) != undefined &&
-                            parseFloat(payoutData.amount) != '' && parseFloat(payoutData.amount) != NaN
-                            ) {
-                            paid_price = parseFloat(paid_price) + parseFloat(payoutData.amount);
-                        }
-
-                    })
-                });
-
+            var paid_price = {{ $total_payment }};
             if (currencyAtRight) {
                 paid_price_with_currency = parseFloat(paid_price).toFixed(decimal_degits) + "" + currentCurrency;
             } else {
                 paid_price_with_currency = currentCurrency + "" + parseFloat(paid_price).toFixed(decimal_degits);
             }
-
             $("#total_payment").text(paid_price_with_currency);
             return paid_price;
         }

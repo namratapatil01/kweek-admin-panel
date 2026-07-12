@@ -166,69 +166,65 @@ foreach ($countries as $keycountry => $valuecountry) {
     var vendorId = "{{ $id }}";
     var vendorData ='';
 
-    var refSection = database.collection('sections').where('serviceType', '==', 'Multivendor Delivery Service');
-    refSection.get().then(async function(snapshots) {
-        var sectionIds = [];
-        if (snapshots.docs.length > 0) {
-            snapshots.docs.forEach((listval) => {
-                var data = listval.data();
-                sectionIds.push(data.id);
-            })
+    function loadStoresForDeliveryman() {
+        if (vendorId) {
+            return $.Deferred().resolve().promise();
         }
-        if (sectionIds.length > 0) {
-            refVendor.where('section_id', '==', section_id).orderBy('title', 'asc').get().then(async function(snapshots) {
-                snapshots.docs.forEach((listval) => {
-                    var data = listval.data();
-                    if (sectionIds.includes(data.section_id)) {
-                        $('#store').append($("<option></option>")
-                            .attr("value", data.id)
-                            .attr("section_id", data.section_id)
-                            .attr("zoneId", data.zoneId)
-                            .text(data.title));
-                    }
-                })
 
+        return $.get("{{ route('vendors.stores-list') }}", { section_id: section_id })
+            .then(function (res) {
+                var stores = (res && res.stores) ? res.stores : [];
+                $('#store').find('option:not(:first)').remove();
+                stores.forEach(function (store) {
+                    $('#store').append($("<option></option>")
+                        .attr("value", store.id)
+                        .attr("section_id", store.section_id || '')
+                        .attr("zoneId", store.zoneId || '')
+                        .text(store.title));
+                });
+            })
+            .fail(function (error) {
+                console.error('Failed to load stores:', error);
             });
-        }
-    })
+    }
 
     $(document).ready(async function() {
 
         if(vendorId){
             let vendorRef = await database.collection('vendors').doc(vendorId).get();
-            vendorData = vendorRef.data();
+            vendorData = vendorRef.data() || {};
         }
+
+        await loadStoresForDeliveryman();
+        $('#store').select2({
+            placeholder: "{{ trans('lang.select_vendor') }}",
+            allowClear: true,
+            width: '100%'
+        });
 
         $("#country_selector").select2({
             templateResult: formatState,
             templateSelection: formatState2,
             placeholder: "Select Country",
-            allowClear: true
+            allowClear: true,
+            width: 'style'
         });
 
-        // --- ADD THIS BLOCK TO SET DEFAULT COUNTRY CODE ---
         var globalSettingsRef = database.collection('settings').doc('globalSettings');
         globalSettingsRef.get().then(async function(snapshot) {
             var globalSettings = snapshot.data();
             if (globalSettings && globalSettings.defaultCountryCode) {
                 var defaultPhoneCode = globalSettings.defaultCountryCode.replace('+', '').trim();
-
-                // Find the option with matching phoneCode
                 var $option = $("#country_selector option").filter(function() {
                     return $(this).val() === defaultPhoneCode;
                 });
-
                 if ($option.length > 0) {
                     $("#country_selector").val(defaultPhoneCode).trigger('change');
-                } else {
-                    console.warn("Default country code not found in list:", defaultPhoneCode);
                 }
             }
         }).catch(function(error) {
             console.error("Error fetching global settings: ", error);
         });
-        // --- END OF DEFAULT COUNTRY LOGIC ---
-
     });
 
     $(".save_from_btn").click(async function() {
@@ -240,82 +236,88 @@ foreach ($countries as $keycountry => $valuecountry) {
         var countryCode = '+' + jQuery("#country_selector").val();
         var userPhone = $(".user_phone").val();
         var isActive = $("#is_active").is(':checked') ? true : false;
-        var zoneId = vendorId ? vendorData.zoneId : $('#store option:selected').attr('zoneid');
-        var vendorID = vendorId ? vendorId : $('#store option:selected').val();
-                
+        var $storeOption = $('#store option:selected');
+        var zoneId = vendorId ? (vendorData.zoneId || '') : ($storeOption.attr('zoneid') || '');
+        var vendorID = vendorId ? vendorId : $storeOption.val();
+        var storeSectionId = vendorId
+            ? (vendorData.section_id || section_id || '')
+            : ($storeOption.attr('section_id') || section_id || '');
+
         if (userFirstName == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{ trans('lang.user_first_name_help') }}</p>");
+            $(".error_top").show().html("<p>{{ trans('lang.user_first_name_help') }}</p>");
             window.scrollTo(0, 0);
-        } else if (email == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{ trans('lang.user_email_help') }}</p>");
+            return;
+        }
+        if (email == '') {
+            $(".error_top").show().html("<p>{{ trans('lang.user_email_help') }}</p>");
             window.scrollTo(0, 0);
-        } else if (password == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{ trans('lang.user_password_help') }}</p>");
+            return;
+        }
+        if (password == '') {
+            $(".error_top").show().html("<p>{{ trans('lang.user_password_help') }}</p>");
             window.scrollTo(0, 0);
-        } else if (userPhone == '') {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{ trans('lang.user_phone_help') }}</p>");
+            return;
+        }
+        if (userPhone == '') {
+            $(".error_top").show().html("<p>{{ trans('lang.user_phone_help') }}</p>");
             window.scrollTo(0, 0);
-        } else if (jQuery("#country_selector").val() == '' || jQuery("#country_selector").val() == null) {
-            $(".error_top").show();
-            $(".error_top").html("");
-            $(".error_top").append("<p>{{ trans('lang.select_country_code') }}</p>");
+            return;
+        }
+        if (jQuery("#country_selector").val() == '' || jQuery("#country_selector").val() == null) {
+            $(".error_top").show().html("<p>{{ trans('lang.select_country_code') }}</p>");
             window.scrollTo(0, 0);
-        } else {
-            
-            jQuery("#data-table_processing").show();
-            var id = database.collection('tmp').doc().id;
-            await storeImageData().then(async (IMG) => {
+            return;
+        }
+        if (!vendorID) {
+            $(".error_top").show().html("<p>{{ trans('lang.select_vendor') }}</p>");
+            window.scrollTo(0, 0);
+            return;
+        }
 
-                user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
-database.collection('users').doc(user_id).set({
-                            'firstName': userFirstName,
-                            'lastName': userLastName,
-                            'email': email,
-                            'countryCode': countryCode,
-                            'phoneNumber': userPhone,
-                            'profilePictureURL': IMG && IMG.profileImage ? IMG.profileImage : "",
-                            'role': 'driver',
-                            'id': user_id,
-                            'createdAt': createdAtman,
-                            'provider': "email",
-                            'appIdentifier': "web",
-                            'vendorID': vendorID,
-                            'active': isActive,
-                            'isDocumentVerify': true,
-                            'zoneId': zoneId,
-                            'isActive': false,
-                            'sectionId': section_id
+        jQuery("#data-table_processing").show();
+        try {
+            var IMG = await storeImageData();
+            var user_id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('user_' + Date.now());
 
-                        }).then(function(result) {
-                            if (vendorId) {
-                                window.location.href = "{{ route('restaurants.deliveryman', '') }}/" + "{{ $id }}";
-                            } else {
-                                window.location.href = '{{ route('deliveryman') }}';
-                            }
-
-                        });
-                    }).catch(err => {
-                        jQuery("#data-table_processing").hide();
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + err + "</p>");
-                        window.scrollTo(0, 0);
-                    });
-            }).catch(function(error) {
-                jQuery("#data-table_processing").hide();
-                $(".error_top").show();
-                $(".error_top").html("");
-                $(".error_top").append("<p>" + error + "</p>");
-                window.scrollTo(0, 0);
+            $.ajax({
+                url: "{{ route('drivers.store-driver') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: user_id,
+                    firstName: userFirstName,
+                    lastName: userLastName,
+                    email: email,
+                    password: password,
+                    countryCode: countryCode,
+                    phoneNumber: userPhone,
+                    profilePictureURL: IMG && IMG.profileImage ? IMG.profileImage : "",
+                    vendorID: vendorID,
+                    active: isActive,
+                    isDocumentVerify: true,
+                    zoneId: zoneId || '',
+                    isActive: false,
+                    sectionId: storeSectionId,
+                    serviceType: 'delivery-service'
+                },
+                success: function () {
+                    if (vendorId) {
+                        window.location.href = "{{ route('restaurants.deliveryman', '') }}/" + "{{ $id }}";
+                    } else {
+                        window.location.href = '{{ route('deliveryman') }}';
+                    }
+                },
+                error: function (xhr, status, error) {
+                    jQuery("#data-table_processing").hide();
+                    var errMessage = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : error;
+                    $(".error_top").show().html("<p>" + errMessage + "</p>");
+                    window.scrollTo(0, 0);
+                }
             });
+        } catch (error) {
+            jQuery("#data-table_processing").hide();
+            $(".error_top").show().html("<p>" + error + "</p>");
+            window.scrollTo(0, 0);
         }
     })
     async function storeImageData() {
@@ -370,31 +372,30 @@ database.collection('users').doc(user_id).set({
     }
 
 
+    var newcountriesjs = <?php echo json_encode($newcountriesjs); ?>;
+
     function formatState(state) {
         if (!state.id) {
             return state.text;
         }
+        var code = (newcountriesjs[state.element.value] || '').toLowerCase();
         var baseUrl = "<?php echo URL::to('/'); ?>/scss/icons/flag-icon-css/flags";
-        var $state = $(
-            '<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>'
+        return $(
+            '<span><img src="' + baseUrl + '/' + code + '.svg" class="img-flag" /> ' + state.text + '</span>'
         );
-        return $state;
     }
 
     function formatState2(state) {
         if (!state.id) {
             return state.text;
         }
-        var baseUrl = "<?php echo URL::to('/'); ?>/scss/icons/flag-icon-css/flags"
-        var $state = $(
-            '<span><img class="img-flag" /> <span></span></span>'
-        );
-        $state.find("span").text(state.text);
-        $state.find("img").attr("src", baseUrl + "/" + newcountriesjs[state.element.value].toLowerCase() + ".svg");
+        var phoneCode = state.element.value;
+        var code = (newcountriesjs[phoneCode] || '').toLowerCase();
+        var baseUrl = "<?php echo URL::to('/'); ?>/scss/icons/flag-icon-css/flags";
+        var $state = $('<span><img class="img-flag" /> <span></span></span>');
+        $state.find("span").text('+' + phoneCode);
+        $state.find("img").attr("src", baseUrl + "/" + code + ".svg");
         return $state;
     }
-
-    var newcountriesjs = '<?php echo json_encode($newcountriesjs); ?>';
-    var newcountriesjs = JSON.parse(newcountriesjs);
 </script>
 @endsection

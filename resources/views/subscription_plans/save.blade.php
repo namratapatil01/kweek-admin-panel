@@ -1,4 +1,156 @@
 @extends('layouts.app')
+
+@section('style')
+<style>
+    /* Card and container styling */
+    .vendor_payout_create {
+        background: transparent !important;
+        padding: 0 !important;
+    }
+    .vendor_payout_create-inner {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Fieldset styling */
+    .vendor_payout_create fieldset {
+        border: 1.5px solid #eaeaea !important;
+        padding: 24px !important;
+        margin-bottom: 30px !important;
+        border-radius: 6px !important;
+        background-color: #fff !important;
+        position: relative !important;
+    }
+
+    /* Legend styling */
+    .vendor_payout_create legend {
+        background-color: #000 !important;
+        color: #fff !important;
+        padding: 6px 14px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        width: auto !important;
+        margin-bottom: 25px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        display: inline-block !important;
+        float: none !important;
+    }
+
+    /* Form layout - stack them vertically */
+    .vendor_payout_create .form-group {
+        display: flex !important;
+        flex-direction: column !important;
+        margin-bottom: 20px !important;
+        width: 100% !important;
+        float: none !important;
+        padding: 0 !important;
+    }
+
+    /* Control labels */
+    .vendor_payout_create .control-label {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        color: #1a202c !important;
+        margin-bottom: 8px !important;
+        text-align: left !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+    }
+
+    /* Text inputs and Textareas */
+    .vendor_payout_create .form-control {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        padding: 10px 14px !important;
+        border: 1px solid #cbd5e0 !important;
+        border-radius: 4px !important;
+        font-size: 14px !important;
+        color: #2d3748 !important;
+        background-color: #fff !important;
+        box-shadow: none !important;
+        transition: border-color 0.15s ease-in-out !important;
+    }
+    .vendor_payout_create .form-control:focus {
+        border-color: #3182ce !important;
+        outline: none !important;
+    }
+
+    /* Radio buttons container and items */
+    .vendor_payout_create .form-check {
+        display: inline-block !important;
+        margin-bottom: 12px !important;
+        margin-right: 20px !important;
+        padding-left: 0 !important;
+        width: auto !important;
+        float: none !important;
+    }
+    .vendor_payout_create .form-check input[type="radio"],
+    .vendor_payout_create .form-check input[type="checkbox"] {
+        position: absolute !important;
+        left: -9999px !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
+    }
+    .vendor_payout_create .form-check .control-label {
+        padding-left: 28px !important;
+        position: relative !important;
+        margin-bottom: 0 !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        color: #4a5568 !important;
+        display: inline-block !important;
+        line-height: 20px !important;
+    }
+
+    /* Button section styling */
+    .btm-btn {
+        text-align: center !important;
+        margin-top: 20px !important;
+        margin-bottom: 40px !important;
+    }
+    .edit-form-btn {
+        background-color: #000 !important;
+        border-color: #000 !important;
+        color: #fff !important;
+        border-radius: 4px !important;
+        padding: 8px 24px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: none !important;
+    }
+    .edit-form-btn:hover {
+        background-color: #333 !important;
+        border-color: #333 !important;
+    }
+    .btn-default {
+        background-color: #718096 !important;
+        border-color: #718096 !important;
+        color: #fff !important;
+        border-radius: 4px !important;
+        padding: 8px 24px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        margin-left: 10px !important;
+        transition: all 0.2s ease !important;
+    }
+    .btn-default:hover {
+        background-color: #4a5568 !important;
+        border-color: #4a5568 !important;
+        color: #fff !important;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="page-wrapper">
     <div class="row page-titles">
@@ -32,75 +184,83 @@
                 <div class="vendor_payout_create-inner">
                     <fieldset>
                         <legend>{{ trans('lang.plan_details') }}</legend>
-                        <div class="form-group row width-50">
-                            <label class="col-3 control-label">{{ trans('lang.plan_name') }}</label>
-                            <div class="col-7">
-                                <input type="text" class="form-control" id="plan_name"
-                                    placeholder="{{ trans('lang.enter_plan_name') }}">
-                            </div>
-                        </div>
-                        <div class="form-group row width-50">
-                            <label class="col-3 control-label" for="">{{ trans('lang.plan_type') }}</label>
-                            <div class="form-check width-50">
-                                <input type="radio" id="free_type" name="planType" value="free" checked>
-                                <label class="control-label" for="free_type">{{ trans('lang.free') }}</label>
-                            </div>
-                            <div class="form-check width-50">
-                                <input type="radio" id="paid_type" name="planType" value="paid">
-                                <label class="control-label" for="paid_type">{{ trans('lang.paid') }}</label>
-                            </div>
-                        </div>
-                        <div class="form-group row width-100 d-none plan_price_div">
-                            <label class="col-3 control-label">{{ trans('lang.plan_price') }}</label>
-                            <div class="col-7">
-                                <input type="number" class="form-control" id="plan_price"
-                                    placeholder="{{ trans('lang.enter_plan_price') }}">
-                            </div>
-                        </div>
-                        <div class="form-group row width-100">
-                            <label class="col-3 control-label">{{ trans('lang.plan_validity_days') }}</label>
-                            <div class="form-check width-100">
-                                <input type="radio" id="unlimited_days" name="set_expiry_limit" value="unlimited"
-                                    checked>
-                                <label class="control-label" for="unlimited_days">{{ trans('lang.unlimited') }}</label>
-                            </div>
-                            <div id="limited_days_div">
-                                <div class="form-check width-50">
-                                    <input type="radio" id="limited_days" name="set_expiry_limit" value="limited">
-                                    <label class="control-label" for="limited_days">{{ trans('lang.limited') }}</label>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">{{ trans('lang.plan_name') }}</label>
+                                    <input type="text" class="form-control" id="plan_name"
+                                        placeholder="{{ trans('lang.enter_plan_name') }}">
                                 </div>
-                                <div class="form-check width-50 d-none expiry-limit-div">
-                                    <input type="number" id="plan_validity" class="form-control"
-                                        placeholder="{{ trans('lang.ex_365') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">{{ trans('lang.plan_type') }}</label>
+                                    <div class="d-flex flex-column">
+                                        <div class="form-check">
+                                            <input type="radio" id="free_type" name="planType" value="free" checked>
+                                            <label class="control-label" for="free_type">{{ trans('lang.free') }}</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="radio" id="paid_type" name="planType" value="paid">
+                                            <label class="control-label" for="paid_type">{{ trans('lang.paid') }}</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group row width-100">
-                            <label class="col-3 control-label">{{ trans('lang.description') }}</label>
-                            <div class="col-7">
-                                <textarea class="form-control" id="description" rows="5"></textarea>
+
+                        <div class="form-group d-none plan_price_div">
+                            <label class="control-label">{{ trans('lang.plan_price') }}</label>
+                            <input type="number" class="form-control" id="plan_price"
+                                placeholder="{{ trans('lang.enter_plan_price') }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">{{ trans('lang.plan_validity_days') }}</label>
+                            <div class="d-flex flex-column">
+                                <div class="form-check">
+                                    <input type="radio" id="unlimited_days" name="set_expiry_limit" value="unlimited"
+                                        checked>
+                                    <label class="control-label" for="unlimited_days">{{ trans('lang.unlimited') }}</label>
+                                </div>
+                                <div id="limited_days_div">
+                                    <div class="form-check">
+                                        <input type="radio" id="limited_days" name="set_expiry_limit" value="limited">
+                                        <label class="control-label" for="limited_days">{{ trans('lang.limited') }}</label>
+                                    </div>
+                                    <div class="expiry-limit-div d-none mt-2" style="max-width: 250px;">
+                                        <input type="number" id="plan_validity" class="form-control"
+                                            placeholder="{{ trans('lang.ex_365') }}">
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">{{ trans('lang.description') }}</label>
+                            <textarea class="form-control" id="description" rows="5"></textarea>
                         </div>
                         
-                        <div class="form-group row width-100 status-div">
-                            <div class="form-check width-100">
+                        <div class="form-group status-div">
+                            <div class="form-check">
                                 <input type="checkbox" id="status">
                                 <label class="control-label" for="status">{{ trans('lang.status') }}</label>
                             </div>
                         </div>
-                        <div class="form-group row width-100">
-                            <label class="col-3 control-label">{{ trans('lang.image') }}</label>
-                            <div class="col-7">
-                                <input type="file" onChange="handleFileSelect(event)" class="form-control">
-                                <div class="form-text text-muted">{{ trans('lang.image') }}</div>
-                            </div>
-                            <div class="placeholder_img_thumb plan_image"></div>
+
+                        <div class="form-group">
+                            <label class="control-label">{{ trans('lang.image') }}</label>
+                            <input type="file" onChange="handleFileSelect(event)" class="form-control" style="border: none !important; padding: 0 !important; height: auto !important; background: transparent !important;">
+                            <div class="form-text text-muted mt-1">{{ trans('lang.image') }}</div>
+                            <div class="placeholder_img_thumb plan_image mt-2"></div>
                             <div id="uploding_image"></div>
                         </div>
                     </fieldset>
+
                     <fieldset>
                         <legend>{{ trans('lang.available_features') }}</legend>
-                        <div class="form-group row width-100 subscriptionPlan-features-div">
+                        <div class="form-group subscriptionPlan-features-div">
                             <div class="form-check">
                                 <input type="checkbox" id="mobile_app" name="features" value="ownerMobileApp">
                                 <label class="control-label" for="mobile_app">{{ trans('lang.mobile_app') }}</label>
@@ -115,49 +275,52 @@
                             </div>
                         </div>
                     </fieldset>
+
                     <fieldset id="commissionPlan-features-div" class="d-none">
                         <legend>{{ trans('lang.plan_points') }}</legend>
-                        <div class="form-group row width-100 ">
+                        <div class="form-group">
                             <div id="options-container"></div>
                             <button id="add-plan-point" onclick="addPlanPoint()"
-                                class="btn btn-primary">{{ trans('lang.add_more') }}</button>
+                                class="btn btn-primary mt-2" style="width: auto !important;">{{ trans('lang.add_more') }}</button>
                         </div>
                     </fieldset>
+
                     <fieldset class="d-none" id="item_service_limit">
                         <legend id="item_service_limit_heading"></legend>
-                        <div class="form-group row width-100">
-                            <div class="form-check width-100">
+                        <div class="form-group">
+                            <div class="form-check">
                                 <input type="radio" id="unlimited_item" name="set_item_limit" value="unlimited" checked>
                                 <label class="control-label" for="unlimited_item">{{ trans('lang.unlimited') }}</label>
                             </div>
-                            <div class="d-flex ">
-                                <div class="form-check width-50 limited_item_div  ">
+                            <div id="limited_item_container">
+                                <div class="form-check limited_item_div">
                                     <input type="radio" id="limited_item" name="set_item_limit" value="limited">
                                     <label class="control-label" for="limited_item">{{ trans('lang.limited') }}</label>
                                 </div>
-                                <div class="form-check width-50 d-none item-limit-div">
+                                <div class="item-limit-div d-none mt-2" style="max-width: 250px;">
                                     <input type="number" id="item_limit" class="form-control"
-                                        placeholder="{{ trans('lang.ex_1000') }}" min="1"  oninput="this.value = Math.max(this.value, 1)">
+                                        placeholder="{{ trans('lang.ex_1000') }}" min="1" oninput="this.value = Math.max(this.value, 1)">
                                 </div>
                             </div>
                         </div>
                     </fieldset>
+
                     <fieldset class="d-none" id="order_booking_limit">
                         <legend id="order_booking_limit_heading"></legend>
-                        <div class="form-group row width-100">
-                            <div class="form-check width-100">
+                        <div class="form-group">
+                            <div class="form-check">
                                 <input type="radio" id="unlimited_order" name="set_order_limit" value="unlimited"
                                     checked>
                                 <label class="control-label" for="unlimited_order">{{ trans('lang.unlimited') }}</label>
                             </div>
-                            <div class="d-flex  ">
-                                <div class="form-check width-50 limited_order_div">
+                            <div id="limited_order_container">
+                                <div class="form-check limited_order_div">
                                     <input type="radio" id="limited_order" name="set_order_limit" value="limited">
                                     <label class="control-label" for="limited_order">{{ trans('lang.limited') }}</label>
                                 </div>
-                                <div class="form-check width-50 d-none order-limit-div">
+                                <div class="order-limit-div d-none mt-2" style="max-width: 250px;">
                                     <input type="number" id="order_limit" class="form-control"
-                                        placeholder="{{ trans('lang.ex_1000') }}" min="1"  oninput="this.value = Math.max(this.value, 1)">
+                                        placeholder="{{ trans('lang.ex_1000') }}" min="1" oninput="this.value = Math.max(this.value, 1)">
                                 </div>
                             </div>
                         </div>
@@ -170,7 +333,7 @@
                 {{ trans('lang.save') }}
             </button>
             <a href="{{ url('subscription-plans') }}" class="btn btn-default"><i
-                    class="fa fa-undo"></i>{{ trans('lang.cancel') }}</a>
+                    class="fa fa-undo"></i> {{ trans('lang.back') }}</a>
         </div>
     </div>
 </div>
@@ -253,91 +416,94 @@
         });
 
         if (requestId != '') {
-            var ref = database.collection('subscription_plans').where('id', '==', id);
             jQuery("#data-table_processing").show();
-            ref.get().then(async function(snapshots) {
-                if (snapshots.docs.length) {
-                    var data = snapshots.docs[0].data();
-                    $("#plan_name").val(data.name);
-                    $("#plan_price").val(data.price);
-                    $('#description').val(data.description);
-                    if (data.isEnable) {
-                        $("#status").prop('checked', true);
-                    } 
-                    if (data.expiryDay != '-1') {
-                        $("#limited_days").prop('checked', true);
-                        $('.expiry-limit-div').removeClass('d-none');
-                        $('#plan_validity').val(data.expiryDay);
-                    } else {
-                        $("#unlimited_days").prop('checked', true);
-                    }
-                    if (data.itemLimit != '-1') {
-                        $("#limited_item").prop('checked', true);
-                        $('.item-limit-div').removeClass('d-none');
-                    } else {
-                        $("#unlimited_item").prop('checked', true);
-                    }
-                    if (data.orderLimit != '-1') {
-                        $("#limited_order").prop('checked', true);
-                        $('.order-limit-div').removeClass('d-none');
-                    } else {
-                        $("#unlimited_order").prop('checked', true);
-                    }
-                    $('#item_limit').val(data.itemLimit);
-                    $('#order_limit').val(data.orderLimit);
+            $.ajax({
+                url: "{{ url('subscription-plans/get-plan') }}/" + id,
+                type: "GET",
+                success: function(data) {
+                    if (data) {
+                        $("#plan_name").val(data.name);
+                        $("#plan_price").val(data.price);
+                        $('#description').val(data.description);
+                        if (data.isEnable || data.isEnable == 'true') {
+                            $("#status").prop('checked', true);
+                        } 
+                        if (data.expiryDay != '-1') {
+                            $("#limited_days").prop('checked', true);
+                            $('.expiry-limit-div').removeClass('d-none');
+                            $('#plan_validity').val(data.expiryDay);
+                        } else {
+                            $("#unlimited_days").prop('checked', true);
+                        }
+                        if (data.itemLimit != '-1') {
+                            $("#limited_item").prop('checked', true);
+                            $('.item-limit-div').removeClass('d-none');
+                        } else {
+                            $("#unlimited_item").prop('checked', true);
+                        }
+                        if (data.orderLimit != '-1') {
+                            $("#limited_order").prop('checked', true);
+                            $('.order-limit-div').removeClass('d-none');
+                        } else {
+                            $("#unlimited_order").prop('checked', true);
+                        }
+                        $('#item_limit').val(data.itemLimit);
+                        $('#order_limit').val(data.orderLimit);
 
-                    if (data.hasOwnProperty('features')) {
-                        Object.entries(data.features).forEach(([key, value]) => {
-                            if (value) {
-                                $('input[name="features"][value="' + key + '"]').prop(
-                                    'checked',
-                                    true);
+                        if (data.hasOwnProperty('features') && data.features) {
+                            Object.entries(data.features).forEach(([key, value]) => {
+                                if (value && value !== 'false') {
+                                    $('input[name="features"][value="' + key + '"]').prop('checked', true);
+                                }
+                            });
+
+                            if (data.isCommissionPlan == true || data.isCommissionPlan == 'true') {
+                                $('input[name="features"]').attr('disabled', true);
+                                $('input[name="planType"]').attr('disabled', true);
+                                $('#status').attr('disabled', true);
+                                $('.status-div').addClass('d-none');
+                                $('#section').attr('disabled', true);
+                                $('#plan_price').attr('readonly', true);
                             }
-                        })
+                        }
 
-                        if (data.isCommissionPlan == true) {
-                            $('input[name="features"]').attr('disabled', true);
-                            $('input[name="planType"]').attr('disabled', true);
-                            $('#status').attr('disabled', true);
-                            $('.status-div').addClass('d-none');
+                        if (data.isCommissionPlan == true || data.isCommissionPlan == 'true') {
+                            $('#commissionPlan-features-div').removeClass('d-none');
+                            planPoints = data.plan_points || [];
+                            renderPlanPoints();
+                            $('#free_type').prop('checked', true);
                             $('#section').attr('disabled', true);
-                            $('#plan_price').attr('readonly', true);
+                            $("#limited_days_div").addClass('d-none');
+                            $('.limited_item_div').addClass('d-none');
+                            $('.limited_order_div').addClass('d-none'); 
+                        } else {
+                            $('.plan_price_div').removeClass('d-none');
+                            $("#limited_days_div").removeClass('d-none');
+                        }
+                        if (data.type == 'paid') {
+                            $('#paid_type').prop('checked', true);
+                            $('.plan_price_div').removeClass('d-none');
+                        } else {
+                            $('#free_type').prop('checked', true);
+                            $('.plan_price_div').addClass('d-none');
+                        }
+                      
+                        if (data.image != '' && data.image != null) {
+                            photo = data.image;
+                            planImageFile = data.image;
+                            $(".plan_image").append('<img onerror="this.onerror=null;this.src=\'' +
+                                placeholderImage + '\'" class="rounded" style="width:50px" src="' +
+                                photo + '" alt="image">');
+                        } else {
+                            $(".plan_image").append('<img class="rounded" style="width:50px" src="' +
+                                placeholderImage + '" alt="image">');
                         }
                     }
-
-                    if (data.isCommissionPlan == true) {
-                        $('#commissionPlan-features-div').removeClass('d-none');
-                        planPoints = data.plan_points;
-                        renderPlanPoints();
-                        $('#free_type').prop('checked', true);
-                        $('#section').attr('disabled', true);
-                        $("#limited_days_div").addClass('d-none');
-                        $('.limited_item_div').addClass('d-none');
-                        $('.limited_order_div').addClass('d-none'); 
-                    } else {
-                        $('.plan_price_div').removeClass('d-none');
-                        $("#limited_days_div").removeClass('d-none');
-                    }
-                    if (data.type == 'paid') {
-                        $('#paid_type').prop('checked', true);
-                        $('.plan_price_div').removeClass('d-none');
-                    } else {
-                        $('#free_type').prop('checked', true);
-                        $('.plan_price_div').addClass('d-none');
-                    }
-                  
-                    if (data.image != '' && data.image != null) {
-                        photo = data.image;
-                        planImageFile = data.image;
-                        $(".plan_image").append('<img onerror="this.onerror=null;this.src=\'' +
-                            placeholderImage + '\'" class="rounded" style="width:50px" src="' +
-                            photo + '" alt="image">');
-                    } else {
-                        $(".plan_image").append('<img class="rounded" style="width:50px" src="' +
-                            placeholderImage + '" alt="image">');
-                    }
+                    jQuery("#data-table_processing").hide();
+                },
+                error: function(err) {
+                    jQuery("#data-table_processing").hide();
                 }
-                jQuery("#data-table_processing").hide();
             });
         }
     });
@@ -478,89 +644,63 @@
             return false;
 
         } else {
+            var savePayload = {
+                'id': requestId != '' ? id : null,
+                'name': plan_name,
+                'price': plan_price,
+                'description': description,
+                'expiryDay': expiry_limit,
+                'isEnable': status,
+                'itemLimit': item_limit,
+                'orderLimit': order_limit,
+                'features': featuresObject,
+                'plan_points': (requestId != '' ? planPoints : null),
+                'type': planType,
+                'sectionId': section_id,
+                'isCommissionPlan': false,
+                '_token': '{{ csrf_token() }}'
+            };
 
-            requestId == '' ? (
-                    storeImageData().then(IMG => {
-                        if (IMG == '') {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append(
-                                "<p>{{ trans('lang.item_image_help') }}</p>");
-                            window.scrollTo(0, 0);
-                            return false;
-                        }
-                        jQuery("#data-table_processing").show();
-                        database.collection('subscription_plans').doc(id).set({
-                            'id': id,
-                            'name': plan_name,
-                            'price': plan_price,
-                            'description': description,
-                            'expiryDay': expiry_limit,
-                            'isEnable': status,
-                            'itemLimit': item_limit,
-                            'orderLimit': order_limit,
-                            'features': featuresObject,
-                            'plan_points': null,
-                            'type': planType,
-                            'createdAt': createdAt,
-                            'image': IMG,
-                            'sectionId': section_id,
-                            'isCommissionPlan':false
-                        }).then(function(result) {
+            storeImageData().then(IMG => {
+                if (IMG == '') {
+                    $(".error_top").show();
+                    $(".error_top").html("");
+                    $(".error_top").append("<p>{{ trans('lang.item_image_help') }}</p>");
+                    window.scrollTo(0, 0);
+                    return false;
+                }
+                savePayload.image = IMG;
+
+                jQuery("#data-table_processing").show();
+                
+                $.ajax({
+                    url: "{{ route('subscription-plans.store') }}",
+                    type: "POST",
+                    data: savePayload,
+                    success: function(response) {
+                        if (response.success) {
                             jQuery("#data-table_processing").hide();
                             $(".success_top").show();
                             $(".success_top").html("");
                             window.scrollTo(0, 0);
                             window.location.href = "{{ route('subscription-plans.index') }}";
-                        }).catch(function(error) {
+                        } else {
                             $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + error + "</p>");
-                        })
-                    }).catch(function(error) {
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + error + "</p>");
-                    })) :
-                (
-                    storeImageData().then(IMG => {
-                        if (IMG == '') {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append(
-                                "<p>{{ trans('lang.item_image_help') }}</p>");
-                            window.scrollTo(0, 0);
-                            return false;
-                        }
-                        database.collection('subscription_plans').doc(id).update({
-                            'name': plan_name,
-                            'price': plan_price,
-                            'description': description,
-                            'expiryDay': expiry_limit,
-                            'isEnable': status,
-                            'itemLimit': item_limit,
-                            'orderLimit': order_limit,
-                            'features': featuresObject,
-                            'plan_points': planPoints,
-                            'image': IMG,
-                            'type': planType,
-                            'sectionId': section_id
-                        }).then(function(result) {
+                            $(".error_top").html("<p>" + response.error + "</p>");
                             jQuery("#data-table_processing").hide();
-                            $(".success_top").show();
-                            $(".success_top").html("");
-                            window.scrollTo(0, 0);
-                            window.location.href = "{{ route('subscription-plans.index') }}";
-                        }).catch(function(error) {
-                            $(".error_top").show();
-                            $(".error_top").html("");
-                            $(".error_top").append("<p>" + error + "</p>");
-                        })
-                    }).catch(function(error) {
+                        }
+                    },
+                    error: function(err) {
                         $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>" + error + "</p>");
-                    }));
+                        $(".error_top").html("<p>" + err.responseText + "</p>");
+                        jQuery("#data-table_processing").hide();
+                    }
+                });
+            }).catch(function(error) {
+                $(".error_top").show();
+                $(".error_top").html("<p>" + error + "</p>");
+                jQuery("#data-table_processing").hide();
+            });
         }
     });
 
