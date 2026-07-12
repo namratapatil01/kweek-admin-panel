@@ -30,7 +30,7 @@ return new class extends Migration
             $table->boolean('dine_in_active')->default(false);
             $table->string('rideType', 64)->nullable();
             $table->boolean('is_product_details')->default(false);
-            $table->string('cab_service_template', 64)->nullable();
+            $table->longText('cab_service_template')->nullable();
             $table->boolean('enableCashbackOffer')->default(false);
             $table->string('theme', 64)->nullable();
             $table->unsignedInteger('referralAmount')->nullable();

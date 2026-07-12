@@ -1,9 +1,107 @@
 @extends('layouts.app')
+
+@section('style')
+<style>
+/* Toggle Switch */
+.coupon-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+    margin: 0;
+}
+.coupon-toggle-switch input { opacity: 0; width: 0; height: 0; }
+.coupon-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e0;
+    border-radius: 22px;
+    transition: .3s;
+}
+.coupon-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px; width: 16px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.coupon-toggle-switch input:checked + .coupon-slider { background-color: #20c997; }
+.coupon-toggle-switch input:checked + .coupon-slider:before { transform: translateX(22px); }
+
+/* Privacy Badge */
+.badge-success {
+    background-color: #e6fcf5 !important;
+    color: #20c997 !important;
+    font-weight: 600;
+}
+.badge-warning {
+    background-color: #fff5f5 !important;
+    color: #f03e3e !important;
+    font-weight: 600;
+}
+
+/* Action button hover styles */
+.btn-coupon-action {
+    transition: all 0.2s ease-in-out;
+}
+.btn-coupon-action:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.btn-edit-coupon:hover {
+    background-color: #00b0ff !important;
+    color: #fff !important;
+}
+.btn-delete-coupon:hover {
+    background-color: #ef5350 !important;
+    color: #fff !important;
+}
+
+/* Custom Table Checkbox styling */
+#couponTable input[type="checkbox"] {
+    position: relative !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid #cbd5e0 !important;
+    border-radius: 4px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    background-color: #fff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+}
+#couponTable input[type="checkbox"]:checked {
+    background-color: #ff5c28 !important;
+    border-color: #ff5c28 !important;
+}
+#couponTable input[type="checkbox"]:checked::after {
+    content: '' !important;
+    width: 5px !important;
+    height: 9px !important;
+    border: solid white !important;
+    border-width: 0 2.5px 2.5px 0 !important;
+    transform: rotate(45deg) !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+}
+</style>
+@endsection
+
 @section('content')
 <div class="page-wrapper">
     <div class="row page-titles">
         <div class="col-md-5 align-self-center">
-            <!-- <h3 class="text-themecolor">{{ trans('lang.coupon_plural') }}</h3> -->
+            <h3 class="text-themecolor">{{ trans('lang.coupon_plural') }}</h3>
         </div>
         <div class="col-md-7 align-self-center">
             <ol class="breadcrumb">
@@ -27,13 +125,13 @@
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex top-title-section pb-4 justify-content-between">
-                        <div class="d-flex top-title-left align-self-center">
-                            <span class="icon mr-3"><img src="{{ asset('images/coupon.png') }}" onerror="this.src='{{ asset('images/order.png') }}'"></span>
-                            <h3 class="mb-0">{{ trans('lang.coupon_plural') }}</h3>
-                            <span class="counter ml-3 total_coupon_count badge badge-secondary" style="font-size:14px;padding:6px 12px;border-radius:50px;"></span>
+                        <div class="d-flex top-title-left align-self-center align-items-center">
+                            <span class="icon mr-3" style="font-size: 24px; color: #2b354e;"><i class="fa fa-list-ul"></i></span>
+                            <h3 class="mb-0" style="font-weight: 700; color: #2b354e; font-size: 22px;">{{ trans('lang.coupon_plural') }}</h3>
+                            <span class="counter ml-3 total_coupon_count badge" style="background: #ff5c28; color: #fff; font-size: 14px; padding: 6px 14px; border-radius: 50px; font-weight: 700;">0</span>
                         </div>
                         <div class="d-flex top-title-right align-self-center">
-                            <a href="{{ route('coupons.create') }}" class="btn btn-primary rounded-full">
+                            <a href="{{ route('coupons.create') }}" class="btn btn-dark" style="background-color: #000; border-color: #000; border-radius: 24px; padding: 10px 24px; font-weight: 700; font-size: 14px; transition: all 0.3s ease;">
                                 <i class="mdi mdi-plus mr-1"></i> Create Coupon
                             </a>
                         </div>
@@ -46,33 +144,33 @@
         <div class="table-list">
             <div class="row">
                 <div class="col-12">
-                    <div class="card border">
-                        <div class="card-header d-flex justify-content-between align-items-center border-0">
+                    <div class="card border-0" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                        <div class="card-header d-flex justify-content-between align-items-center border-0 bg-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 20px 24px;">
                             <div class="card-header-title">
-                                <h3 class="text-dark-2 mb-1 h4">{{ trans('lang.coupon_plural') }}</h3>
-                                <p class="mb-0 text-dark-2">View and manage all the coupons</p>
+                                <h3 class="text-dark mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">{{ trans('lang.coupon_plural') }}</h3>
+                                <p class="mb-0 text-muted" style="font-size: 13px;">View and manage all the coupons</p>
                             </div>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="padding: 0 24px 24px 24px;">
                             <div class="table-responsive">
-                                <table id="couponTable" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
+                                <table id="couponTable" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%" style="border: 1px solid #eef2f6;">
                                     <thead>
-                                        <tr>
-                                            <th class="delete-all">
-                                                <input type="checkbox" id="select_all_coupons">
-                                                <label class="control-label" for="select_all_coupons">
-                                                    <a id="deleteAllCoupons" class="do_not_delete" href="javascript:void(0)">
-                                                        <i class="mdi mdi-delete"></i> {{ trans('lang.all') }}
+                                        <tr style="background-color: #f8fafc;">
+                                            <th class="delete-all" style="width: 100px; vertical-align: middle; padding: 12px 16px;">
+                                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                                    <input type="checkbox" id="select_all_coupons" style="margin: 0;">
+                                                    <a id="deleteAllCoupons" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 700; font-size: 13.5px; text-decoration: none; gap: 4px;">
+                                                        <i class="mdi mdi-delete" style="font-size: 16px;"></i> All
                                                     </a>
-                                                </label>
+                                                </div>
                                             </th>
-                                            <th>Code</th>
-                                            <th>Discount</th>
-                                            <th>Store</th>
-                                            <th>Privacy</th>
-                                            <th>Expires At</th>
-                                            <th>Enabled</th>
-                                            <th>Actions</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Code</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Discount</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Store</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Privacy</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Expires At</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Enabled</th>
+                                            <th style="padding: 12px 16px; font-weight: 600; color: #4a5568;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -108,18 +206,30 @@ $(document).ready(function () {
                 return json.data || [];
             }
         },
-        columnDefs: [{ orderable: false, targets: [0, 6, 7] }],
+        columnDefs: [
+            { orderable: false, targets: [0, 6, 7] },
+            {
+                targets: '_all',
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).css({
+                        'padding': '12px 16px',
+                        'vertical-align': 'middle'
+                    });
+                }
+            }
+        ],
         language: {
             zeroRecords : '{{ trans("lang.no_record_found") }}',
             emptyTable  : '{{ trans("lang.no_record_found") }}',
-            processing  : ''
+            processing  : '',
+            search: ''
         },
         dom: 'lfrtipB',
         buttons: [
             {
                 extend   : 'collection',
                 text     : '<i class="mdi mdi-cloud-download"></i> {{ trans("lang.export_as") }}',
-                className: 'btn btn-info',
+                className: 'btn btn-outline-secondary btn-sm',
                 buttons  : [
                     { extend: 'excelHtml5', text: '{{ trans("lang.export_excel") }}' },
                     { extend: 'pdfHtml5',   text: '{{ trans("lang.export_pdf") }}'   },
@@ -127,10 +237,21 @@ $(document).ready(function () {
                 ]
             }
         ],
+        drawCallback: function() {
+            $('.dataTables_paginate .paginate_button').addClass('btn btn-outline-light btn-sm mx-1');
+        },
         initComplete: function () {
             $('.dataTables_filter').append($('.dt-buttons').detach());
             $('.dataTables_filter input')
-                .attr('placeholder', 'Search coupons...')
+                .attr('placeholder', 'Search...')
+                .css({
+                    'border': '1px solid #e2e8f0',
+                    'border-radius': '20px',
+                    'padding': '8px 16px',
+                    'outline': 'none',
+                    'font-size': '14px',
+                    'margin-left': '10px'
+                })
                 .val('');
             $('.dataTables_filter label').contents().filter(function () {
                 return this.nodeType === 3;
@@ -186,11 +307,9 @@ $(document).ready(function () {
             method: 'POST',
             data  : { _token: '{{ csrf_token() }}' },
             success: function (res) {
-                // Server returns current state; reflect it
                 chk.prop('checked', res.enabled);
             },
             error: function () {
-                // Revert on error
                 chk.prop('checked', !chk.prop('checked'));
                 alert('Failed to update status.');
             }
@@ -198,46 +317,4 @@ $(document).ready(function () {
     });
 });
 </script>
-
-<style>
-/* Toggle Switch */
-.coupon-toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 26px;
-    margin: 0;
-}
-.coupon-toggle-switch input { opacity: 0; width: 0; height: 0; }
-.coupon-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc;
-    border-radius: 26px;
-    transition: .3s;
-}
-.coupon-slider:before {
-    position: absolute;
-    content: "";
-    height: 20px; width: 20px;
-    left: 3px; bottom: 3px;
-    background-color: white;
-    border-radius: 50%;
-    transition: .3s;
-}
-.coupon-toggle-switch input:checked + .coupon-slider { background-color: #28a745; }
-.coupon-toggle-switch input:checked + .coupon-slider:before { transform: translateX(22px); }
-
-/* Action buttons */
-.btn-circle-sm {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    font-size: 15px;
-    padding: 0;
-}
-</style>
 @endsection

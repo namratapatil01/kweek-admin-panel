@@ -649,6 +649,12 @@ Route::middleware(['permission:item-attributes,item.attributes.create'])->group(
 
 Route::middleware(['permission:review-attributes,review.attributes'])->group(function () {
     Route::get('/reviewattributes', [App\Http\Controllers\ReviewAttributeController::class, 'index'])->name('reviewattributes');
+    Route::get('/reviewattributes/datatable', [App\Http\Controllers\ReviewAttributeController::class, 'datatable'])->name('reviewattributes.datatable');
+    Route::post('/reviewattributes', [App\Http\Controllers\ReviewAttributeController::class, 'store'])->name('reviewattributes.store');
+    Route::post('/reviewattributes/bulk-delete', [App\Http\Controllers\ReviewAttributeController::class, 'bulkDestroy'])->name('reviewattributes.bulk-destroy');
+    Route::post('/reviewattributes/toggle/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'toggle'])->name('reviewattributes.toggle');
+    Route::put('/reviewattributes/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'update'])->name('reviewattributes.update');
+    Route::delete('/reviewattributes/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'destroy'])->name('reviewattributes.destroy');
 });
 Route::middleware(['permission:review-attributes,review.attributes.edit'])->group(function () {
     Route::get('/reviewattributes/edit/{id}', [App\Http\Controllers\ReviewAttributeController::class, 'edit'])->name('reviewattributes.edit');
@@ -656,6 +662,7 @@ Route::middleware(['permission:review-attributes,review.attributes.edit'])->grou
 Route::middleware(['permission:review-attributes,review.attributes.create'])->group(function () {
     Route::get('/reviewattributes/create', [App\Http\Controllers\ReviewAttributeController::class, 'create'])->name('reviewattributes.create');
 });
+
 
 Route::middleware(['permission:rental-discount,rental-discount'])->group(function () {
     Route::get('/rentaldiscount', [App\Http\Controllers\SettingsController::class, 'rentalDiscount'])->name('rentaldiscount');
@@ -921,8 +928,8 @@ Route::middleware(['permission:subscription-plans,subscription-plans.' . ((str_c
     Route::get('/subscription-plans/save/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'save'])->name('subscription-plans.save');
 });
 Route::middleware(['permission:subscription-history,subscription.history'])->group(function () {
-    Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
     Route::get('/subscription-plan/history/datatable/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'historyDatatable'])->name('subscription.subscriptionPlanHistory.datatable');
+    Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
     Route::post('/subscription-plan/history/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyHistory'])->name('subscription.subscriptionPlanHistory.delete');
 });
 
@@ -932,6 +939,9 @@ Route::middleware(['permission:advertisements,advertisements'])->group(function 
 Route::middleware(['auth'])->group(function () {
     Route::get('/advertisements/datatable', [App\Http\Controllers\AdvertisementsController::class, 'datatable'])->name('advertisements.datatable');
     Route::post('/advertisements/delete', [App\Http\Controllers\AdvertisementsController::class, 'destroy'])->name('advertisements.destroy');
+    Route::post('/advertisements/toggle-pause', [App\Http\Controllers\AdvertisementsController::class, 'togglePause'])->name('advertisements.toggle-pause');
+    Route::post('/advertisements/copy', [App\Http\Controllers\AdvertisementsController::class, 'copy'])->name('advertisements.copy');
+    Route::post('/advertisements/toggle-payment', [App\Http\Controllers\AdvertisementsController::class, 'togglePayment'])->name('advertisements.toggle-payment');
 });
 Route::middleware(['permission:advertisements,advertisements.create'])->group(function () {
     Route::get('/advertisements/create', [App\Http\Controllers\AdvertisementsController::class, 'create'])->name('advertisements.create');

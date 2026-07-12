@@ -1,4 +1,131 @@
 @extends('layouts.app')
+
+@section('style')
+<style>
+    /* Checkbox custom styling */
+    #subscriptionPlansTable input[type="checkbox"] {
+        position: relative !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        width: 18px !important;
+        height: 18px !important;
+        border: 1.5px solid #cbd5e0 !important;
+        border-radius: 4px !important;
+        outline: none !important;
+        cursor: pointer !important;
+        background-color: #fff !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s ease-in-out !important;
+        margin: 0 !important;
+        opacity: 1 !important;
+    }
+    #subscriptionPlansTable input[type="checkbox"]:checked {
+        background-color: #ff5c28 !important;
+        border-color: #ff5c28 !important;
+    }
+    #subscriptionPlansTable input[type="checkbox"]:checked::after {
+        content: '' !important;
+        width: 5px !important;
+        height: 9px !important;
+        border: solid white !important;
+        border-width: 0 2.5px 2.5px 0 !important;
+        transform: rotate(45deg) !important;
+        margin-bottom: 2px !important;
+        display: block !important;
+    }
+
+    /* Action buttons circle styling */
+    .action-btn-circle-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: transparent;
+        transition: all 0.2s ease;
+        text-decoration: none !important;
+        font-size: 14px;
+    }
+    .btn-circle-edit {
+        border: 1px solid #06b6d4;
+        color: #06b6d4 !important;
+    }
+    .btn-circle-edit:hover {
+        background-color: #06b6d4;
+        color: #fff !important;
+    }
+    .btn-circle-delete {
+        border: 1px solid #ef4444;
+        color: #ef4444 !important;
+    }
+    .btn-circle-delete:hover {
+        background-color: #ef4444;
+        color: #fff !important;
+    }
+
+    /* Overview cards styling */
+    .overview-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: #fff;
+        border: 1px solid #eef2f5 !important;
+    }
+    .overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+    .overview-icon-container {
+        background: #f8fafc;
+        border-radius: 50%;
+        padding: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Black pill button styling */
+    .btn-black-pill {
+        background-color: #000 !important;
+        border-color: #000 !important;
+        color: #fff !important;
+        border-radius: 50px !important;
+        padding: 8px 20px !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.2s ease !important;
+    }
+    .btn-black-pill:hover {
+        background-color: #333 !important;
+        border-color: #333 !important;
+        color: #fff !important;
+    }
+
+    .delete-all {
+        min-width: 80px !important;
+        white-space: nowrap !important;
+    }
+    .delete-all label {
+        display: inline-flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+        flex: none !important;
+    }
+</style>
+@endsection
+
 @section('content')
     <div class="page-wrapper">
         <div class="row page-titles">
@@ -26,24 +153,10 @@
                     </div>
                 </div>
             </div>
-            <div class="overview-sec">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border">
-                            <div class="card-header d-flex justify-content-between align-items-center border-0">
-                                <div class="card-header-title d-flex">
-                                    <div>
-                                        <h3 class="text-dark-2 mb-2 h4">{{ trans('lang.overview') }}</h3>
-                                        <p class="mb-0 text-dark-2">{{ trans('lang.see_overview_of_package_earning') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="row subscription-list">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="overview-sec mb-4">
+                <h3 class="text-dark-2 mb-1 h4">{{ trans('lang.overview') }}</h3>
+                <p class="mb-3 text-muted">{{ trans('lang.see_overview_of_package_earning') }}</p>
+                <div class="row subscription-list">
                 </div>
             </div>
             <div class="table-list">
@@ -58,7 +171,7 @@
                                 <div class="card-header-right d-flex align-items-center">
                                     <div class="card-header-btn mr-3">
                                         <a href="{!! route('subscription-plans.save') !!}"
-                                            class="btn-primary btn rounded-full"><i
+                                            class="btn-black-pill"><i
                                                 class="mdi mdi-plus mr-2"></i>{{ trans('lang.create_subscription_plan') }}</a>
                                     </div>
                                 </div>
@@ -233,9 +346,9 @@
                         render: function (data, type, row) {
                             var rowId = row.id || '';
                             var editRoute = "{{ url('subscription-plans/save') }}/" + rowId;
-                            var html = '<span class="action-btn"><a href="' + editRoute + '" class="link-td" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
+                            var html = '<span class="action-btn-circle-container"><a href="' + editRoute + '" class="btn-circle btn-circle-edit" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
                             if (checkDeletePermission && row.isCommissionPlan != true && row.isCommissionPlan !== 'true') {
-                                html += '<a id="' + rowId + '" class="link-td delete-btn direct-click-btn" name="plan-delete" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
+                                html += '<a id="' + rowId + '" class="btn-circle btn-circle-delete delete-btn" name="plan-delete" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
                             }
                             html += '</span>';
                             return html;
@@ -368,23 +481,21 @@
                         response.data.forEach(function (data) {
                             getEarnings(data.id);
                             var dName = data.name || (data.payload && data.payload.name) || 'Plan';
-                            var img = data.image || (data.payload && data.payload.image) || placeholderImage;
-                            var planCode = data.id ? data.id.substring(0, 6) : 'P' + Math.floor(Math.random() * 10000);
-                            var planType = data.type || (data.payload && data.payload.type) || 'free';
-                            var badgeClass = planType === 'paid' ? 'badge-primary' : 'badge-success';
-                            var badgeText = planType === 'paid' ? 'Premium' : 'Basic';
+                            var img = resolveImageUrl(data.image || (data.payload && data.payload.image));
                             
-                            html += ` <div class="col-md-6 col-lg-3 mb-3">
-                                    <div class="card border-0 shadow-sm">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <h5 class="mb-1">${planCode}</h5>
-                                                    <h6 class="text-muted mb-0">${dName}</h6>
-                                                </div>
-                                                <span class="badge ${badgeClass}">${badgeText}</span>
+                            html += ` <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card overview-card border-0 shadow-sm position-relative overflow-hidden" style="border-radius: 12px; height: 120px; background-color: #fff;">
+                                        <div class="card-body d-flex align-items-center h-100 p-4">
+                                            <div class="overview-icon-container mr-3" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                                <img src="${img}" onerror="this.onerror=null;this.src='${placeholderImage}'" style="width: 100%; height: 100%; object-fit: contain;">
                                             </div>
-                                            <h4 class="text-primary mb-0 earnings_${data.id}"></h4>
+                                            <div class="overview-text">
+                                                <h3 class="font-weight-bold mb-1 earnings_${data.id}" style="font-size: 1.5rem; color: #2b2b2b;"></h3>
+                                                <span class="text-muted font-weight-medium" style="font-size: 0.9rem;">${dName}</span>
+                                            </div>
+                                        </div>
+                                        <div class="position-absolute" style="bottom: -15px; right: -15px; width: 80px; height: 80px; opacity: 0.15; pointer-events: none;">
+                                            <img src="${img}" onerror="this.onerror=null;this.src='${placeholderImage}'" style="width: 100%; height: 100%; object-fit: contain;">
                                         </div>
                                     </div>
                                 </div>`;

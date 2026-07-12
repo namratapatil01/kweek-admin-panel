@@ -70,11 +70,90 @@ class AdvertisementsController extends Controller
             abort(404);
         }
 
+        $vendor = null;
+        if (! empty($ad->vendorId)) {
+            $vendor = DB::table('vendors')->where('id', $ad->vendorId)->first();
+        }
+
         return view('advertisements.view', [
             'id' => $id,
             'ad' => $ad,
             'payload' => json_decode($ad->payload ?? '{}', true) ?? [],
+            'vendor' => $vendor,
         ]);
+    }
+
+    public function togglePause(Request $request): JsonResponse
+    {
+        $id = $request->input('id');
+        $isPaused = (bool) $request->input('isPaused');
+        $note = $request->input('note');
+
+        $existing = DB::table('advertisements')->where('id', $id)->first();
+        if (! $existing) {
+            return response()->json(['success' => false, 'error' => 'Advertisement not found'], 404);
+        }
+
+        $payload = json_decode($existing->payload ?? '{}', true) ?? [];
+        $payload['isPaused'] = $isPaused;
+        $payload['pauseNote'] = $note ?? '';
+
+        DB::table('advertisements')->where('id', $id)->update([
+            'payload' => json_encode($payload),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function copy(Request $request): JsonResponse
+    {
+        $id = $request->input('id');
+        $existing = DB::table('advertisements')->where('id', $id)->first();
+        if (! $existing) {
+            return response()->json(['success' => false, 'error' => 'Advertisement not found'], 404);
+        }
+
+        $newId = (string) Str::uuid();
+        $payload = json_decode($existing->payload ?? '{}', true) ?? [];
+        if (isset($payload['title'])) {
+            $payload['title'] .= ' - Copy';
+        }
+
+        DB::table('advertisements')->insert([
+            'id' => $newId,
+            'title' => ($existing->title ? $existing->title . ' - Copy' : 'Copy'),
+            'vendorId' => $existing->vendorId,
+            'sectionId' => $existing->sectionId,
+            'isEnabled' => $existing->isEnabled,
+            'isEnable' => $existing->isEnable,
+            'payload' => json_encode($payload),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function togglePayment(Request $request): JsonResponse
+    {
+        $id = $request->input('id');
+        $status = (bool) $request->input('status');
+
+        $existing = DB::table('advertisements')->where('id', $id)->first();
+        if (! $existing) {
+            return response()->json(['success' => false, 'error' => 'Advertisement not found'], 404);
+        }
+
+        $payload = json_decode($existing->payload ?? '{}', true) ?? [];
+        $payload['paymentStatus'] = $status;
+
+        DB::table('advertisements')->where('id', $id)->update([
+            'payload' => json_encode($payload),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     public function chat($id)
@@ -132,11 +211,14 @@ class AdvertisementsController extends Controller
         $vendorIds = $ads->pluck('vendorId')->filter()->unique()->values()->toArray();
         $vendors = DB::table('vendors')->whereIn('id', $vendorIds)->get(['id', 'title', 'photo', 'phonenumber'])
             ->keyBy('id');
+        $vendorUsers = DB::table('app_users')->whereIn('vendorID', $vendorIds)->where('role', 'vendor')->get(['vendorID', 'email'])
+            ->keyBy('vendorID');
 
         $rows = [];
         foreach ($ads as $ad) {
             $payload = json_decode($ad->payload ?? '{}', true) ?? [];
             $vendor = $vendors[$ad->vendorId] ?? null;
+            $vendorUser = $vendorUsers[$ad->vendorId] ?? null;
 
             $title = $ad->title ?: ($payload['title'] ?? '—');
             $type = $payload['type'] ?? '';
@@ -184,27 +266,32 @@ class AdvertisementsController extends Controller
             $storeHtml = '—';
             if ($vendor) {
                 $photo = $vendor->photo ?: asset('images/default_user.png');
+                $email = $vendorUser->email ?? $vendor->phonenumber ?? '';
                 $storeHtml = '<div class="d-flex align-items-center">'
                     . '<img src="' . e($photo) . '" class="rounded-circle mr-2" style="width:40px;height:40px;object-fit:cover;" onerror="this.src=\'' . asset('images/default_user.png') . '\'">'
                     . '<div><div class="font-weight-bold">' . e($vendor->title) . '</div>'
-                    . '<small class="text-muted">' . e($vendor->phonenumber ?? '') . '</small></div></div>';
+                    . '<small class="text-muted">' . e($email) . '</small></div></div>';
             }
 
             $editUrl = route('advertisements.edit', $ad->id);
             $viewUrl = route('advertisements.view', $ad->id);
             $chatUrl = route('advertisement.chat', $ad->id);
 
+            $pauseIcon = $isPaused ? 'mdi mdi-play-circle-outline' : 'mdi mdi-pause-circle-outline';
+            $pauseTitle = $isPaused ? 'Resume' : 'Pause';
+            $pauseClass = $isPaused ? 'btn-resume text-dark' : 'btn-pause text-dark';
+
             $actions = '<span class="action-btn ad-actions">'
-                . '<a href="' . $chatUrl . '" class="btn-ad-action" title="Chat"><i class="fa fa-commenting"></i></a>'
-                . '<a href="' . $viewUrl . '" class="btn-ad-action" title="View"><i class="mdi mdi-eye"></i></a>'
-                . '<a href="' . $editUrl . '" class="btn-ad-action" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>'
-                . '<a href="javascript:void(0)" class="btn-ad-action btn-delete-ad" data-id="' . e($ad->id) . '" title="Delete"><i class="mdi mdi-delete"></i></a>'
-                . '<a href="javascript:void(0)" class="btn-ad-action btn-copy-ad" data-id="' . e($ad->id) . '" title="Copy"><i class="mdi mdi-content-copy"></i></a>'
-                . '<a href="' . $viewUrl . '" class="btn-ad-action" title="Details"><i class="mdi mdi-target"></i></a>'
+                . '<a href="' . $chatUrl . '" class="btn-ad-action btn-chat-ad" title="Chat" style="border: 1.5px solid #00c08b; background: #fff; color: #00c08b; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-comment-processing"></i></a>'
+                . '<a href="' . $viewUrl . '" class="btn-ad-action btn-view-ad" title="View" style="border: 1.5px solid #ab2efd; background: #fff; color: #ab2efd; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-eye"></i></a>'
+                . '<a href="' . $editUrl . '" class="btn-ad-action btn-edit-ad" title="Edit" style="border: 1.5px solid #00b0ff; background: #fff; color: #00b0ff; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-lead-pencil"></i></a>'
+                . '<a href="javascript:void(0)" class="btn-ad-action btn-delete-ad" data-id="' . e($ad->id) . '" title="Delete" style="border: 1.5px solid #ef5350; background: #fff; color: #ef5350; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-delete"></i></a>'
+                . '<a href="javascript:void(0)" class="btn-ad-action btn-copy-ad" data-id="' . e($ad->id) . '" title="Copy" style="border: 1.5px solid #10b981; background: #fff; color: #10b981; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="mdi mdi-content-copy"></i></a>'
+                . '<a href="javascript:void(0)" class="btn-ad-action btn-toggle-pause ' . $pauseClass . '" data-id="' . e($ad->id) . '" data-paused="' . ($isPaused ? 1 : 0) . '" title="' . $pauseTitle . '" style="border: 1.5px solid #000000; background: #fff; color: #000000; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px;"><i class="' . $pauseIcon . '"></i></a>'
                 . '</span>';
 
             $rows[] = [
-                '<input type="checkbox" class="ad-checkbox" data-id="' . e($ad->id) . '">',
+                '<input type="checkbox" class="ad-checkbox animate-chk" data-id="' . e($ad->id) . '">',
                 '<a href="' . $viewUrl . '" class="font-weight-bold text-dark">' . e(\Illuminate\Support\Str::limit($title, 18)) . '</a>',
                 $storeHtml,
                 e($typeLabel),
