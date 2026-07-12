@@ -491,7 +491,7 @@
                     .orderBy('createdAt', 'desc');
 
                 const rideSnapshots = await ref.limit(10).get();
-                append_listrecent_order.innerHTML = buildRidesHTML(rideSnapshots) || noRecordRow;
+                append_listrecent_order.innerHTML = buildRidesHTML(rideSnapshots);
 
                 ref = db.collection('users').where('role', '==', 'driver').where('isOwner', '==', false);
                 if (typeof active_id !== 'undefined' && active_id) {
@@ -505,22 +505,32 @@
                 console.error('loadDashboardLists failed:', error);
                 append_listvendors.innerHTML = noRecordRow;
                 append_listtop_drivers.innerHTML = noRecordRow;
-                append_listrecent_order.innerHTML = noRecordRow;
+                append_listrecent_order.innerHTML = '';
             }
 
-            $('#orderTable, #driverTable').each(function () {
-                if (!$.fn.DataTable.isDataTable(this)) {
-                    $(this).DataTable({
-                        order: [],
-                        responsive: true,
-                        paging: false,
-                        info: false,
-                        "language": {
-                            "zeroRecords": "{{trans('lang.no_record_found')}}",
-                            "emptyTable": "{{trans('lang.no_record_found')}}"
-                        },
-                    });
-                }
+            initDashboardOrderTable();
+        }
+
+        function initDashboardOrderTable() {
+            const $orderTable = $('#orderTable');
+            if (!$orderTable.length) {
+                return;
+            }
+
+            if ($.fn.DataTable.isDataTable($orderTable[0])) {
+                $orderTable.DataTable().destroy();
+            }
+
+            $orderTable.DataTable({
+                order: [],
+                responsive: true,
+                paging: false,
+                info: false,
+                searching: false,
+                language: {
+                    zeroRecords: "{{trans('lang.no_record_found')}}",
+                    emptyTable: "{{trans('lang.no_record_found')}}"
+                },
             });
         }
 

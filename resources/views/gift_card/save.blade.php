@@ -71,7 +71,9 @@
                             <div class="form-group row width-100">
                                 <label class="col-3 control-label">{{trans('lang.expiry_day')}}</label>
                                 <div class="col-7">
-                                    <input type="number" class="form-control" id="expiry">
+                                    <input type="text" class="form-control" id="expiry" inputmode="numeric"
+                                           placeholder="e.g. 30 (days) or 31/07/2026">
+                                    <small class="form-text text-muted">Enter number of days until expiry, or pick an expiry date.</small>
                                 </div>
                             </div>
 
@@ -153,6 +155,46 @@
                     return '';
                 }
 
+                function parseExpiryInput(raw) {
+                    var value = (raw || '').toString().trim();
+                    if (!value) {
+                        return null;
+                    }
+
+                    if (/^\d+$/.test(value)) {
+                        var days = parseInt(value, 10);
+                        return days > 0 ? days : null;
+                    }
+
+                    var dmy = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                    if (dmy) {
+                        var expiryDate = new Date(parseInt(dmy[3], 10), parseInt(dmy[2], 10) - 1, parseInt(dmy[1], 10));
+                        expiryDate.setHours(23, 59, 59, 999);
+                        if (isNaN(expiryDate.getTime())) {
+                            return null;
+                        }
+                        var today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        var diffDays = Math.ceil((expiryDate.getTime() - today.getTime()) / 86400000);
+                        return diffDays > 0 ? diffDays : null;
+                    }
+
+                    var ymd = value.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                    if (ymd) {
+                        var expiryDateYmd = new Date(parseInt(ymd[1], 10), parseInt(ymd[2], 10) - 1, parseInt(ymd[3], 10));
+                        expiryDateYmd.setHours(23, 59, 59, 999);
+                        if (isNaN(expiryDateYmd.getTime())) {
+                            return null;
+                        }
+                        var todayYmd = new Date();
+                        todayYmd.setHours(0, 0, 0, 0);
+                        var diffDaysYmd = Math.ceil((expiryDateYmd.getTime() - todayYmd.getTime()) / 86400000);
+                        return diffDaysYmd > 0 ? diffDaysYmd : null;
+                    }
+
+                    return null;
+                }
+
                 placeholder.get().then(async function (snapshotsimage) {
                     var placeholderImageData = snapshotsimage.data();
                     placeholderImage = placeholderImageData.image;
@@ -194,9 +236,9 @@
                     $(".error_top").hide();
                     var title = $("#title").val();
                     var message = $('#message').val();
-                    var expiryDay = $('#expiry').val();
+                    var expiryDay = parseExpiryInput($('#expiry').val());
                     var status = $("#status").is(":checked");
-                    var giftCardimg = photo || $('#img').attr('src');
+                    var giftCardimg = photo || ($('#img').length ? $('#img').attr('src') : '');
 
                     if (title == "") {
                         $(".error_top").show();
@@ -218,16 +260,10 @@
                         window.scrollTo(0, 0);
                         return false;
 
-                    } else if (expiryDay == "" || expiryDay == 0) {
+                    } else if (expiryDay === null) {
                         $(".error_top").show();
                         $(".error_top").html("");
                         $(".error_top").append("<p>{{trans('lang.expiry_day_error')}}</p>");
-                        window.scrollTo(0, 0);
-                        return false;
-                    } else if (expiryDay < 0) {
-                        $(".error_top").show();
-                        $(".error_top").html("");
-                        $(".error_top").append("<p>{{trans('lang.expiry_day_in_positive_no')}}</p>");
                         window.scrollTo(0, 0);
                         return false;
                     } else {

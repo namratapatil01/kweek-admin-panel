@@ -96,9 +96,11 @@ class CouponController extends Controller
                 <span class="coupon-slider"></span>
             </label>';
 
-            $editUrl   = route('coupons.edit', $coupon->id);
-            $deleteBtn = '<a href="javascript:void(0)" class="btn-coupon-action btn-delete-coupon" data-id="' . $coupon->id . '" title="Delete" style="border: 1.5px solid #ef5350; background: #fff; color: #ef5350; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px; transition: all 0.2s ease-in-out;"><i class="mdi mdi-delete"></i></a>';
-            $editBtn   = '<a href="' . $editUrl . '" class="btn-coupon-action btn-edit-coupon mr-1" title="Edit" style="border: 1.5px solid #00b0ff; background: #fff; color: #00b0ff; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; font-size: 16px; transition: all 0.2s ease-in-out;"><i class="mdi mdi-lead-pencil"></i></a>';
+                $editUrl = route('coupons.edit', $coupon->id);
+            $actions = '<span class="action-btn">'
+                . '<a href="' . $editUrl . '" data-toggle="tooltip" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>'
+                . '<a href="javascript:void(0)" class="delete-btn btn-delete-coupon" data-id="' . $coupon->id . '" data-toggle="tooltip" title="Delete"><i class="mdi mdi-delete"></i></a>'
+                . '</span>';
 
             $checkboxHtml = '<input type="checkbox" class="coupon-checkbox animate-chk" data-id="' . $coupon->id . '">';
 
@@ -110,7 +112,7 @@ class CouponController extends Controller
                 $privacyBadge,
                 $expiryLabel,
                 $toggleHtml,
-                $editBtn . $deleteBtn,
+                $actions,
             ];
         }
 

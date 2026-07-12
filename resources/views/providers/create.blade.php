@@ -96,8 +96,8 @@ foreach ($countries as $keycountry => $valuecountry) {
 													+<?php echo $valuecy->phoneCode; ?> {{$valuecy->countryName}}</option>
 												<?php } ?>
 											</select>
-											<input type="text" class="form-control user_phone"  onkeypress="return chkAlphabets2(event,'error1')">
-											<div id="error1" class="err"></div>
+											<input type="text" class="form-control user_phone" placeholder="Phone" onkeypress="return chkAlphabets2(event,'phone_error')">
+											<div id="phone_error" class="err"></div>
 									</div>
                                 </div>
                             </div>
@@ -201,12 +201,82 @@ foreach ($countries as $keycountry => $valuecountry) {
 
 @endsection
 
+@section('style')
+<style>
+    #phone-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        background: #fff;
+    }
+
+    #phone-box .select2-container {
+        position: absolute !important;
+        left: 0;
+        top: 0;
+        width: 120px !important;
+        z-index: 2;
+    }
+
+    #phone-box .select2-container .select2-selection--single {
+        height: 36px;
+        border: 0;
+        background: transparent;
+    }
+
+    #phone-box .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        padding-left: 8px !important;
+        padding-right: 24px !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+
+    #phone-box .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 34px;
+        right: 4px;
+    }
+
+    #phone-box .select2-selection__clear {
+        display: none !important;
+    }
+
+    #phone-box .phone-country-prefix {
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        gap: 6px;
+    }
+
+    #phone-box .phone-country-prefix .img-flag {
+        width: 22px;
+        height: 16px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    #phone-box .phone-country-prefix .phone-dial-code {
+        font-size: 14px;
+        font-weight: 500;
+        color: #67757c;
+    }
+
+    #phone-box .form-control.user_phone {
+        padding-left: 125px;
+        width: 100%;
+        height: 38px;
+        border: 0;
+        box-shadow: none;
+    }
+</style>
+@endsection
+
 @section('scripts')
 <script type="text/javascript">
     var section_id = getCookie('section_id') || '';
     var ownerphoto = '';
     var businessModelData = { subscription_model: false };
-    var newcountriesjs = JSON.parse(@json($newcountriesjs));
+    var newcountriesjs = @json($newcountriesjs);
 
     function showError(msg) {
         $(".error_top").show().html("<p>" + msg + "</p>");
@@ -228,16 +298,25 @@ foreach ($countries as $keycountry => $valuecountry) {
 
     function formatState(state) {
         if (!state.id) return state.text;
+        var phoneCode = String(state.id);
+        var code = (newcountriesjs[phoneCode] || '').toLowerCase();
         var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
-        return $('<span><img src="' + baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg" class="img-flag" /> ' + state.text + '</span>');
+        var label = state.text || ('+' + phoneCode);
+        if (!code) {
+            return $('<span>' + label + '</span>');
+        }
+        return $('<span class="phone-country-prefix"><img src="' + baseUrl + '/' + code + '.svg" class="img-flag" alt="" /><span>' + label + '</span></span>');
     }
+
     function formatState2(state) {
         if (!state.id) return state.text;
+        var phoneCode = String(state.id);
+        var code = (newcountriesjs[phoneCode] || '').toLowerCase();
         var baseUrl = "{{ URL::to('/') }}/scss/icons/flag-icon-css/flags";
-        var $state = $('<span><img class="img-flag" /><span></span></span>');
-        $state.find('span').text(state.text);
-        $state.find('img').attr('src', baseUrl + '/' + newcountriesjs[state.element.value].toLowerCase() + '.svg');
-        return $state;
+        if (!code) {
+            return $('<span class="phone-dial-code">+' + phoneCode + '</span>');
+        }
+        return $('<span class="phone-country-prefix"><img src="' + baseUrl + '/' + code + '.svg" class="img-flag" alt="" /><span class="phone-dial-code">+' + phoneCode + '</span></span>');
     }
 
     function chkAlphabets(event, msg) {
@@ -259,6 +338,15 @@ foreach ($countries as $keycountry => $valuecountry) {
     }
 
     $(document).ready(function () {
+        jQuery("#country_selector").select2({
+            templateResult: formatState,
+            templateSelection: formatState2,
+            placeholder: "Select Country",
+            minimumResultsForSearch: 6,
+            width: '120px',
+            dropdownParent: $('#phone-box')
+        });
+
         $.get("{{ route('providers.meta') }}", function (meta) {
             businessModelData.subscription_model = meta.subscription_model;
             if (meta.subscription_model) {
@@ -275,16 +363,9 @@ foreach ($countries as $keycountry => $valuecountry) {
                     return $(this).val() === defaultPhoneCode;
                 });
                 if ($option.length) {
-                    $("#country_selector").val(defaultPhoneCode).trigger('change');
+                    $("#country_selector").val(defaultPhoneCode).trigger('change.select2');
                 }
             }
-        });
-
-        jQuery("#country_selector").select2({
-            templateResult: formatState,
-            templateSelection: formatState2,
-            placeholder: "Select Country",
-            allowClear: true
         });
     });
 

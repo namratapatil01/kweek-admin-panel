@@ -283,6 +283,7 @@ Route::middleware(['permission:parcel-orders,parcel.orders.edit'])->group(functi
     Route::get('/parcel_orders/edit/{id}', [App\Http\Controllers\ParcelController::class, 'parcelOrderEdit'])->name('parcel_orders.edit');
 });
 
+Route::get('/rides/datatable', [App\Http\Controllers\RideController::class, 'datatable'])->name('rides.datatable');
 Route::get('/rides/{id}', [App\Http\Controllers\RideController::class, 'index'])->name('drivers.ride');
 Route::get('/rides/{driverId}', [App\Http\Controllers\RideController::class, 'index'])->name('drivers.rides');
 Route::get('/ride/{sosId}', [App\Http\Controllers\RideController::class, 'index2'])->name('ride');
@@ -824,8 +825,8 @@ Route::middleware(['permission:providers,providers.view'])->group(function () {
 });
 
 Route::middleware(['permission:ondemand-coupons,ondemand.coupons'])->group(function () {
-    Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
     Route::get('/ondemand-coupons-data', [App\Http\Controllers\OnDemandServiceController::class, 'couponsDatatable'])->name('ondemand.coupons.datatable');
+    Route::get('/ondemand-coupons/{id?}', [App\Http\Controllers\OnDemandServiceController::class, 'Coupons'])->name('ondemand.coupons');
     Route::post('/ondemand-coupons/toggle/{id}', [App\Http\Controllers\OnDemandServiceController::class, 'couponToggle'])->name('ondemand.coupons.toggle');
     Route::post('/ondemand-coupons/delete', [App\Http\Controllers\OnDemandServiceController::class, 'couponDestroy'])->name('ondemand.coupons.destroy');
 });
@@ -931,6 +932,7 @@ Route::middleware(['permission:subscription-history,subscription.history'])->gro
     Route::get('/subscription-plan/history/datatable/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'historyDatatable'])->name('subscription.subscriptionPlanHistory.datatable');
     Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
     Route::post('/subscription-plan/history/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyHistory'])->name('subscription.subscriptionPlanHistory.delete');
+    Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
 });
 
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {
