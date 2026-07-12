@@ -19,6 +19,8 @@ if (empty($service_type)) {
         $service_type = 'ecommerce-service';
     }
 }
+$section_id_cookie = (string) request()->cookie('section_id', '');
+$cabLiveMapPath = $section_id_cookie === '8' ? 'map/toda' : 'map/taxi';
 @endphp
 
 
@@ -41,7 +43,7 @@ if (empty($service_type)) {
         in_array('god-eye', $role_has_permission)
         )
             <li class="nav-subtitle"><span class="nav-subtitle-span">{{ trans('lang.live_monitoring') }}</span></li>
-            <li><a class="waves-effect waves-dark" href="{!! url('map/multivendor') !!}" aria-expanded="false">
+            <li><a class="waves-effect waves-dark" href="{!! url('map/food') !!}" aria-expanded="false">
                     <i class="ri-home-wifi-fill"></i><span class="hide-menu">{{ trans('lang.live_tracking') }}</span>
                 </a>
             </li>
@@ -604,7 +606,7 @@ if (empty($service_type)) {
         )
 
         @if (in_array('cab-service-god-eye', $role_has_permission))
-        <li><a class="waves-effect waves-dark" href="{!! url('map/cab') !!}" aria-expanded="false">
+        <li><a class="waves-effect waves-dark" href="{!! url($cabLiveMapPath) !!}" aria-expanded="false">
                 <i class="ri-train-wifi-fill"></i>
                 <span class="hide-menu">{{ trans('lang.live_tracking') }}</span>
             </a>

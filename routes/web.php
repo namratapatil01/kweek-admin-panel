@@ -378,7 +378,14 @@ Route::middleware(['permission:wallet-transaction,wallet-transaction'])->group(f
 });
 Route::post('order-status-notification', [App\Http\Controllers\OrderController::class, 'sendNotification'])->name('order-status-notification');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/map/settings', [App\Http\Controllers\MapController::class, 'getMapSettings'])->name('map.settings');
+    Route::get('/map/drivers/locations', [App\Http\Controllers\MapController::class, 'getDriverLocations'])->name('map.drivers.locations');
+});
+
 Route::middleware(['permission:god-eye,map'])->group(function () {
+    Route::get('/map/food', [App\Http\Controllers\MapController::class, 'food'])->name('map.food');
+    Route::get('/map/food/data', [App\Http\Controllers\MapController::class, 'getFoodData'])->name('map.food.data');
     Route::get('/map/multivendor', [App\Http\Controllers\MapController::class, 'multivendor'])->name('map.multivendor');
     Route::get('/map/multivendor/data', [App\Http\Controllers\MapController::class, 'getMultivendorData'])->name('map.multivendor.data');
 });
@@ -389,6 +396,10 @@ Route::middleware(['permission:rental-plural-god-eye,rental-plural-map'])->group
     Route::get('/map/rental', [App\Http\Controllers\MapController::class, 'rental'])->name('map.rental');
 });
 Route::middleware(['permission:cab-service-god-eye,cab-service-map'])->group(function () {
+    Route::get('/map/taxi', [App\Http\Controllers\MapController::class, 'taxi'])->name('map.taxi');
+    Route::get('/map/taxi/data', [App\Http\Controllers\MapController::class, 'getTaxiData'])->name('map.taxi.data');
+    Route::get('/map/toda', [App\Http\Controllers\MapController::class, 'toda'])->name('map.toda');
+    Route::get('/map/toda/data', [App\Http\Controllers\MapController::class, 'getTodaData'])->name('map.toda.data');
     Route::get('/map/cab', [App\Http\Controllers\MapController::class, 'cab'])->name('map.cab');
     Route::get('/map/cab/data', [App\Http\Controllers\MapController::class, 'getCabData'])->name('map.cab.data');
 });

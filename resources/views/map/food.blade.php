@@ -144,14 +144,15 @@
         var base_url = '{!! asset('/images/') !!}';
         var mapType = 'ONLINE';
         var globalDrivers = {};
-        var mapDataUrl = '/map/multivendor/data';
+        var mapDataUrl = "{{ route('map.food.data') }}";
         var mapSettingsUrl = "{{ route('map.settings') }}";
         var driverLocationsUrl = "{{ route('map.drivers.locations') }}";
         var serviceType = 'delivery-service';
-        var section_id = getCookie('section_id') || '';
+        var section_id = getCookie('section_id') || '3';
         var godsEyeMapReady = false;
         var mapDataLoaded = false;
         var lastMapData = [];
+        var pendingMapData = null;
         var locationRefreshTimer = null;
 
         window.gm_authFailure = function () {
@@ -161,10 +162,10 @@
             console.warn('Google Maps failed to load, using OpenStreetMap for food tracking');
             mapType = "OFFLINE";
             godsEyeMapReady = false;
-            InitializeMultivendorMap();
+            InitializeFoodMap(true);
             if (lastMapData.length) {
                 $(".live-tracking-list").empty();
-                loadData(lastMapData);
+                renderFoodMapData(lastMapData);
                 fitMapToMarkers();
             }
         };
@@ -210,11 +211,7 @@
         }
 
         function shouldShowDriverOnMap(lat, lng) {
-            if (!hasValidCoords({ latitude: lat, longitude: lng })) {
-                return false;
-            }
-            var center = getDefaultMapCenter();
-            return distanceKm(center.lat, center.lng, parseFloat(lat), parseFloat(lng)) <= 400;
+            return hasValidCoords({ latitude: lat, longitude: lng });
         }
 
         function getDriverDetail(driverId) {
@@ -242,7 +239,7 @@
             return { lat: default_lat, lng: default_lng };
         }
 
-        function fetchMultivendorMapData() {
+        function fetchFoodMapData() {
             if (mapDataLoaded) {
                 return;
             }
@@ -283,13 +280,17 @@
 
                     window.globalDrivers = globalDrivers;
                     lastMapData = $.merge(orders, drivers);
+                    pendingMapData = lastMapData;
+                    if (res.section && res.section.name) {
+                        $('.section_name').text(res.section.name);
+                    }
                     $(".live-tracking-list").empty();
-                    loadData(lastMapData);
+                    renderFoodMapData(pendingMapData);
                     fitMapToMarkers();
                 },
                 error: function (xhr) {
                     mapDataLoaded = false;
-                    console.error('Failed to load multivendor map data', xhr && xhr.status, xhr && xhr.responseText);
+                    console.error('Failed to load food map data', xhr && xhr.status, xhr && xhr.responseText);
                     $(".live-tracking-list").html('<div class="p-3 text-danger">Failed to load drivers. Please refresh.</div>');
                 }
             });
@@ -340,6 +341,10 @@
         }
 
         $(document).ready(async function () {
+            @if(!empty($sectionName))
+            $('.section_name').text(@json($sectionName));
+            @endif
+
             try {
                 var settingsRes = await fetchMapSettings();
                 if (settingsRes && settingsRes.selectedMapType === 'osm') {
@@ -363,15 +368,15 @@
             }
 
             try {
-                InitializeMultivendorMap();
+                InitializeFoodMap();
             } catch (e) {
                 console.error('Map init failed, falling back to OSM', e);
                 mapType = "OFFLINE";
                 godsEyeMapReady = false;
-                InitializeMultivendorMap();
+                InitializeFoodMap();
             }
 
-            fetchMultivendorMapData();
+            fetchFoodMapData();
 
             setTimeout(function () {
                 $(".sidebartoggler").click();
@@ -408,16 +413,37 @@
             });
         });
 
-        function InitializeMultivendorMap() {
-            // Layout may also call window.godsEyeMapInit after script load.
-            if (godsEyeMapReady && map) {
-                return;
+        function InitializeFoodMap(forceReinit) {
+            var canUseGoogle = typeof google !== 'undefined' && google.maps;
+            if (godsEyeMapReady && map && !forceReinit) {
+                if (mapType === 'OFFLINE' && canUseGoogle) {
+                    forceReinit = true;
+                } else {
+                    return;
+                }
+            }
+
+            if (forceReinit) {
+                godsEyeMapReady = false;
+                markers = [];
+                if (map && map.remove) {
+                    map.remove();
+                    map = null;
+                }
+                if (typeof L !== 'undefined' && L.DomUtil.get('map') != null) {
+                    L.DomUtil.get('map')._leaflet_id = null;
+                }
+                var legendHost = document.querySelector('.multivendor-map-wrap');
+                var legendEl = document.getElementById('legend');
+                if (legendHost && legendEl && !legendHost.contains(legendEl)) {
+                    legendHost.appendChild(legendEl);
+                }
             }
 
             var center = getDefaultMapCenter();
             var legend = document.getElementById('legend');
 
-            if (mapType == "OFFLINE" || typeof google === 'undefined' || !google.maps) {
+            if (mapType == "OFFLINE" || !canUseGoogle) {
                 mapType = "OFFLINE";
 
                 if (map && map.remove) {
@@ -433,6 +459,7 @@
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
             } else {
+                mapType = 'ONLINE';
                 var myLatlng = new google.maps.LatLng(center.lat, center.lng);
                 map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 10,
@@ -475,11 +502,23 @@
             } else {
                 map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
             }
+
+            if (pendingMapData && pendingMapData.length) {
+                $(".live-tracking-list").empty();
+                renderFoodMapData(pendingMapData);
+                fitMapToMarkers();
+            }
         }
 
-        window.godsEyeMapInit = InitializeMultivendorMap;
+        window.godsEyeMapInit = function () {
+            if (mapType === 'OFFLINE' && typeof google !== 'undefined' && google.maps) {
+                InitializeFoodMap(true);
+            } else if (!godsEyeMapReady) {
+                InitializeFoodMap(false);
+            }
+        };
 
-        function loadData(data) {
+        function renderFoodMapData(data) {
             markers = [];
             var mapEntries = [];
 
