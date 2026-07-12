@@ -286,19 +286,27 @@ class SubscriptionPlanController extends Controller
             if ($sectionId) {
                 $query->where(function ($q) use ($sectionId) {
                     $q->where('app_users.sectionId', $sectionId)
-                      ->orWhere('app_users.section_id', $sectionId);
+                      ->orWhere('app_users.section_id', $sectionId)
+                      ->orWhere('vendors.section_id', $sectionId)
+                      ->orWhere('subscription_histories.payload->subscription_plan->sectionId', $sectionId)
+                      ->orWhere('subscription_histories.payload->subscription_plan->section_id', $sectionId);
                 });
             }
+
+            $totalQuery = clone $query;
+            $totalRecords = $totalQuery->count();
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('app_users.firstName', 'LIKE', "%{$search}%")
                       ->orWhere('app_users.lastName', 'LIKE', "%{$search}%")
-                      ->orWhere('subscription_histories.payload', 'LIKE', "%{$search}%");
+                      ->orWhere('subscription_histories.name', 'LIKE', "%{$search}%")
+                      ->orWhere('subscription_histories.payload->subscription_plan->name', 'LIKE', "%{$search}%")
+                      ->orWhere('subscription_histories.payload->subscription_plan->type', 'LIKE', "%{$search}%");
                 });
             }
 
-            $totalRecords = $query->count();
+            $totalFiltered = $query->count();
 
             // Order columns mapping
             if ($id == '') {
@@ -331,7 +339,7 @@ class SubscriptionPlanController extends Controller
                 $histId = $history->id;
                 
                 // checkbox
-                $row[] = '<input type="checkbox" id="is_open_' . $histId . '" class="is_open" dataId="' . $histId . '"><label class="col-3 control-label" for="is_open_' . $histId . '" ></label>';
+                $row[] = '<input type="checkbox" id="is_open_' . $histId . '" class="is_open" dataId="' . $histId . '" style="margin: 0;">';
                 
                 $payload = is_array($history->payload) ? $history->payload : json_decode($history->payload ?? '{}', true);
                 if (!is_array($payload)) $payload = [];

@@ -1,4 +1,43 @@
 @extends('layouts.app')
+
+@section('style')
+<style>
+/* Custom Table Checkbox styling */
+#subscriptionHistoryTable input[type="checkbox"] {
+    position: relative !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid #cbd5e0 !important;
+    border-radius: 4px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    background-color: #fff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+}
+#subscriptionHistoryTable input[type="checkbox"]:checked {
+    background-color: #ff5c28 !important;
+    border-color: #ff5c28 !important;
+}
+#subscriptionHistoryTable input[type="checkbox"]:checked::after {
+    content: '' !important;
+    width: 5px !important;
+    height: 9px !important;
+    border: solid white !important;
+    border-width: 0 2.5px 2.5px 0 !important;
+    transform: rotate(45deg) !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+}
+</style>
+@endsection
+
 @section('content')
     <div class="page-wrapper">
         <div class="row page-titles">
@@ -146,7 +185,13 @@
                                     <table id="subscriptionHistoryTable" class="display nowrap table table-hover table-striped table-bordered table table-striped" cellspacing="0" width="100%">
                                         <thead>
                                             <tr>
-                                                <th class="delete-all"><input type="checkbox" id="is_active"><label class="col-3 control-label" for="is_active"><a id="deleteAll" class="do_not_delete" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i> {{ trans('lang.all') }}</a></label>
+                                                <th class="delete-all" style="width: 100px; vertical-align: middle;">
+                                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                                        <input type="checkbox" id="is_active" style="margin: 0;">
+                                                        <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 700; font-size: 13.5px; text-decoration: none; gap: 4px;">
+                                                            <i class="mdi mdi-delete" style="font-size: 16px;"></i> {{ trans('lang.all') }}
+                                                        </a>
+                                                    </div>
                                                 </th>
                                                 <?php if ($id == '') { ?>
                                                 <th>{{ trans('lang.vendor_name') }}</th>

@@ -327,7 +327,7 @@ $(function () {
                 _token: '{{ csrf_token() }}',
                 collection: 'sections',
                 id: id,
-                data: { isActive: isChecked },
+                data: { isActive: isChecked ? 1 : 0 },
                 merge: 1
             },
             success: function (response) {

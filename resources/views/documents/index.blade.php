@@ -4,12 +4,12 @@
 <div class="page-wrapper">
     <div class="row page-titles">
         <div class="col-md-5 align-self-center">
-            <h3 class="text-themecolor restaurantTitle">{{ trans('lang.documents') }}</h3>
+            <h3 class="text-themecolor">{{ trans('lang.document_plural') }}</h3>
         </div>
         <div class="col-md-7 align-self-center">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
-                <li class="breadcrumb-item active">{{ trans('lang.documents') }}</li>
+                <li class="breadcrumb-item active">{{ trans('lang.document_table') }}</li>
             </ol>
         </div>
     </div>
@@ -22,47 +22,47 @@
             <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
 
-        <!-- Admin Top Section -->
-        <div class="admin-top-section">
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex top-title-section pb-4 justify-content-between">
-                        <div class="d-flex top-title-left align-items-center">
-                            <span class="icon mr-3"><img src="{{ asset('images/document.png') }}"></span>
-                            <h3 class="mb-0 font-weight-bold">{{ trans('lang.documents') }}</h3>
-                            <span class="counter ml-3 total_count"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="d-flex align-items-center mb-4">
+            <span class="mr-2" style="font-size: 22px; display: inline-flex; align-items: center;">
+                <i class="fa fa-folder-open-o" style="color: #4b5563;"></i>
+            </span>
+            <span class="section-header-title" style="font-size: 20px; font-weight: 600; color: #1a202c;">{{ trans('lang.document_plural') }}</span>
+            <span class="count-badge ml-2 total_count" style="background-color: #ff3b30; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: 700;">0</span>
         </div>
 
-        <!-- Documents List Section -->
         <div class="table-list">
             <div class="row">
                 <div class="col-12">
                     <div class="card border">
-                        <div class="card-header d-flex justify-content-between align-items-center border-0">
-                            <div class="card-header-title">
-                                <h3 class="text-dark-2 mb-2 h4 font-weight-bold">{{ trans('lang.document_list') }}</h3>
-                                <p class="mb-0 text-dark-2">{{ trans('lang.manage_documents_single_click') }}</p>
+                        <div class="card-header d-flex justify-content-between align-items-center bg-white border-0 pt-4 pb-2">
+                            <div>
+                                <h4 class="mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">{{ trans('lang.document_table') }}</h4>
+                                <p class="mb-0 text-muted" style="font-size: 13px;">{{ trans('lang.documents_table_text') }}</p>
                             </div>
-                            <div class="card-header-right d-flex align-items-center">
-                                <div class="card-header-btn mr-3">
-                                    <a href="{{ route('documents.create') }}" class="btn-primary btn rounded-full"><i class="mdi mdi-plus mr-2"></i>{{ trans('lang.create_document') }}</a>
-                                </div>
+                            <div>
+                                <a href="{{ route('documents.create') }}" class="btn btn-create-document">
+                                    <i class="mdi mdi-plus mr-1" style="font-size: 16px; font-weight: 700;"></i>{{ trans('lang.document_create') }}
+                                </a>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <div class="table-responsive m-t-10">
-                                <table id="documentsTable" class="display nowrap table table-hover table-striped table-bordered table table-striped dataTable no-footer dtr-inline collapsed" cellspacing="0" width="100%">
+                        <div class="card-body pt-0">
+                            <div class="table-responsive">
+                                <table id="example24" class="table table-hover table-striped" cellspacing="0" width="100%">
                                     <thead>
                                         <tr>
-                                            <th class="delete-all"><input type="checkbox" id="is_active"><label class="col-3 control-label" for="is_active"><a id="deleteAll" class="do_not_delete" href="javascript:void(0)"><i class="mdi mdi-delete"></i>{{ trans('lang.all') }}</a></label></th>
-                                            @foreach($columns as $column)
-                                                <th class="font-weight-bold">{{ $column['label'] }}</th>
-                                            @endforeach
-                                            <th class="font-weight-bold">{{ trans('lang.actions') }}</th>
+                                            <th class="delete-all" style="width: 90px; vertical-align: middle;">
+                                                <div class="d-flex align-items-center">
+                                                    <input type="checkbox" id="is_active" class="mr-2">
+                                                    <label for="is_active" class="mr-2" style="margin-bottom: 0;"></label>
+                                                    <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 600; font-size: 13px; text-decoration: none;">
+                                                        <i class="fa fa-trash mr-1"></i> {{ trans('lang.all') }}
+                                                    </a>
+                                                </div>
+                                            </th>
+                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.title') }}</th>
+                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.document_for') }}</th>
+                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.coupon_enabled') }}</th>
+                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.actions') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>

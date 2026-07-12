@@ -52,6 +52,7 @@
                                             <th class="delete-all" style="width: 90px; vertical-align: middle;">
                                                 <div class="d-flex align-items-center">
                                                     <input type="checkbox" id="is_active" class="mr-2">
+                                                    <label for="is_active" class="mr-2" style="margin-bottom: 0;"></label>
                                                     <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center text-danger" href="javascript:void(0)" style="font-weight: 600; font-size: 13px; text-decoration: none;">
                                                         <i class="fa fa-trash mr-1"></i> {{trans('lang.all')}}
                                                     </a>
@@ -309,6 +310,14 @@
         margin: 0 3px !important;
         border: 1px solid transparent !important;
     }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        width: auto !important;
+        height: auto !important;
+        border-radius: 20px !important;
+        padding: 5px 15px !important;
+        line-height: 20px !important;
+    }
     .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
         background: #f1f5f9 !important;
         color: #000 !important;
@@ -402,7 +411,7 @@ $(function () {
                 _token: '{{ csrf_token() }}',
                 collection: 'banner_items',
                 id: id,
-                data: { is_publish: isChecked },
+                data: { is_publish: isChecked ? 1 : 0 },
                 merge: 1
             },
             success: function (response) {

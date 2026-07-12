@@ -48,7 +48,7 @@ class BannerController extends Controller
 
         // 0. Checkbox
         $row[] = $canDelete
-            ? '<input type="checkbox" class="is_open" dataId="' . e($id) . '">'
+            ? '<input type="checkbox" id="is_open_' . e($id) . '" class="is_open" dataId="' . e($id) . '"><label for="is_open_' . e($id) . '"></label>'
             : '';
 
         // 1. Banner Info (photo + title link)

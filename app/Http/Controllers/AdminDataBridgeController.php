@@ -43,12 +43,38 @@ class AdminDataBridgeController extends Controller
 
     public function upsert(Request $request, DocumentStoreService $store): JsonResponse
     {
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE sections MODIFY cab_service_template LONGTEXT NULL");
+        } catch (\Throwable $e) {
+        }
+
         $validated = $request->validate([
             'collection' => ['required', 'string', 'max:120'],
             'id' => ['required', 'string', 'max:128'],
             'data' => ['required', 'array'],
             'merge' => ['sometimes', 'boolean'],
         ]);
+
+        $data = $validated['data'];
+        foreach ($data as $key => $value) {
+            if ($value === true) {
+                $data[$key] = 1;
+            } elseif ($value === false) {
+                $data[$key] = 0;
+            } elseif (in_array(strtolower($key), [
+                'isactive', 'active', 'is_publish', 'publish', 'isenable', 'isenabled',
+                'istopup', 'takeaway', 'reststatus', 'dine_in_active', 'is_product_details',
+                'enablecashbackoffer', 'issendtoadmin', 'symbolatright', 'allcustomer',
+                'allpayment', 'isowner', 'isdocumentverify'
+            ], true)) {
+                if ($value === 'true' || $value === '1' || $value === 1) {
+                    $data[$key] = 1;
+                } elseif ($value === 'false' || $value === '0' || $value === 0 || $value === null) {
+                    $data[$key] = 0;
+                }
+            }
+        }
+        $validated['data'] = $data;
 
         if ($validated['merge'] ?? false) {
             $existing = $store->getDocument($validated['collection'], $validated['id']) ?? [];

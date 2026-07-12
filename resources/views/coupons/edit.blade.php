@@ -4,101 +4,178 @@
 <style>
 .coupon-card {
     background: #fff;
-    border: 1px solid #e0e4ea;
-    border-radius: 6px;
-    padding: 24px 28px 28px;
-    margin-bottom: 30px;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 30px 40px;
+    margin: 20px auto 40px;
+    max-width: 900px;
 }
 .coupon-card-title {
     display: inline-block;
-    background: #2b3542;
+    background: #000;
     color: #fff;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.7px;
-    padding: 5px 14px;
+    letter-spacing: 1px;
+    padding: 6px 16px;
     border-radius: 4px;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
 }
 .cf-label {
     display: block;
-    font-weight: 700;
-    font-size: 13px;
-    color: #3d7bdb;
-    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: #2b354e;
+    margin-bottom: 6px;
 }
 .cf-label .req { color: #e53935; margin-left: 2px; }
 .cf-input {
     display: block;
     width: 100%;
-    border: 1px solid #d3d8e0;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #444;
+    border: 1.5px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #2b354e;
     background: #fff;
-    padding: 7px 10px;
-    transition: border-color .18s, box-shadow .18s;
-    height: 38px;
+    padding: 10px 16px;
+    transition: all 0.2s ease-in-out;
+    height: 46px;
 }
-.cf-input::placeholder { color: #b0b8c4; font-size: 12.5px; }
 .cf-input:focus {
-    border-color: #4e73df;
-    box-shadow: 0 0 0 2px rgba(78,115,223,.12);
+    border-color: #2b3542;
+    box-shadow: 0 0 0 3px rgba(43,53,66,0.1);
     outline: none;
 }
-textarea.cf-input { height: auto; resize: vertical; }
-select.cf-input { appearance: auto; }
-.cf-hint { font-size: 11.5px; color: #888; margin-top: 3px; }
+textarea.cf-input {
+    height: auto;
+    resize: vertical;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+select.cf-input {
+    appearance: auto;
+}
+.cf-hint {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 4px;
+}
 .cf-file-btn {
     display: inline-block;
-    font-size: 12.5px;
-    border: 1px solid #bbb;
-    border-radius: 3px;
-    padding: 3px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    padding: 8px 16px;
     cursor: pointer;
-    color: #555;
-    background: #f5f5f5;
+    color: #4a5568;
+    background: #f7fafc;
+    transition: all 0.2s;
 }
-.cf-file-btn:hover { background: #eaeaea; }
+.cf-file-btn:hover {
+    background: #edf2f7;
+}
 .cf-file-label {
     display: block;
-    font-weight: 700;
-    font-size: 13px;
-    color: #3d7bdb;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: #2b354e;
     margin-bottom: 6px;
 }
 .cf-check-row {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.cf-check-row input[type="checkbox"] + label {
-    font-size: 13px;
-    color: #333;
+.cf-check-row input[type="checkbox"] {
+    position: relative !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid #cbd5e0 !important;
+    border-radius: 4px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    background-color: #fff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+}
+.cf-check-row input[type="checkbox"]:checked {
+    background-color: #ff5c28 !important;
+    border-color: #ff5c28 !important;
+}
+.cf-check-row input[type="checkbox"]:checked::after {
+    content: '' !important;
+    width: 5px !important;
+    height: 9px !important;
+    border: solid white !important;
+    border-width: 0 2.5px 2.5px 0 !important;
+    transform: rotate(45deg) !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+}
+.cf-check-row label {
+    font-size: 14px;
+    color: #2b354e;
     font-weight: 500;
     margin-bottom: 0;
-}
-.cf-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-.cf-btn-save {
-    background: #1e2a35;
-    border: none;
-    color: #fff;
-    font-size: 13px;
-    padding: 7px 24px;
-    border-radius: 4px;
     cursor: pointer;
+    margin-left: 8px !important;
+    padding-left: 0 !important;
 }
-.cf-btn-save:hover { background: #2c3e50; }
-.cf-btn-back {
-    background: #fff;
-    border: 1px solid #ccc;
-    color: #555;
-    font-size: 13px;
-    padding: 7px 20px;
-    border-radius: 4px;
-    text-decoration: none;
+.cf-check-row label::before,
+.cf-check-row label::after {
+    display: none !important;
+    content: none !important;
+}
+.cf-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+.cf-btn-save {
+    background: #000;
+    border: 1px solid #000;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
 }
-.cf-btn-back:hover { background: #f5f5f5; color: #333; text-decoration: none; }
+.cf-btn-save:hover {
+    background: #222;
+}
+.cf-btn-back {
+    background: #fff;
+    border: 1.5px solid #cbd5e0;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 24px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+.cf-btn-back:hover {
+    background: #edf2f7;
+    color: #2d3748;
+    text-decoration: none;
+}
 </style>
 @endsection
 
@@ -132,7 +209,6 @@ select.cf-input { appearance: auto; }
 
         <div class="coupon-card">
 
-            {{-- Header badge --}}
             <div class="coupon-card-title">EDIT COUPON</div>
 
             <form action="{{ route('coupons.update', $coupon->id) }}" method="POST" enctype="multipart/form-data">
@@ -141,16 +217,18 @@ select.cf-input { appearance: auto; }
 
                 {{-- Row 1: Code | Discount Type --}}
                 <div class="form-row">
-                    <div class="col-md-6 form-group mb-3">
+                    <div class="col-md-6 form-group mb-4">
                         <label class="cf-label">Code</label>
                         <input type="text"
                                name="code"
                                class="cf-input @error('code') is-invalid @enderror"
+                               placeholder="Insert Coupon Code"
                                value="{{ strtoupper(old('code', $payload['code'] ?? '')) }}"
                                required>
+                        <div class="cf-hint">Insert Coupon Code</div>
                         @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-6 form-group mb-3">
+                    <div class="col-md-6 form-group mb-4">
                         <label class="cf-label">Discount Type</label>
                         @php $dt = old('discount_type', $payload['discountType'] ?? $payload['discount_type'] ?? ''); @endphp
                         <select name="discount_type"
@@ -159,23 +237,26 @@ select.cf-input { appearance: auto; }
                             <option value="Percentage" {{ $dt == 'Percentage' ? 'selected' : '' }}>Percent</option>
                             <option value="Fix Price"  {{ $dt == 'Fix Price'  ? 'selected' : '' }}>Fix Price</option>
                         </select>
+                        <div class="cf-hint">Select Discount Type</div>
                         @error('discount_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
 
                 {{-- Row 2: Discount | Expires At --}}
                 <div class="form-row">
-                    <div class="col-md-6 form-group mb-3">
+                    <div class="col-md-6 form-group mb-4">
                         <label class="cf-label">Discount <span class="req">*</span></label>
                         <input type="number"
                                name="discount"
                                class="cf-input @error('discount') is-invalid @enderror"
+                               placeholder="Insert Discount Amount"
                                step="0.01" min="0"
                                value="{{ old('discount', $payload['discount'] ?? '') }}"
                                required>
+                        <div class="cf-hint">Insert Discount Fixed Amount (Ex: 8 for 8$) or Percent (Ex: 10 for 10%)</div>
                         @error('discount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-6 form-group mb-3">
+                    <div class="col-md-6 form-group mb-4">
                         <label class="cf-label">Expires At</label>
                         @php
                             $expiresAtVal = '';
@@ -191,6 +272,7 @@ select.cf-input { appearance: auto; }
                                    name="expires_at"
                                    id="expires_at_input"
                                    class="cf-input date_picker @error('expires_at') is-invalid @enderror"
+                                   placeholder="Select Expiry Date"
                                    value="{{ old('expires_at', $expiresAtVal) }}"
                                    autocomplete="off">
                         </div>
@@ -200,7 +282,7 @@ select.cf-input { appearance: auto; }
                 </div>
 
                 {{-- Row 3: Stores (full width) --}}
-                <div class="form-group mb-3">
+                <div class="form-group mb-4">
                     <label class="cf-label">Stores</label>
                     <select name="vendor_id" class="cf-input">
                         <option value="">Select Store</option>
@@ -211,19 +293,21 @@ select.cf-input { appearance: auto; }
                             </option>
                         @endforeach
                     </select>
-                    <div class="cf-hint">The coupon will be applied on selected vendors.</div>
+                    <div class="cf-hint">The coupon will applied on selected vendors</div>
                 </div>
 
                 {{-- Row 4: Description --}}
-                <div class="form-group mb-3">
+                <div class="form-group mb-4">
                     <label class="cf-label">Description</label>
                     <textarea name="description"
                               class="cf-input"
-                              rows="7">{{ old('description', $payload['description'] ?? '') }}</textarea>
+                              placeholder="Insert Description"
+                              rows="6">{{ old('description', $payload['description'] ?? '') }}</textarea>
+                    <div class="cf-hint">Insert Description</div>
                 </div>
 
                 {{-- Row 5: Image --}}
-                <div class="form-group mb-3">
+                <div class="form-group mb-4">
                     <label class="cf-file-label">Image</label>
                     @if(!empty($payload['image']))
                         <div class="mb-2">
@@ -252,20 +336,19 @@ select.cf-input { appearance: auto; }
                            {{ old('isEnabled', $coupon->isEnabled ?? 1) ? 'checked' : '' }}>
                     <label for="coupon_enabled">Enabled</label>
                 </div>
-                <div class="form-group cf-check-row mb-3">
+                <div class="form-group cf-check-row mb-4">
                     @php $isPublicVal = old('is_public', ($payload['isPublic'] ?? $payload['is_public'] ?? 1)); @endphp
                     <input type="checkbox" name="is_public" id="coupon_public" value="1"
                            {{ $isPublicVal ? 'checked' : '' }}>
                     <label for="coupon_public">isPublic</label>
                 </div>
 
-                {{-- Action Buttons --}}
                 <div class="cf-actions">
                     <button type="submit" class="cf-btn-save">
                         <i class="mdi mdi-content-save mr-1"></i> Save
                     </button>
                     <a href="{{ route('coupons') }}" class="cf-btn-back">
-                        <i class="mdi mdi-arrow-left mr-1"></i> Back
+                        <i class="fa fa-undo mr-1"></i> Back
                     </a>
                 </div>
 

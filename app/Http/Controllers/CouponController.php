@@ -102,7 +102,7 @@ class CouponController extends Controller
                 . '<a href="javascript:void(0)" class="delete-btn btn-delete-coupon" data-id="' . $coupon->id . '" data-toggle="tooltip" title="Delete"><i class="mdi mdi-delete"></i></a>'
                 . '</span>';
 
-            $checkboxHtml = '<input type="checkbox" class="coupon-checkbox" data-id="' . $coupon->id . '">';
+            $checkboxHtml = '<input type="checkbox" class="coupon-checkbox animate-chk" data-id="' . $coupon->id . '">';
 
             $rows[] = [
                 $checkboxHtml,
