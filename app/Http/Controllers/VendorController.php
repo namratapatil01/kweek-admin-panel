@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\StoresProfileImage;
 use App\Models\AppUser;
 use App\Models\Vendor;
 use App\Support\PayloadMapper;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class VendorController extends Controller
 {
+    use StoresProfileImage;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -460,7 +463,7 @@ class VendorController extends Controller
             }
 
             if (AppUser::where('email', $request->input('email'))->exists()) {
-                return response()->json(['error' => 'This email is already registered.'], 422);
+                return response()->json(['error' => 'This email is already registered. Please use a different email.'], 422);
             }
 
             $data = $request->only([
@@ -468,6 +471,8 @@ class VendorController extends Controller
                 'active', 'profilePictureURL', 'userBankDetails',
                 'subscription_plan', 'subscriptionPlanId', 'subscriptionExpiryDate',
             ]);
+
+            $data['profilePictureURL'] = $this->storeProfileImage($data['profilePictureURL'] ?? null);
 
             $data['role'] = 'vendor';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -522,6 +527,10 @@ class VendorController extends Controller
                 'firstName', 'lastName', 'active', 'profilePictureURL', 'userBankDetails',
                 'subscription_plan', 'subscriptionPlanId', 'subscriptionExpiryDate',
             ]);
+
+            if (array_key_exists('profilePictureURL', $data)) {
+                $data['profilePictureURL'] = $this->storeProfileImage($data['profilePictureURL'] ?? null);
+            }
 
             if (isset($data['active'])) {
                 $data['active'] = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -600,10 +609,30 @@ class VendorController extends Controller
         try {
             $sectionId = $request->input('section_id', '');
             $query = DB::table('subscription_plans')->where('isEnable', 1);
+
             if ($sectionId) {
-                $query->where('sectionId', $sectionId);
+                $query->where(function ($q) use ($sectionId) {
+                    $q->where('sectionId', $sectionId)
+                        ->orWhere('section_id', $sectionId);
+                });
             }
-            $plans = $query->get(['id', 'name', 'expiryDay', 'price', 'sectionId']);
+
+            $plans = $query->get(['id', 'name', 'expiryDay', 'price', 'sectionId', 'payload'])
+                ->filter(function ($plan) {
+                    $payload = json_decode($plan->payload ?? '{}', true);
+                    if (!is_array($payload)) {
+                        return true;
+                    }
+                    $isCommission = $payload['isCommissionPlan'] ?? false;
+
+                    return $isCommission !== true && $isCommission !== 'true';
+                })
+                ->values()
+                ->map(function ($plan) {
+                    unset($plan->payload);
+
+                    return $plan;
+                });
 
             return response()->json(['plans' => $plans]);
         } catch (\Exception $e) {

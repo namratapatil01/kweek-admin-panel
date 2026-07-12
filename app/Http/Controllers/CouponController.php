@@ -96,9 +96,11 @@ class CouponController extends Controller
                 <span class="coupon-slider"></span>
             </label>';
 
-            $editUrl   = route('coupons.edit', $coupon->id);
-            $deleteBtn = '<a href="javascript:void(0)" class="btn btn-circle-sm btn-danger btn-delete-coupon" data-id="' . $coupon->id . '" title="Delete"><i class="mdi mdi-delete"></i></a>';
-            $editBtn   = '<a href="' . $editUrl . '" class="btn btn-circle-sm btn-info mr-1" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>';
+                $editUrl = route('coupons.edit', $coupon->id);
+            $actions = '<span class="action-btn">'
+                . '<a href="' . $editUrl . '" data-toggle="tooltip" title="Edit"><i class="mdi mdi-lead-pencil"></i></a>'
+                . '<a href="javascript:void(0)" class="delete-btn btn-delete-coupon" data-id="' . $coupon->id . '" data-toggle="tooltip" title="Delete"><i class="mdi mdi-delete"></i></a>'
+                . '</span>';
 
             $checkboxHtml = '<input type="checkbox" class="coupon-checkbox" data-id="' . $coupon->id . '">';
 
@@ -110,7 +112,7 @@ class CouponController extends Controller
                 $privacyBadge,
                 $expiryLabel,
                 $toggleHtml,
-                $editBtn . $deleteBtn,
+                $actions,
             ];
         }
 

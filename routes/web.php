@@ -283,6 +283,7 @@ Route::middleware(['permission:parcel-orders,parcel.orders.edit'])->group(functi
     Route::get('/parcel_orders/edit/{id}', [App\Http\Controllers\ParcelController::class, 'parcelOrderEdit'])->name('parcel_orders.edit');
 });
 
+Route::get('/rides/datatable', [App\Http\Controllers\RideController::class, 'datatable'])->name('rides.datatable');
 Route::get('/rides/{id}', [App\Http\Controllers\RideController::class, 'index'])->name('drivers.ride');
 Route::get('/rides/{driverId}', [App\Http\Controllers\RideController::class, 'index'])->name('drivers.rides');
 Route::get('/ride/{sosId}', [App\Http\Controllers\RideController::class, 'index2'])->name('ride');
@@ -921,9 +922,9 @@ Route::middleware(['permission:subscription-plans,subscription-plans.' . ((str_c
     Route::get('/subscription-plans/save/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'save'])->name('subscription-plans.save');
 });
 Route::middleware(['permission:subscription-history,subscription.history'])->group(function () {
-    Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
     Route::get('/subscription-plan/history/datatable/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'historyDatatable'])->name('subscription.subscriptionPlanHistory.datatable');
     Route::post('/subscription-plan/history/delete', [App\Http\Controllers\SubscriptionPlanController::class, 'destroyHistory'])->name('subscription.subscriptionPlanHistory.delete');
+    Route::get('/subscription-plan/history/{id?}', [App\Http\Controllers\SubscriptionPlanController::class, 'SubscriptionPlanHistory'])->name('subscription.subscriptionPlanHistory');
 });
 
 Route::middleware(['permission:advertisements,advertisements'])->group(function () {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\StoresProfileImage;
 use App\Models\AppUser;
 use App\Models\ProviderOrder;
 use App\Support\PayloadMapper;
@@ -14,6 +15,8 @@ use Illuminate\Support\Str;
 
 class ProvidersController extends Controller
 {
+    use StoresProfileImage;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -242,6 +245,8 @@ class ProvidersController extends Controller
                 'active', 'profilePictureURL', 'userBankDetails',
                 'adminCommission', 'subscription_plan', 'subscriptionPlanId', 'subscriptionExpiryDate',
             ]);
+
+            $data['profilePictureURL'] = $this->storeProfileImage($data['profilePictureURL'] ?? null);
 
             $data['role'] = 'provider';
             $data['active'] = filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;

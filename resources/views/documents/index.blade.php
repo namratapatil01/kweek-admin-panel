@@ -78,33 +78,9 @@
 @endsection
 
 @section('scripts')
-@include('admin.partials.crud-scripts', ['mode' => 'index', 'tableId' => 'documentsTable'])
-
-<script>
-    var section_id = getCookie('section_id') || null;
-
-    $(document).ready(function() {
-        loadTotalCount();
-    });
-
-    function loadTotalCount() {
-        $('.total_count').text('0');
-    }
-<style>
-/* Adjust switch size if needed */
-.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #dc3545; -webkit-transition: .4s; transition: .4s; }
-.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; -webkit-transition: .4s; transition: .4s; }
-input:checked + .slider { background-color: #28a745; }
-input:focus + .slider { box-shadow: 0 0 1px #28a745; }
-input:checked + .slider:before { -webkit-transform: translateX(20px); -ms-transform: translateX(20px); transform: translateX(20px); }
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
-</style>
 <script type="text/javascript">
 $(function () {
-    var table = $('#documentTable').DataTable({
+    var table = $('#documentsTable').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
@@ -115,36 +91,30 @@ $(function () {
                 d.sectionId = getCookie('section_id') || '';
             },
             dataSrc: function (json) {
-                if(json.recordsTotal !== undefined) {
+                if (json.recordsTotal !== undefined) {
                     $('.total_count').text(json.recordsTotal);
                 }
-                setTimeout(function(){ $('[data-toggle="tooltip"]').tooltip(); }, 100);
-                
-                return (json.data || []).map(function(row) {
-                    // row[0] is checkbox
-                    // row[1] is actions
-                    // row[2] is title
-                    // row[3] is type
-                    // row[4] is enable (boolean badge)
+                setTimeout(function () { $('[data-toggle="tooltip"]').tooltip(); }, 100);
 
+                return (json.data || []).map(function (row) {
                     var idMatch = row[0].match(/data-id="([^"]+)"/);
                     var id = idMatch ? idMatch[1] : '';
 
-                    var typeStr = String(row[3]);
-                    if (typeStr.toLowerCase() === 'driver') typeStr = 'Individual Driver';
-                    else if (typeStr.toLowerCase() === 'vendor') typeStr = 'Vendor';
-                    else if (typeStr.toLowerCase() === 'owner') typeStr = 'Owner';
+                    var typeStr = String(row[3] || '');
+                    if (typeStr.toLowerCase() === 'driver') typeStr = '{{ trans("lang.document_driver") }}';
+                    else if (typeStr.toLowerCase() === 'vendor') typeStr = '{{ trans("lang.document_vendor") }}';
+                    else if (typeStr.toLowerCase() === 'owner') typeStr = '{{ trans("lang.document_owner") }}';
 
-                    var isEnabled = row[4].indexOf('badge-success') !== -1;
-                    var toggleHtml = '<label class="switch"><input type="checkbox" class="doc-enable-toggle" data-id="'+id+'" '+(isEnabled ? 'checked' : '')+'><span class="slider round"></span></label>';
+                    var isEnabled = String(row[4] || '').indexOf('badge-success') !== -1;
+                    var toggleHtml = '<label class="switch"><input type="checkbox" class="doc-enable-toggle" data-id="' + id + '" ' + (isEnabled ? 'checked' : '') + '><span class="slider round"></span></label>';
 
                     var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
-                    var actionsHtml = '<span class="action-btn d-flex align-items-center">' +
-                        '<a href="'+routeEdit+'" class="btn btn-sm btn-outline-info rounded-circle ml-2" style="width: 32px; height: 32px; display: inline-flex; justify-content: center; align-items: center;"><i class="mdi mdi-lead-pencil"></i></a>' +
-                        '<a href="javascript:void(0)" class="delete-row btn btn-sm btn-outline-danger rounded-circle ml-2" data-id="'+id+'" style="width: 32px; height: 32px; display: inline-flex; justify-content: center; align-items: center;"><i class="mdi mdi-delete"></i></a>' +
-                    '</span>';
+                    var actionsHtml = '<span class="action-btn">'
+                        + '<a href="' + routeEdit + '" data-toggle="tooltip" title="{{ trans("lang.edit") }}"><i class="mdi mdi-lead-pencil"></i></a>'
+                        + '<a href="javascript:void(0)" class="delete-row" data-id="' + id + '" data-toggle="tooltip" title="{{ trans("lang.delete") }}"><i class="mdi mdi-delete"></i></a>'
+                        + '</span>';
 
-                    return [ row[0], row[2], typeStr, toggleHtml, actionsHtml ];
+                    return [row[0], row[2], typeStr, toggleHtml, actionsHtml];
                 });
             }
         },
@@ -160,8 +130,8 @@ $(function () {
         }
     });
 
-    $('#select-all').on('click', function () {
-        $('.row-select').prop('checked', $(this).is(':checked'));
+    $('#is_active').on('click', function () {
+        $('#documentsTable .row-select').prop('checked', $(this).prop('checked'));
     });
 
     $(document).on('click', '.delete-row', function () {
@@ -180,7 +150,7 @@ $(function () {
     $(document).on('change', '.doc-enable-toggle', function () {
         var id = $(this).data('id');
         var isChecked = $(this).is(':checked') ? 1 : 0;
-        
+
         $.ajax({
             url: '{{ url("documents/status") }}/' + id,
             type: 'POST',
@@ -188,10 +158,7 @@ $(function () {
                 _token: '{{ csrf_token() }}',
                 enable: isChecked
             },
-            success: function(res) {
-                // success msg if needed
-            },
-            error: function() {
+            error: function () {
                 alert('Failed to update status');
                 table.ajax.reload();
             }
@@ -199,4 +166,15 @@ $(function () {
     });
 });
 </script>
+
+<style>
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #dc3545; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: #28a745; }
+input:checked + .slider:before { transform: translateX(20px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+</style>
 @endsection

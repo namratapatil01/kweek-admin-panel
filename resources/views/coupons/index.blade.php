@@ -228,16 +228,5 @@ $(document).ready(function () {
 }
 .coupon-toggle-switch input:checked + .coupon-slider { background-color: #28a745; }
 .coupon-toggle-switch input:checked + .coupon-slider:before { transform: translateX(22px); }
-
-/* Action buttons */
-.btn-circle-sm {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    font-size: 15px;
-    padding: 0;
-}
 </style>
 @endsection
