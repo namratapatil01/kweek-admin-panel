@@ -439,7 +439,9 @@
             }
             script.onload = function () {
                 navigator.geolocation.getCurrentPosition(GeolocationSuccessCallback, GeolocationErrorCallback);
-                if (typeof window['InitializeGodsEyeMap'] === 'function') {
+                if (typeof window.godsEyeMapInit === 'function') {
+                    window.godsEyeMapInit();
+                } else if (typeof window['InitializeGodsEyeMap'] === 'function') {
                     InitializeGodsEyeMap();
                 }
             };

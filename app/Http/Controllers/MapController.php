@@ -38,6 +38,7 @@ class MapController extends Controller
 
         $drivers = DB::table('app_users')
             ->where('role', 'driver')
+            ->where('serviceType', 'cab-service')
             ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
             ->get()
             ->map(fn ($driver) => $this->normalizeDriverForMap($driver))
@@ -47,7 +48,40 @@ class MapController extends Controller
         $rides = DB::table('rides')
             ->when($sectionId, fn ($q) => $q->where('sectionId', $sectionId))
             ->whereIn('status', ['In Transit', 'in_transit'])
-            ->get();
+            ->orderByDesc('createdAt')
+            ->limit(200)
+            ->get()
+            ->map(function ($ride) {
+                $payload = $this->decodePayload($ride->payload ?? null);
+                $driver = $payload['driver'] ?? null;
+                if (is_string($ride->driver ?? null)) {
+                    $decodedDriver = json_decode($ride->driver, true);
+                    if (is_array($decodedDriver)) {
+                        $driver = $decodedDriver;
+                    }
+                } elseif (is_array($ride->driver ?? null)) {
+                    $driver = $ride->driver;
+                }
+
+                $author = $payload['author'] ?? null;
+                if (is_string($ride->author ?? null)) {
+                    $decodedAuthor = json_decode($ride->author, true);
+                    if (is_array($decodedAuthor)) {
+                        $author = $decodedAuthor;
+                    }
+                } elseif (is_array($ride->author ?? null)) {
+                    $author = $ride->author;
+                }
+
+                return [
+                    'id' => $ride->id,
+                    'status' => $ride->status,
+                    'flag' => 'in_transit',
+                    'driver' => $driver,
+                    'author' => $author,
+                ];
+            })
+            ->values();
 
         return response()->json([
             'drivers' => $drivers,

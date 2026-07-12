@@ -206,8 +206,72 @@
         var mapType = 'ONLINE';
         var section_id = getCookie('section_id') || '';
         var pendingMapData = null;
+        var godsEyeMapReady = false;
+        var mapDataLoaded = false;
 
-        $(document).ready(function () {
+        function getDefaultMapCenter() {
+            var default_lat = parseFloat(getCookie('default_latitude'));
+            var default_lng = parseFloat(getCookie('default_longitude'));
+            if (isNaN(default_lat) || isNaN(default_lng) || (Math.abs(default_lat) < 0.1 && Math.abs(default_lng) < 0.1)) {
+                return { lat: 23.0225, lng: 72.5714 };
+            }
+            return { lat: default_lat, lng: default_lng };
+        }
+
+        function fetchCabMapData() {
+            if (mapDataLoaded) {
+                return;
+            }
+            mapDataLoaded = true;
+
+            $.ajax({
+                url: "{{ route('map.cab.data') }}",
+                method: 'GET',
+                data: { section_id: section_id },
+                dataType: 'json',
+                cache: false,
+                success: function (res) {
+                    var orders = [];
+                    var drivers = [];
+                    var ordersDriverIds = [];
+                    var globalDrivers = {};
+
+                    (res.rides || []).forEach(function (ride) {
+                        ride.flag = 'in_transit';
+                        orders.push(ride);
+                        if (ride.driver && ride.driver.id) {
+                            ordersDriverIds.push(ride.driver.id);
+                        }
+                    });
+
+                    (res.drivers || []).forEach(function (driver) {
+                        driver.flag = 'available';
+                        driver.location = {
+                            latitude: driver.latitude,
+                            longitude: driver.longitude
+                        };
+                        globalDrivers[driver.id] = driver;
+                        if ($.inArray(driver.id, ordersDriverIds) === -1) {
+                            drivers.push(driver);
+                        }
+                    });
+
+                    window.globalDrivers = globalDrivers;
+                    pendingMapData = $.merge(orders, drivers);
+                    $(".live-tracking-list").empty();
+                    renderCabMapData(pendingMapData).then(function () {
+                        fitMapToMarkers();
+                    });
+                },
+                error: function (xhr) {
+                    mapDataLoaded = false;
+                    console.error('Failed to load cab map data', xhr && xhr.status, xhr && xhr.responseText);
+                    $(".live-tracking-list").html('<div class="p-3 text-danger">Failed to load drivers. Please refresh.</div>');
+                }
+            });
+        }
+
+        $(document).ready(async function () {
             database.collection('sections').where('id', '==', section_id).get().then(function (snapshots) {
                 if (snapshots.docs.length > 0) {
                     snapshots.docs.forEach(function (doc) {
@@ -216,45 +280,38 @@
                 }
             });
 
-            database.collection('settings').doc('DriverNearBy').get().then(function (snapshots) {
+            try {
+                var snapshots = await database.collection('settings').doc('DriverNearBy').get();
                 var data = snapshots.data();
                 if (data && data.selectedMapType && data.selectedMapType == "osm") {
                     mapType = "OFFLINE";
                 }
-            });
+            } catch (e) {
+                console.warn('DriverNearBy settings load failed, using default map type', e);
+            }
 
-            var orders = [];
-            var drivers = [];
-            var ordersDriverIds = [];
-            var globalDrivers = {};
-
-            $.get("{{ route('map.cab.data') }}", { section_id: section_id }, function (res) {
-                (res.rides || []).forEach(function (ride) {
-                    ride.flag = 'in_transit';
-                    orders.push(ride);
-                    if (ride.driver && ride.driver.id) {
-                        ordersDriverIds.push(ride.driver.id);
+            if (mapType !== "OFFLINE") {
+                for (var wait = 0; wait < 40; wait++) {
+                    if (typeof google !== 'undefined' && google.maps) {
+                        break;
                     }
-                });
-
-                (res.drivers || []).forEach(function (driver) {
-                    driver.flag = 'available';
-                    driver.location = {
-                        latitude: driver.latitude,
-                        longitude: driver.longitude
-                    };
-                    globalDrivers[driver.id] = driver;
-                    if ($.inArray(driver.id, ordersDriverIds) === -1) {
-                        drivers.push(driver);
-                    }
-                });
-
-                window.globalDrivers = globalDrivers;
-                pendingMapData = $.merge(orders, drivers);
-                if (map) {
-                    renderCabMapData(pendingMapData);
+                    await new Promise(function (resolve) { setTimeout(resolve, 100); });
                 }
-            });
+                if (typeof google === 'undefined' || !google.maps) {
+                    mapType = "OFFLINE";
+                }
+            }
+
+            try {
+                InitializeCabMap();
+            } catch (e) {
+                console.error('Map init failed, falling back to OSM', e);
+                mapType = "OFFLINE";
+                godsEyeMapReady = false;
+                InitializeCabMap();
+            }
+
+            fetchCabMapData();
 
             setTimeout(function () {
                 $(".sidebartoggler").click();
@@ -290,19 +347,31 @@
             });
         });
 
-        function InitializeGodsEyeMap() {
-            var default_lat = parseFloat(getCookie('default_latitude')) || 23.022505;
-            var default_lng = parseFloat(getCookie('default_longitude')) || 72.571365;
+        function InitializeCabMap() {
+            if (godsEyeMapReady && map) {
+                return;
+            }
+
+            var center = getDefaultMapCenter();
             var legend = document.getElementById('legend');
 
-            if (mapType == "OFFLINE") {
-                map = L.map('map').setView([default_lat, default_lng], 10);
+            if (mapType == "OFFLINE" || typeof google === 'undefined' || !google.maps) {
+                mapType = "OFFLINE";
+
+                if (map && map.remove) {
+                    map.remove();
+                }
+                if (typeof L !== 'undefined' && L.DomUtil.get('map') != null) {
+                    L.DomUtil.get('map')._leaflet_id = null;
+                }
+
+                map = L.map('map').setView([center.lat, center.lng], 10);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
             } else {
-                var myLatlng = new google.maps.LatLng(default_lat, default_lng);
+                var myLatlng = new google.maps.LatLng(center.lat, center.lng);
                 map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 10,
                     center: myLatlng,
@@ -310,6 +379,8 @@
                     mapTypeId: google.maps.MapTypeId.ROADMAP
                 });
             }
+
+            godsEyeMapReady = true;
 
             var fliter_icons = {
                 available: { name: 'Available', icon: base_url + '/available.png' },
@@ -336,11 +407,9 @@
             } else {
                 map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
             }
-
-            if (pendingMapData) {
-                renderCabMapData(pendingMapData);
-            }
         }
+
+        window.godsEyeMapInit = InitializeCabMap;
 
         function hasValidCoords(location) {
             if (!location || location.latitude == null || location.longitude == null) {
@@ -355,22 +424,6 @@
                 return false;
             }
             return !(Math.abs(lat) < 0.1 && Math.abs(lng) < 0.1);
-        }
-
-        function distanceKm(lat1, lng1, lat2, lng2) {
-            var R = 6371;
-            var dLat = (lat2 - lat1) * Math.PI / 180;
-            var dLng = (lng2 - lng1) * Math.PI / 180;
-            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng / 2) * Math.sin(dLng / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-
-        function shouldShowOnMap(lat, lng) {
-            var centerLat = parseFloat(getCookie('default_latitude')) || 23.022505;
-            var centerLng = parseFloat(getCookie('default_longitude')) || 72.571365;
-            return distanceKm(centerLat, centerLng, lat, lng) <= 400;
         }
 
         function focusDriverOnMap(driverId) {
@@ -431,7 +484,6 @@
                 var html = '';
                 var driverId = '';
                 var hasCoords = false;
-                var showOnMap = false;
 
                 if (val.flag == "in_transit") {
                     if (val.driver && val.driver.id) {
@@ -457,11 +509,10 @@
                 if (hasCoords) {
                     driver.location.latitude = parseFloat(driver.location.latitude);
                     driver.location.longitude = parseFloat(driver.location.longitude);
-                    showOnMap = shouldShowOnMap(driver.location.latitude, driver.location.longitude);
                 }
 
                 if (val.flag == "in_transit") {
-                    if (!hasCoords || !showOnMap) {
+                    if (!hasCoords) {
                         continue;
                     }
                     var user = val.author && val.author.id ? await getUserDetail(val.author.id) : null;
@@ -478,13 +529,12 @@
                         html += '</div></div>';
                     }
                 } else if (driver.firstName || driver.lastName) {
-                    var listIconHtml = showOnMap
+                    html += '<div class="live-tracking-box' + (hasCoords ? ' track-from' : '') + '" data-driver-id="' + driverId + '"' +
+                        (hasCoords ? ' data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '" title="Click to view on map"' : '') + '>';
+                    html += '<div class="live-tracking-inner">';
+                    html += hasCoords
                         ? '<span class="listicon"><img src="' + base_url + '/car_available.png" alt=""></span>'
                         : '<span class="listicon listicon-off"></span>';
-                    html += '<div class="live-tracking-box' + (showOnMap ? ' track-from' : '') + '" data-driver-id="' + driverId + '"' +
-                        (showOnMap ? ' data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '" title="Click to view on map"' : '') + '>';
-                    html += '<div class="live-tracking-inner">';
-                    html += listIconHtml;
                     html += '<h3 class="drier-name">{{trans("lang.driver_name")}} : ' + driver.firstName + ' ' + driver.lastName + '</h3>';
                     html += '<span class="badge badge-success">Available</span>';
                     html += '</div></div>';
@@ -494,7 +544,8 @@
                     $(".live-tracking-list").append(html);
                 }
 
-                if (showOnMap && map) {
+                if (hasCoords && map) {
+                    try {
                     var iconImg = val.flag == "available" ? base_url + '/car_available.png' : base_url + '/car_on_trip.png';
                     var content = '<div class="p-2">' +
                         '<h6>{{trans("lang.driver_name")}} : ' + (driver.firstName || '') + ' ' + (driver.lastName || '') + '</h6>' +
@@ -529,6 +580,9 @@
                         });
                         markers[i] = marker;
                         markersByDriverId[driverId] = marker;
+                    }
+                    } catch (e) {
+                        console.warn('Cab marker skipped for driver', driverId, e);
                     }
                 }
             }

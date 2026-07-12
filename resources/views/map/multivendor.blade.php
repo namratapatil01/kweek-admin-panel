@@ -49,10 +49,9 @@
 
                     <div class="col-lg-8">
 
-                        <div id="map" style="height:450px"></div>
-
-                        <div id="legend">
-                            <h3>Legend</h3>
+                        <div class="multivendor-map-wrap">
+                            <div id="map"></div>
+                            <div id="legend" class="multivendor-map-legend"></div>
                         </div>
 
                     </div>
@@ -69,20 +68,51 @@
             cursor: pointer;
         }
 
-        #legend {
+        .multivendor-map-wrap {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        #map {
+            width: 100%;
+            height: 520px;
+            min-height: 450px;
+        }
+
+        .multivendor-map-legend {
             font-family: Arial, sans-serif;
             background: #fff;
-            padding: 10px;
-            margin: 11px;
-            border: 1px solid #000;
+            padding: 10px 14px;
+            margin: 0;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            line-height: 1.8;
+            font-size: 13px;
         }
 
-        #legend h3 {
-            margin-top: 0;
+        .multivendor-map-legend h3 {
+            margin: 0 0 6px;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        #legend img {
+        .multivendor-map-legend img {
             vertical-align: middle;
+            width: 14px;
+            margin-right: 5px;
+        }
+
+        .live-tracking-box.track-from {
+            cursor: pointer;
+        }
+
+        .live-tracking-box.track-from:hover {
+            background: #f0fdf4;
+            border-color: #22c55e;
         }
     </style>
 
@@ -104,6 +134,23 @@
         var mapDataUrl = '/map/multivendor/data';
         var godsEyeMapReady = false;
         var mapDataLoaded = false;
+        var lastMapData = [];
+
+        window.gm_authFailure = function () {
+            if (mapType === "OFFLINE") {
+                return;
+            }
+            console.warn('Google Maps failed to load, using OpenStreetMap for food tracking');
+            mapType = "OFFLINE";
+            godsEyeMapReady = false;
+            InitializeMultivendorMap();
+            if (lastMapData.length) {
+                $(".live-tracking-list").empty();
+                loadData(lastMapData).then(function () {
+                    fitMapToMarkers();
+                });
+            }
+        };
 
         function getDefaultMapCenter() {
             var default_lat = parseFloat(getCookie('default_latitude'));
@@ -153,8 +200,9 @@
                     });
 
                     window.globalDrivers = globalDrivers;
+                    lastMapData = $.merge(orders, drivers);
                     $(".live-tracking-list").empty();
-                    loadData($.merge(orders, drivers)).then(function () {
+                    loadData(lastMapData).then(function () {
                         fitMapToMarkers();
                     });
                 },
@@ -214,12 +262,12 @@
             }
 
             try {
-                InitializeGodsEyeMap();
+                InitializeMultivendorMap();
             } catch (e) {
                 console.error('Map init failed, falling back to OSM', e);
                 mapType = "OFFLINE";
                 godsEyeMapReady = false;
-                InitializeGodsEyeMap();
+                InitializeMultivendorMap();
             }
 
             fetchMultivendorMapData();
@@ -259,8 +307,8 @@
             });
         });
 
-        function InitializeGodsEyeMap() {
-            // Layout also calls this after Google/Leaflet script load — do not wipe an existing map.
+        function InitializeMultivendorMap() {
+            // Layout may also call window.godsEyeMapInit after script load.
             if (godsEyeMapReady && map) {
                 return;
             }
@@ -285,25 +333,13 @@
                 }).addTo(map);
             } else {
                 var myLatlng = new google.maps.LatLng(center.lat, center.lng);
-                var mapOptions = {
+                map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 10,
                     center: myLatlng,
                     streetViewControl: false,
                     mapTypeId: google.maps.MapTypeId.ROADMAP
-                };
-                map = new google.maps.Map(document.getElementById("map"), mapOptions);
+                });
             }
-            var mapDiv = L.DomUtil.get('map');
-            if (mapDiv) {
-                mapDiv._leaflet_id = null;
-            }
-
-            map = L.map('map').setView([default_lat, default_lng], 10);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
 
             godsEyeMapReady = true;
 
@@ -321,25 +357,31 @@
             legend.innerHTML = "<h3>Legend</h3>";
             for (var key in fliter_icons) {
                 var type = fliter_icons[key];
-                var name = type.name;
-                var icon = type.icon;
                 var div = document.createElement('div');
-                div.innerHTML = '<img src="' + icon + '" style="width:14px; margin-right:5px;"> ' + name;
+                div.innerHTML = '<img src="' + type.icon + '"> ' + type.name;
                 legend.appendChild(div);
             }
 
-            var lmaplegend = L.control({ position: 'bottomleft' });
-            lmaplegend.onAdd = function (map) {
-                var div = L.DomUtil.create('div', 'legend');
-                div.innerHTML = "<h4>Map Legend</h4>";
-                div.appendChild(legend);
-                return div;
-            };
-            lmaplegend.addTo(map);
+            if (mapType == "OFFLINE") {
+                var lmaplegend = L.control({ position: 'bottomleft' });
+                lmaplegend.onAdd = function () {
+                    var div = L.DomUtil.create('div', 'legend');
+                    div.innerHTML = "<h4>Map Legend</h4>";
+                    div.appendChild(legend);
+                    return div;
+                };
+                lmaplegend.addTo(map);
+            } else {
+                map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
+            }
         }
+
+        window.godsEyeMapInit = InitializeMultivendorMap;
 
         async function loadData(data) {
             markers = [];
+            var mapEntries = [];
+
             for (let i = 0; i < data.length; i++) {
                 val = data[i];
 
@@ -372,7 +414,7 @@
                             userId=val.author.id;
                         }
 
-                        let user = userId ? await getUserDetail(userId) : undefined;
+                        let user = val.author || (userId ? await getUserDetail(userId) : undefined);
 
                         if (user != undefined && user!='') {
                             html += '<div class="live-tracking-box track-from" data-index="' + i + '" data-lat="' + driver.location.latitude + '" data-lng="' + driver.location.longitude + '">';
@@ -406,54 +448,70 @@
 
                 if(driver!=undefined && driver!=''){
                     if (typeof driver.location.latitude != 'undefined' && typeof driver.location.longitude != 'undefined') {
-                        let iconImg = '';
-                        if (val.flag == "available") {
-                            iconImg = base_url + '/car_available.png';
-                        } else {
-                            iconImg = base_url + '/car_on_trip.png';
-                        }
-                        var content = `
-                        <div class="p-2">
-                            <h6>{{trans('lang.driver_name')}} : ${(driver.firstName || '') + " " + (driver.lastName || '')} </h6>
-                            <h6>{{trans('lang.phone')}} : ${driver.phoneNumber ?? '-'} </h6>
-                        </div>`;
-                        if (mapType == "OFFLINE" ){
-                            var customIcon = L.icon({
-                                iconUrl: iconImg,
-                                iconSize: [25, 25],
-                            });
-                            let marker = L.marker([driver.location.latitude, driver.location.longitude], { icon: customIcon }).addTo(map);
-                            marker.bindPopup(content);
-                            markers[i] = marker;
-                            marker.on('click', function () {
-                                marker.openPopup();
-                            });
-                            setInterval(function () {
-                                locationUpdate(marker, driver);
-                            }, 10000);
-                        } else{
-                            let marker = new google.maps.Marker({
-                                position: new google.maps.LatLng(driver.location.latitude, driver.location.longitude),
-                                icon: {
-                                    url: iconImg,
-                                    scaledSize: new google.maps.Size(25, 25)
-                                },
-                                map: map
-                            });
-                            let infowindow = new google.maps.InfoWindow({
-                                content: content
-                            });
-                            marker.addListener('click', function () {
-                                infowindow.open(map, marker);
-                            });
-                            markers[i] = marker;
-                            marker.setMap(map);
-                            setInterval(function () {
-                                locationUpdate(marker, driver);
-                            }, 10000);
-                        }
+                        mapEntries.push({ index: i, val: val, driver: driver });
                     }
                 }
+            }
+
+            mapEntries.forEach(function (entry) {
+                try {
+                    addDriverMarker(entry.index, entry.val, entry.driver);
+                } catch (e) {
+                    console.warn('Marker skipped for driver', entry.driver && entry.driver.id, e);
+                }
+            });
+        }
+
+        function addDriverMarker(i, val, driver) {
+            if (!map) {
+                return;
+            }
+
+            let iconImg = '';
+            if (val.flag == "available") {
+                iconImg = base_url + '/car_available.png';
+            } else {
+                iconImg = base_url + '/car_on_trip.png';
+            }
+            var content = `
+            <div class="p-2">
+                <h6>{{trans('lang.driver_name')}} : ${(driver.firstName || '') + " " + (driver.lastName || '')} </h6>
+                <h6>{{trans('lang.phone')}} : ${driver.phoneNumber ?? '-'} </h6>
+            </div>`;
+            if (mapType == "OFFLINE" ){
+                var customIcon = L.icon({
+                    iconUrl: iconImg,
+                    iconSize: [25, 25],
+                });
+                let marker = L.marker([driver.location.latitude, driver.location.longitude], { icon: customIcon }).addTo(map);
+                marker.bindPopup(content);
+                markers[i] = marker;
+                marker.on('click', function () {
+                    marker.openPopup();
+                });
+                setInterval(function () {
+                    locationUpdate(marker, driver);
+                }, 10000);
+            } else{
+                let marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(driver.location.latitude, driver.location.longitude),
+                    icon: {
+                        url: iconImg,
+                        scaledSize: new google.maps.Size(25, 25)
+                    },
+                    map: map
+                });
+                let infowindow = new google.maps.InfoWindow({
+                    content: content
+                });
+                marker.addListener('click', function () {
+                    infowindow.open(map, marker);
+                });
+                markers[i] = marker;
+                marker.setMap(map);
+                setInterval(function () {
+                    locationUpdate(marker, driver);
+                }, 10000);
             }
         }
 
