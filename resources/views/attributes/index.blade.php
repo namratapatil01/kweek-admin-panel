@@ -65,7 +65,7 @@
                                             <th>{{ trans('lang.actions') }}</th>
                                         </tr>
                                     </thead>
-                                    <tbody></tbody>
+                                    <tbody id="append_list1"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -76,6 +76,56 @@
     </div>
 </div>
 
+@endsection
+
+@section('style')
+<style>
+.action-btn-circle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-circle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    font-size: 16px !important;
+    border: 1.5px solid currentColor !important;
+    background: #fff !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+.btn-circle i {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    display: inline !important;
+    line-height: 1 !important;
+}
+.btn-circle-edit {
+    color: #00b0ff !important;
+    border-color: #00b0ff !important;
+}
+.btn-circle-edit:hover {
+    background: #00b0ff !important;
+    color: #fff !important;
+}
+.btn-circle-delete {
+    color: #ef5350 !important;
+    border-color: #ef5350 !important;
+}
+.btn-circle-delete:hover {
+    background: #ef5350 !important;
+    color: #fff !important;
+}
+</style>
 @endsection
 
 @section('scripts')
@@ -119,25 +169,17 @@
                 }],
                 language: {
                     zeroRecords: "{{trans('lang.no_record_found')}}",
-                    emptyTable: "{{trans('lang.no_record_found')}}"
+                    emptyTable: "{{trans('lang.no_record_found')}}",
+                    processing: ''
                 },
-                error: function () {
-                    jQuery('#data-table_processing').hide();
+                drawCallback: function () {
+                    $('[data-toggle="tooltip"]').tooltip();
                 }
-            },
-            order: [[0, 'asc']],
-            columnDefs: [{
-                orderable: false,
-                targets: [1]
-            }],
-            language: {
-                zeroRecords: "{{ trans('lang.no_record_found') }}",
-                emptyTable: "{{ trans('lang.no_record_found') }}",
-                processing: ''
-            },
-            drawCallback: function () {
-                $('[data-toggle="tooltip"]').tooltip();
-            }
+            });
+        }).catch(function (err) {
+            console.error('Failed to load item attributes', err);
+            $('.total_count').text(0);
+            jQuery("#data-table_processing").hide();
         });
 
         $(document).on('click', '.attribute-delete', function () {
@@ -159,7 +201,7 @@
                     _method: 'DELETE'
                 },
                 success: function () {
-                    table.ajax.reload();
+                    window.location.reload();
                     jQuery('#data-table_processing').hide();
                 },
                 error: function (xhr) {
@@ -167,10 +209,6 @@
                     alert(xhr.responseJSON?.error || '{{ trans('lang.error') }}');
                 }
             });
-        }).catch(function (err) {
-            console.error('Failed to load item attributes', err);
-            $('.total_count').text(0);
-            jQuery("#data-table_processing").hide();
         });
     });
 
@@ -190,11 +228,12 @@
         var title = val.title || val.name || id;
         var html = '<tr>';
         html += '<td>' + title + '</td>';
-        html += '<td><span class="action-btn"><a href="' + route1 + '" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
+        html += '<td><div class="action-btn-circle-container">';
+        html += '<a href="' + route1 + '" class="btn-circle btn-circle-edit" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
         if (checkDeletePermission) {
-            html += '<a id="' + id + '" name="attribute-delete" class="delete-btn" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
+            html += '<a id="' + id + '" name="attribute-delete" class="btn-circle btn-circle-delete delete-btn" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
         }
-        html += '</span></td></tr>';
+        html += '</div></td></tr>';
         return html;
     }
 

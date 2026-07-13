@@ -4,12 +4,12 @@
 <div class="page-wrapper">
     <div class="row page-titles">
         <div class="col-md-5 align-self-center">
-            <h3 class="text-themecolor">{{ trans('lang.document_plural') }}</h3>
+            <h3 class="text-themecolor">Documents</h3>
         </div>
         <div class="col-md-7 align-self-center">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">{{ trans('lang.dashboard') }}</a></li>
-                <li class="breadcrumb-item active">{{ trans('lang.document_table') }}</li>
+                <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Document List</li>
             </ol>
         </div>
     </div>
@@ -30,20 +30,13 @@
             <span class="count-badge ml-2 total_count">0</span>
         </div>
 
-        <div class="table-list">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card border">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-white border-0 pt-4 pb-2">
-                            <div>
-                                <h4 class="mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">{{ trans('lang.document_table') }}</h4>
-                                <p class="mb-0 text-muted" style="font-size: 13px;">{{ trans('lang.documents_table_text') }}</p>
-                            </div>
-                            <div>
-                                <a href="{{ route('documents.create') }}" class="btn btn-create-document">
-                                    <i class="mdi mdi-plus mr-1" style="font-size: 16px; font-weight: 700;"></i>{{ trans('lang.document_create') }}
-                                </a>
-                            </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-white border-0" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 20px 24px;">
+                        <div>
+                            <h4 class="mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">Document List</h4>
+                            <p class="mb-0 text-muted" style="font-size: 13px;">View and manage all the documents</p>
                         </div>
                         <div class="card-body pt-0">
                             <div class="table-responsive">
@@ -102,9 +95,9 @@ $(function () {
                     var routeEdit = '{{ route("documents.edit", ":id") }}'.replace(':id', id);
 
                     var typeStr = String(row[3] || '');
-                    if (typeStr.toLowerCase() === 'driver') typeStr = '{{ trans("lang.document_driver") }}';
-                    else if (typeStr.toLowerCase() === 'vendor') typeStr = '{{ trans("lang.document_vendor") }}';
-                    else if (typeStr.toLowerCase() === 'owner') typeStr = '{{ trans("lang.document_owner") }}';
+                    if (typeStr.toLowerCase() === 'driver') typeStr = 'Individual Driver';
+                    else if (typeStr.toLowerCase() === 'vendor') typeStr = 'Vendor';
+                    else if (typeStr.toLowerCase() === 'owner') typeStr = 'Owner';
 
                     var isEnabled = String(row[4] || '').indexOf('badge-success') !== -1;
                     var toggleHtml = '<label class="switch"><input type="checkbox" class="doc-enable-toggle" data-id="' + id + '" ' + (isEnabled ? 'checked' : '') + '><span class="slider round"></span></label>';
@@ -137,7 +130,7 @@ $(function () {
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",
             emptyTable: "{{ trans('lang.no_record_found') }}",
-            processing: ''
+            processing: '<i class="fa fa-spinner fa-spin"></i> Loading...'
         }
     });
 
@@ -361,6 +354,54 @@ $(function () {
 input:checked + .slider { background-color: #38a169; }
 input:checked + .slider:before { transform: translateX(22px); }
 .slider.round { border-radius: 24px; }
+/* Circle action buttons - exact match to reference */
+.action-btn-circle-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    border: 1.5px solid;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+.btn-circle i {
+    border: none !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    background: none !important;
+    line-height: 1 !important;
+}
+.btn-circle:hover { transform: scale(1.1); }
+.btn-circle-edit {
+    color: #00b0ff;
+    border-color: #00b0ff;
+    background: #fff;
+}
+.btn-circle-edit:hover { background: #00b0ff; color: #fff !important; }
+.btn-circle-delete {
+    color: #ef5350;
+    border-color: #ef5350;
+    background: #fff;
+}
+.btn-circle-delete:hover { background: #ef5350; color: #fff !important; }
+
+/* Switch toggle styling - exact match to reference */
+.switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #fff; border: 2px solid #ef4444; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: #ef4444; transition: .4s; }
+input:checked + .slider { background-color: #22c55e; border-color: #22c55e; }
+input:checked + .slider:before { transform: translateX(22px); background-color: #fff; }
+.slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
 </style>
 @endsection

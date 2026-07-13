@@ -611,32 +611,24 @@ class VendorController extends Controller
             $query = DB::table('subscription_plans')->where('isEnable', 1);
 
             if ($sectionId) {
-                $query->where(function ($q) use ($sectionId) {
-                    $q->where('sectionId', $sectionId)
-                        ->orWhere('section_id', $sectionId);
-                });
+                $query->where('sectionId', $sectionId);
             }
 
-            $plans = $query->get(['id', 'name', 'expiryDay', 'price', 'sectionId', 'payload'])
-                ->filter(function ($plan) {
-                    $payload = json_decode($plan->payload ?? '{}', true);
-                    if (!is_array($payload)) {
-                        return true;
-                    }
-                    $isCommission = $payload['isCommissionPlan'] ?? false;
-
-                    return $isCommission !== true && $isCommission !== 'true';
-                })
-                ->values()
+            $plans = $query->get(['id', 'name', 'sectionId', 'payload'])
                 ->map(function ($plan) {
+                    $payload = json_decode($plan->payload ?? '{}', true);
+                    if (is_array($payload)) {
+                        $plan->expiryDay = $payload['expiryDay'] ?? null;
+                        $plan->price = $payload['price'] ?? null;
+                        $plan->isCommissionPlan = $payload['isCommissionPlan'] ?? false;
+                    }
                     unset($plan->payload);
-
                     return $plan;
                 });
 
             return response()->json(['plans' => $plans]);
         } catch (\Exception $e) {
-            return response()->json(['plans' => []]);
+            return response()->json(['plans' => [], 'error' => $e->getMessage()]);
         }
     }
 
@@ -653,13 +645,21 @@ class VendorController extends Controller
                 $expiryDate = now()->addDays((int) $plan->expiryDay)->toIso8601String();
             }
 
+            $payload = json_decode($plan->payload ?? '{}', true);
+            $planData = [
+                'id'         => $plan->id,
+                'name'       => $plan->name,
+                'expiryDay'  => $plan->expiryDay,
+                'expiryDate' => $expiryDate,
+                'price'      => $plan->price,
+            ];
+
+            if (is_array($payload)) {
+                $planData = array_merge($payload, $planData);
+            }
+
             return response()->json([
-                'data' => [
-                    'id'         => $plan->id,
-                    'name'       => $plan->name,
-                    'expiryDay'  => $plan->expiryDay,
-                    'expiryDate' => $expiryDate,
-                ],
+                'data' => $planData,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
