@@ -108,59 +108,21 @@
     @section('scripts')
 
     <script type="text/javascript">
-
-        var database = kweekDb();
         var arrayParcelWeight = [];
-
-        var parcel_weight = database.collection('parcel_weight');
         var editCount = 0;
+        var countAddButton = 1;
+        var csrfToken = '{{ csrf_token() }}';
+        var listUrl = "{{ route('parcel_weight.data') }}";
+        var saveUrl = "{{ route('parcel_weight.save') }}";
+        var bulkSaveUrl = "{{ route('parcel_weight.bulk_save') }}";
+        var deleteUrlTemplate = "{{ url('parcel_weight') }}/";
 
-        $(document).ready(function () {
-
-
-            parcel_weight.get().then(async function (snapshots) {
-
-                snapshots.docs.forEach((listval) => {
-                    var parcel_weight_data = listval.data();
-                    var docId = listval.id ? listval.id : parcel_weight_data.id;
-					
-                    var object = {
-                        'id': docId,
-                        'title': parcel_weight_data.title,
-                        'delivery_charge': parcel_weight_data.delivery_charge
-                    };
-
-                    arrayParcelWeight.push(object);
-
-
-                    $(".parcel_weight").show();
-
-                    var html = '<tr>' +
-                        '<td style="width:40%"><input type="text" value="' + parcel_weight_data.title + '" class="form-control" id="title_' + docId + '" onchange="replaceText(`' + docId + '`)"></td>' +
-                        '<td style="width:40%"><input type="text" value="' + parcel_weight_data.delivery_charge + '" class="form-control" id="price_' + docId + '" onchange="replaceText(`' + docId + '`)"></td>';
-
-                    <?php if (in_array('parcel.weight.edit', json_decode(@session('user_permissions'))) || in_array('parcel.weight.delete', json_decode(@session('user_permissions')))) { ?>
-
-                    html += '<td class="action-btn" style="width:20%">';
-                    <?php if (in_array('parcel.weight.edit', json_decode(@session('user_permissions')))){?>
-                    html += '<span class="edit-form-btn"><button type="button" class="btn btn-primary edit_' + docId + '" onclick="editData(`' + editCount + '`,`' + docId + '`)"><i class="fa fa-edit"></i></button>&nbsp;&nbsp</span>';
-                    <?php }
-                    if (in_array('parcel.weight.delete', json_decode(@session('user_permissions')))){
-                    ?>
-                    html += '<span class="delete-btn"><button type="button" class="btn btn-primary delete_' + docId + '" onclick="deleteData(`' + docId + '`)"><i class="fa fa-trash"></i></button></span>';
-                    <?php }?>
-                    html += '</td>';
-                    <?php }?>
-                    html += '</tr>';
-
-                    $('#parcel_weight_table tr:last').after(html);
-                    editCount++;
-                    $('#data-table_processing').hide();
-                });
-
-            });
-        });
-
+        function generateId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+            }
+            return 'pw_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        }
 
         function updateParcelWeightArray(id, title, price) {
             for (var i = 0; i < arrayParcelWeight.length; i++) {
@@ -183,11 +145,59 @@
             updateParcelWeightArray(id, $("#title_" + id).val(), $("#price_" + id).val());
         }
 
+        function renderParcelWeightRow(parcelWeightData) {
+            var docId = parcelWeightData.id;
+            updateParcelWeightArray(docId, parcelWeightData.title, parcelWeightData.delivery_charge);
+            $(".parcel_weight").show();
 
-        var countAddButton = 1;
+            var html = '<tr>' +
+                '<td style="width:40%"><input type="text" value="' + parcelWeightData.title + '" class="form-control" id="title_' + docId + '" onchange="replaceText(`' + docId + '`)"></td>' +
+                '<td style="width:40%"><input type="text" value="' + parcelWeightData.delivery_charge + '" class="form-control" id="price_' + docId + '" onchange="replaceText(`' + docId + '`)"></td>';
+
+            <?php if (in_array('parcel.weight.edit', json_decode(@session('user_permissions'))) || in_array('parcel.weight.delete', json_decode(@session('user_permissions')))) { ?>
+            html += '<td class="action-btn" style="width:20%">';
+            <?php if (in_array('parcel.weight.edit', json_decode(@session('user_permissions')))){?>
+            html += '<span class="edit-form-btn"><button type="button" class="btn btn-primary edit_' + docId + '" onclick="editData(`' + editCount + '`,`' + docId + '`)"><i class="fa fa-edit"></i></button>&nbsp;&nbsp</span>';
+            <?php }
+            if (in_array('parcel.weight.delete', json_decode(@session('user_permissions')))){
+            ?>
+            html += '<span class="delete-btn"><button type="button" class="btn btn-primary delete_' + docId + '" onclick="deleteData(`' + docId + '`)"><i class="fa fa-trash"></i></button></span>';
+            <?php }?>
+            html += '</td>';
+            <?php }?>
+            html += '</tr>';
+
+            $('#parcel_weight_table tr:last').after(html);
+            editCount++;
+        }
+
+        function loadParcelWeights() {
+            $.ajax({
+                url: listUrl,
+                method: 'GET',
+                dataType: 'json',
+                cache: false,
+                success: function (response) {
+                    arrayParcelWeight = [];
+                    editCount = 0;
+                    $('#parcel_weight_table tr:not(:first)').remove();
+
+                    (response.data || []).forEach(function (item) {
+                        renderParcelWeightRow(item);
+                    });
+                },
+                error: function () {
+                    $(".error_top").show().html("<p>Failed to load parcel weights.</p>");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            loadParcelWeights();
+        });
 
         function addMoreButton() {
-            count = countAddButton;
+            var count = countAddButton;
             $(".parcel_weight").show();
 
             $('#parcel_weight_table tr:last').after('<tr>' +
@@ -202,41 +212,25 @@
         function saveData(count) {
             var title = $("#title_" + count).val();
             var price = $("#price_" + count).val();
-			
+
             if (title == "") {
-                $(".error_top").show();
-                $(".error_top").html("");
-                $(".error_top").append("<p>{{trans('lang.parcel_title_error')}}</p>");
+                $(".error_top").show().html("<p>{{trans('lang.parcel_title_error')}}</p>");
                 window.scrollTo(0, 0);
-            } else if (price == "") {
-                $(".error_top").show();
-                $(".error_top").html("");
-                $(".error_top").append("<p>{{trans('lang.parcel_price_error')}}</p>");
-                window.scrollTo(0, 0);
-            } else {
-                $(".error_top").hide();
-                $(".error_top").html("");
-                var alovelaceDocumentRef = database.collection('vendor_orders').doc();
-				
-                if (alovelaceDocumentRef.id) {
-                    id_rendom = alovelaceDocumentRef.id;
-                }
-                var object = {
-                    'id': id_rendom,
-                    'title': title,
-                    'delivery_charge': price
-                };
-
-
-              
-				
-				arrayParcelWeight.push(object);
-				
-                $(".save_" + count).hide();
-                $("#title_" + count).attr('disabled', "true");
-                $("#price_" + count).attr('disabled', "true");
-
+                return;
             }
+            if (price == "") {
+                $(".error_top").show().html("<p>{{trans('lang.parcel_price_error')}}</p>");
+                window.scrollTo(0, 0);
+                return;
+            }
+
+            $(".error_top").hide().html("");
+            var newId = generateId();
+            updateParcelWeightArray(newId, title, price);
+
+            $(".save_" + count).hide();
+            $("#title_" + count).attr('id', 'title_' + newId).attr('disabled', true);
+            $("#price_" + count).attr('id', 'price_' + newId).attr('disabled', true);
         }
 
         function editData(count, actionId) {
@@ -244,38 +238,41 @@
                 alert(doNotUpdateAlert);
                 return false;
             }
-			
+
             var title = $("#title_" + actionId).val();
             var price = $("#price_" + actionId).val();
-			
+
             if (title == "") {
-                $(".error_top").show();
-                $(".error_top").html("");
-                $(".error_top").append("<p>{{trans('lang.parcel_title_error')}}</p>");
+                $(".error_top").show().html("<p>{{trans('lang.parcel_title_error')}}</p>");
                 window.scrollTo(0, 0);
-            } else if (price == "") {
-                $(".error_top").show();
-                $(".error_top").html("");
-                $(".error_top").append("<p>{{trans('lang.parcel_price_error')}}</p>");
+                return;
+            }
+            if (price == "") {
+                $(".error_top").show().html("<p>{{trans('lang.parcel_price_error')}}</p>");
                 window.scrollTo(0, 0);
-            } else {
-                $(".error_top").hide();
-                $(".error_top").html("");
-                var object = {
-                    'id': actionId,
-                    'title': title,
-                    'delivery_charge': price
-                };
-				
-					database.collection('parcel_weight').doc(actionId).update({
-						 'id': actionId,
-						 'title': title,
-						 'delivery_charge': price
-					});
-                updateParcelWeightArray(actionId, title, price);
-				
+                return;
             }
 
+            $(".error_top").hide().html("");
+
+            $.ajax({
+                url: saveUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: csrfToken,
+                    id: actionId,
+                    title: title,
+                    delivery_charge: price
+                },
+                success: function () {
+                    updateParcelWeightArray(actionId, title, price);
+                    $('.edit_' + actionId).html("<i class='fa fa-check'></i>");
+                },
+                error: function (xhr) {
+                    $(".error_top").show().html("<p>" + (xhr.responseJSON?.message || 'Failed to update parcel weight.') + "</p>");
+                }
+            });
         }
 
         function deleteData(actionId) {
@@ -283,18 +280,30 @@
                 alert(doNotDeleteAlert);
                 return false;
             }
-			
-            arrayParcelWeight = arrayParcelWeight.filter(function (item) {
-                return item.id != actionId;
-            });
 
-            database.collection('parcel_weight').doc(actionId).delete().then(function (result) {
-                window.location.href = '{{ url()->current() }}';
+            if (!confirm('{{ trans("lang.delete_alert") }}')) {
+                return false;
+            }
+
+            $.ajax({
+                url: deleteUrlTemplate + actionId,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: csrfToken,
+                    _method: 'DELETE'
+                },
+                success: function () {
+                    window.location.href = '{{ route("parcel_weight") }}';
+                },
+                error: function (xhr) {
+                    $(".error_top").show().html("<p>" + (xhr.responseJSON?.message || 'Failed to delete parcel weight.') + "</p>");
+                }
             });
         }
 
         $(document).on('click', '.save-form-btn', function () {
-            var writes = [];
+            var items = [];
 
             for (var i = 0; i < arrayParcelWeight.length; i++) {
                 var item = arrayParcelWeight[i];
@@ -302,19 +311,29 @@
                 var latestPrice = $("#price_" + item['id']).length ? $("#price_" + item['id']).val() : item['delivery_charge'];
 
                 updateParcelWeightArray(item['id'], latestTitle, latestPrice);
-
-                writes.push(database.collection('parcel_weight').doc(item['id']).set({
-                    'id': arrayParcelWeight[i]['id'],
-                    'title': latestTitle,
-                    'delivery_charge': latestPrice
-                }));
+                items.push({
+                    id: item['id'],
+                    title: latestTitle,
+                    delivery_charge: latestPrice
+                });
             }
 
-            Promise.all(writes).then(function () {
-                    window.location.href = '{{ route("parcel_weight")}}';
-                });
+            $.ajax({
+                url: bulkSaveUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _token: csrfToken,
+                    items: items
+                },
+                success: function () {
+                    window.location.href = '{{ route("parcel_weight") }}';
+                },
+                error: function (xhr) {
+                    $(".error_top").show().html("<p>" + (xhr.responseJSON?.message || 'Failed to save parcel weights.') + "</p>");
+                }
+            });
         });
-
     </script>
 
     @endsection

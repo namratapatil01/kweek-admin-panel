@@ -34,7 +34,7 @@
 
                 <li class="breadcrumb-item">
 
-                    {{trans('lang.cab_service')}}
+                    {{trans('lang.parcel_plural')}}
 
                 </li>
 
@@ -101,9 +101,9 @@
 
 
                     <div class="col-lg-8">
-                        <div class="cab-map-wrap">
+                        <div class="padala-map-wrap">
                             <div id="map"></div>
-                            <div id="legend" class="cab-map-legend"></div>
+                            <div id="legend" class="padala-map-legend"></div>
                         </div>
                     </div>
 
@@ -128,7 +128,7 @@
             cursor: pointer;
         }
 
-        .cab-map-wrap {
+        .padala-map-wrap {
             position: relative;
             border-radius: 12px;
             overflow: hidden;
@@ -142,7 +142,7 @@
             min-height: 450px;
         }
 
-        .cab-map-legend {
+        .padala-map-legend {
             font-family: Arial, sans-serif;
             background: #fff;
             padding: 10px 14px;
@@ -154,7 +154,7 @@
             font-size: 13px;
         }
 
-        .cab-map-legend h3 {
+        .padala-map-legend h3 {
             margin: 0 0 6px;
             font-size: 14px;
             font-weight: 600;
@@ -203,27 +203,27 @@
         var activeInfoWindow = null;
         var base_url = '{!! asset('/images/') !!}';
         var mapType = 'ONLINE';
-        var section_id = getCookie('section_id') || '';
+        var section_id = '6';
         var pendingMapData = null;
         var godsEyeMapReady = false;
         var mapDataLoaded = false;
-        var lastCabMapData = [];
+        var lastPadalaMapData = [];
         var mapSettingsUrl = "{{ route('map.settings') }}";
         var driverLocationsUrl = "{{ route('map.drivers.locations') }}";
-        var serviceType = 'cab-service';
+        var serviceType = 'parcel_delivery';
         var locationRefreshTimer = null;
 
         window.gm_authFailure = function () {
             if (mapType === "OFFLINE") {
                 return;
             }
-            console.warn('Google Maps failed to load, using OpenStreetMap for cab tracking');
+            console.warn('Google Maps failed to load, using OpenStreetMap for padala tracking');
             mapType = "OFFLINE";
             godsEyeMapReady = false;
-            InitializeCabMap();
-            if (lastCabMapData.length) {
+            InitializePadalaMap(true);
+            if (lastPadalaMapData.length) {
                 $(".live-tracking-list").empty();
-                renderCabMapData(lastCabMapData);
+                renderPadalaMapData(lastPadalaMapData);
                 fitMapToMarkers();
             }
         };
@@ -244,7 +244,7 @@
             });
         }
 
-        function startCabLocationRefresh() {
+        function startPadalaLocationRefresh() {
             if (locationRefreshTimer) {
                 clearInterval(locationRefreshTimer);
             }
@@ -299,16 +299,15 @@
             return { lat: default_lat, lng: default_lng };
         }
 
-        function fetchCabMapData() {
+        function fetchPadalaMapData() {
             if (mapDataLoaded) {
                 return;
             }
             mapDataLoaded = true;
 
             $.ajax({
-                url: "{{ route('map.cab.data') }}",
+                url: "{{ route('map.padala.data') }}",
                 method: 'GET',
-                data: { section_id: section_id },
                 dataType: 'json',
                 cache: false,
                 success: function (res) {
@@ -317,11 +316,11 @@
                     var ordersDriverIds = [];
                     var globalDrivers = {};
 
-                    (res.rides || []).forEach(function (ride) {
-                        ride.flag = 'in_transit';
-                        orders.push(ride);
-                        if (ride.driver && ride.driver.id) {
-                            ordersDriverIds.push(ride.driver.id);
+                    (res.orders || []).forEach(function (order) {
+                        order.flag = 'in_transit';
+                        orders.push(order);
+                        if (order.driver && order.driver.id) {
+                            ordersDriverIds.push(order.driver.id);
                         }
                     });
 
@@ -338,18 +337,18 @@
                     });
 
                     window.globalDrivers = globalDrivers;
-                    lastCabMapData = $.merge(orders, drivers);
-                    pendingMapData = lastCabMapData;
+                    lastPadalaMapData = $.merge(orders, drivers);
+                    pendingMapData = lastPadalaMapData;
                     if (res.section && res.section.name) {
                         $('.section_name').text(res.section.name);
                     }
                     $(".live-tracking-list").empty();
-                    renderCabMapData(pendingMapData);
+                    renderPadalaMapData(pendingMapData);
                     fitMapToMarkers();
                 },
                 error: function (xhr) {
                     mapDataLoaded = false;
-                    console.error('Failed to load cab map data', xhr && xhr.status, xhr && xhr.responseText);
+                    console.error('Failed to load padala map data', xhr && xhr.status, xhr && xhr.responseText);
                     $(".live-tracking-list").html('<div class="p-3 text-danger">Failed to load drivers. Please refresh.</div>');
                 }
             });
@@ -382,15 +381,15 @@
             }
 
             try {
-                InitializeCabMap();
+                InitializePadalaMap();
             } catch (e) {
                 console.error('Map init failed, falling back to OSM', e);
                 mapType = "OFFLINE";
                 godsEyeMapReady = false;
-                InitializeCabMap();
+                InitializePadalaMap();
             }
 
-            fetchCabMapData();
+            fetchPadalaMapData();
 
             setTimeout(function () {
                 $(".sidebartoggler").click();
@@ -426,15 +425,38 @@
             });
         });
 
-        function InitializeCabMap() {
-            if (godsEyeMapReady && map) {
-                return;
+        function InitializePadalaMap(forceReinit) {
+            var canUseGoogle = typeof google !== 'undefined' && google.maps;
+            if (godsEyeMapReady && map && !forceReinit) {
+                if (mapType === 'OFFLINE' && canUseGoogle) {
+                    forceReinit = true;
+                } else {
+                    return;
+                }
+            }
+
+            if (forceReinit) {
+                godsEyeMapReady = false;
+                markers = [];
+                markersByDriverId = {};
+                if (map && map.remove) {
+                    map.remove();
+                    map = null;
+                }
+                if (typeof L !== 'undefined' && L.DomUtil.get('map') != null) {
+                    L.DomUtil.get('map')._leaflet_id = null;
+                }
+                var legendHost = document.querySelector('.padala-map-wrap');
+                var legendEl = document.getElementById('legend');
+                if (legendHost && legendEl && !legendHost.contains(legendEl)) {
+                    legendHost.appendChild(legendEl);
+                }
             }
 
             var center = getDefaultMapCenter();
             var legend = document.getElementById('legend');
 
-            if (mapType == "OFFLINE" || typeof google === 'undefined' || !google.maps) {
+            if (mapType == "OFFLINE" || !canUseGoogle) {
                 mapType = "OFFLINE";
 
                 if (map && map.remove) {
@@ -450,6 +472,7 @@
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
             } else {
+                mapType = 'ONLINE';
                 var myLatlng = new google.maps.LatLng(center.lat, center.lng);
                 map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 10,
@@ -486,9 +509,21 @@
             } else {
                 map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
             }
+
+            if (pendingMapData && pendingMapData.length) {
+                $(".live-tracking-list").empty();
+                renderPadalaMapData(pendingMapData);
+                fitMapToMarkers();
+            }
         }
 
-        window.godsEyeMapInit = InitializeCabMap;
+        window.godsEyeMapInit = function () {
+            if (mapType === 'OFFLINE' && typeof google !== 'undefined' && google.maps) {
+                InitializePadalaMap(true);
+            } else if (!godsEyeMapReady) {
+                InitializePadalaMap(false);
+            }
+        };
 
         function hasValidCoords(location) {
             if (!location || location.latitude == null || location.longitude == null) {
@@ -530,22 +565,8 @@
             return { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
         }
 
-        function getMarkerLatLng(point) {
-            if (!point) {
-                return null;
-            }
-            if (typeof point.lat === 'function') {
-                return { lat: point.lat(), lng: point.lng() };
-            }
-            return { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
-        }
-
         function shouldShowDriverOnMap(lat, lng) {
-            if (!hasValidCoords({ latitude: lat, longitude: lng })) {
-                return false;
-            }
-            var center = getDefaultMapCenter();
-            return distanceKm(center.lat, center.lng, parseFloat(lat), parseFloat(lng)) <= 400;
+            return hasValidCoords({ latitude: lat, longitude: lng });
         }
 
         function focusDriverOnMap(driverId) {
@@ -584,13 +605,6 @@
             }
 
             var center = getDefaultMapCenter();
-            var nearby = validMarkers.filter(function (marker) {
-                var pos = mapType === 'OFFLINE' ? getMarkerLatLng(marker.getLatLng()) : getMarkerLatLng(marker.getPosition());
-                return pos && distanceKm(center.lat, center.lng, pos.lat, pos.lng) <= 400;
-            });
-            if (nearby.length) {
-                validMarkers = nearby;
-            }
 
             if (mapType == "OFFLINE") {
                 var group = L.featureGroup(validMarkers);
@@ -607,16 +621,16 @@
             });
             map.fitBounds(bounds, 48);
             google.maps.event.addListenerOnce(map, 'idle', function () {
-                if (map.getZoom() < 10) {
+                if (map.getZoom() < 5) {
                     map.setCenter(new google.maps.LatLng(center.lat, center.lng));
-                    map.setZoom(11);
+                    map.setZoom(6);
                 } else if (map.getZoom() > 15) {
                     map.setZoom(15);
                 }
             });
         }
 
-        function renderCabMapData(data) {
+        function renderPadalaMapData(data) {
             $(".live-tracking-list").empty();
             markers = [];
             markersByDriverId = {};
@@ -666,7 +680,7 @@
                             html += '<h4 class="user-name">{{trans("lang.user_name")}} : ' + user.firstName + ' ' + user.lastName + '</h4>';
                         }
                         html += '<span class="badge badge-danger">In Transit</span>';
-                        html += '&nbsp;&nbsp;<a href="/rides/edit/' + val.id + '" class="badge badge-info" target="_blank">{{trans("lang.order_id")}} : ' + String(val.id).substring(0, 7) + '</a>';
+                        html += '&nbsp;&nbsp;<a href="/parcel_orders/edit/' + val.id + '" class="badge badge-info" target="_blank">{{trans("lang.order_id")}} : ' + String(val.id).substring(0, 7) + '</a>';
                         html += '</div></div>';
                     }
                 } else if (driver.firstName || driver.lastName) {
@@ -696,16 +710,16 @@
                     return;
                 }
                 try {
-                    addCabDriverMarker(entry.index, entry.val, entry.driver, entry.driverId);
+                    addPadalaDriverMarker(entry.index, entry.val, entry.driver, entry.driverId);
                 } catch (e) {
-                    console.warn('Cab marker skipped for driver', entry.driverId, e);
+                        console.warn('Padala marker skipped for driver', entry.driverId, e);
                 }
             });
 
-            startCabLocationRefresh();
+            startPadalaLocationRefresh();
         }
 
-        function addCabDriverMarker(i, val, driver, driverId) {
+        function addPadalaDriverMarker(i, val, driver, driverId) {
             if (!map) {
                 return;
             }

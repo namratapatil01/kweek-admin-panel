@@ -203,11 +203,11 @@
         var activeInfoWindow = null;
         var base_url = '{!! asset('/images/') !!}';
         var mapType = 'ONLINE';
-        var section_id = getCookie('section_id') || '';
+        var section_id = '8';
         var pendingMapData = null;
         var godsEyeMapReady = false;
         var mapDataLoaded = false;
-        var lastCabMapData = [];
+        var lastTodaMapData = [];
         var mapSettingsUrl = "{{ route('map.settings') }}";
         var driverLocationsUrl = "{{ route('map.drivers.locations') }}";
         var serviceType = 'cab-service';
@@ -217,13 +217,13 @@
             if (mapType === "OFFLINE") {
                 return;
             }
-            console.warn('Google Maps failed to load, using OpenStreetMap for cab tracking');
+            console.warn('Google Maps failed to load, using OpenStreetMap for TODA tracking');
             mapType = "OFFLINE";
             godsEyeMapReady = false;
-            InitializeCabMap();
-            if (lastCabMapData.length) {
+            InitializeTodaMap();
+            if (lastTodaMapData.length) {
                 $(".live-tracking-list").empty();
-                renderCabMapData(lastCabMapData);
+                renderTodaMapData(lastTodaMapData);
                 fitMapToMarkers();
             }
         };
@@ -244,7 +244,7 @@
             });
         }
 
-        function startCabLocationRefresh() {
+        function startTodaLocationRefresh() {
             if (locationRefreshTimer) {
                 clearInterval(locationRefreshTimer);
             }
@@ -299,16 +299,15 @@
             return { lat: default_lat, lng: default_lng };
         }
 
-        function fetchCabMapData() {
+        function fetchTodaMapData() {
             if (mapDataLoaded) {
                 return;
             }
             mapDataLoaded = true;
 
             $.ajax({
-                url: "{{ route('map.cab.data') }}",
+                url: "{{ route('map.toda.data') }}",
                 method: 'GET',
-                data: { section_id: section_id },
                 dataType: 'json',
                 cache: false,
                 success: function (res) {
@@ -338,18 +337,18 @@
                     });
 
                     window.globalDrivers = globalDrivers;
-                    lastCabMapData = $.merge(orders, drivers);
-                    pendingMapData = lastCabMapData;
+                    lastTodaMapData = $.merge(orders, drivers);
+                    pendingMapData = lastTodaMapData;
                     if (res.section && res.section.name) {
                         $('.section_name').text(res.section.name);
                     }
                     $(".live-tracking-list").empty();
-                    renderCabMapData(pendingMapData);
+                    renderTodaMapData(pendingMapData);
                     fitMapToMarkers();
                 },
                 error: function (xhr) {
                     mapDataLoaded = false;
-                    console.error('Failed to load cab map data', xhr && xhr.status, xhr && xhr.responseText);
+                    console.error('Failed to load TODA map data', xhr && xhr.status, xhr && xhr.responseText);
                     $(".live-tracking-list").html('<div class="p-3 text-danger">Failed to load drivers. Please refresh.</div>');
                 }
             });
@@ -382,15 +381,15 @@
             }
 
             try {
-                InitializeCabMap();
+                InitializeTodaMap();
             } catch (e) {
                 console.error('Map init failed, falling back to OSM', e);
                 mapType = "OFFLINE";
                 godsEyeMapReady = false;
-                InitializeCabMap();
+                InitializeTodaMap();
             }
 
-            fetchCabMapData();
+            fetchTodaMapData();
 
             setTimeout(function () {
                 $(".sidebartoggler").click();
@@ -426,7 +425,7 @@
             });
         });
 
-        function InitializeCabMap() {
+        function InitializeTodaMap() {
             if (godsEyeMapReady && map) {
                 return;
             }
@@ -488,7 +487,7 @@
             }
         }
 
-        window.godsEyeMapInit = InitializeCabMap;
+        window.godsEyeMapInit = InitializeTodaMap;
 
         function hasValidCoords(location) {
             if (!location || location.latitude == null || location.longitude == null) {
@@ -616,7 +615,7 @@
             });
         }
 
-        function renderCabMapData(data) {
+        function renderTodaMapData(data) {
             $(".live-tracking-list").empty();
             markers = [];
             markersByDriverId = {};
@@ -696,16 +695,16 @@
                     return;
                 }
                 try {
-                    addCabDriverMarker(entry.index, entry.val, entry.driver, entry.driverId);
+                    addTodaDriverMarker(entry.index, entry.val, entry.driver, entry.driverId);
                 } catch (e) {
-                    console.warn('Cab marker skipped for driver', entry.driverId, e);
+                        console.warn('TODA marker skipped for driver', entry.driverId, e);
                 }
             });
 
-            startCabLocationRefresh();
+            startTodaLocationRefresh();
         }
 
-        function addCabDriverMarker(i, val, driver, driverId) {
+        function addTodaDriverMarker(i, val, driver, driverId) {
             if (!map) {
                 return;
             }
