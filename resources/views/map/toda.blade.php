@@ -220,11 +220,11 @@
             console.warn('Google Maps failed to load, using OpenStreetMap for TODA tracking');
             mapType = "OFFLINE";
             godsEyeMapReady = false;
-            InitializeTodaMap();
+            InitializeTodaMap(true);
             if (lastTodaMapData.length) {
                 $(".live-tracking-list").empty();
                 renderTodaMapData(lastTodaMapData);
-                fitMapToMarkers();
+                fitTodaMapToTaxiMarkers();
             }
         };
 
@@ -270,6 +270,7 @@
                             };
                         }
                         window.globalDrivers[driver.id] = driver;
+                        resolveTodaDriverCoords(driver);
 
                         if (!hasValidCoords(driver.location)) {
                             return;
@@ -277,6 +278,10 @@
 
                         var marker = markersByDriverId[driver.id];
                         if (!marker) {
+                            var driverFlag = (window.globalDrivers[driver.id] && window.globalDrivers[driver.id].flag) || 'available';
+                            createTodaTaxiMapMarker(driver.id, { flag: driverFlag }, driver, driver.id);
+                            updateTodaDriverListEntry(driver.id, driver, driverFlag);
+                            fitTodaMapToTaxiMarkers();
                             return;
                         }
 
@@ -287,7 +292,7 @@
                         }
                     });
                 });
-            }, 10000);
+            }, 5000);
         }
 
         function getDefaultMapCenter() {
@@ -344,7 +349,7 @@
                     }
                     $(".live-tracking-list").empty();
                     renderTodaMapData(pendingMapData);
-                    fitMapToMarkers();
+                    fitTodaMapToTaxiMarkers();
                 },
                 error: function (xhr) {
                     mapDataLoaded = false;
@@ -386,7 +391,7 @@
                 console.error('Map init failed, falling back to OSM', e);
                 mapType = "OFFLINE";
                 godsEyeMapReady = false;
-                InitializeTodaMap();
+                InitializeTodaMap(true);
             }
 
             fetchTodaMapData();
@@ -425,15 +430,38 @@
             });
         });
 
-        function InitializeTodaMap() {
-            if (godsEyeMapReady && map) {
-                return;
+        function InitializeTodaMap(forceReinit) {
+            var canUseGoogle = typeof google !== 'undefined' && google.maps;
+            if (godsEyeMapReady && map && !forceReinit) {
+                if (mapType === 'OFFLINE' && canUseGoogle) {
+                    forceReinit = true;
+                } else {
+                    return;
+                }
+            }
+
+            if (forceReinit) {
+                godsEyeMapReady = false;
+                markers = [];
+                markersByDriverId = {};
+                if (map && map.remove) {
+                    map.remove();
+                    map = null;
+                }
+                if (typeof L !== 'undefined' && L.DomUtil.get('map') != null) {
+                    L.DomUtil.get('map')._leaflet_id = null;
+                }
+                var legendHost = document.querySelector('.cab-map-wrap');
+                var legendEl = document.getElementById('legend');
+                if (legendHost && legendEl && !legendHost.contains(legendEl)) {
+                    legendHost.appendChild(legendEl);
+                }
             }
 
             var center = getDefaultMapCenter();
             var legend = document.getElementById('legend');
 
-            if (mapType == "OFFLINE" || typeof google === 'undefined' || !google.maps) {
+            if (mapType == "OFFLINE" || !canUseGoogle) {
                 mapType = "OFFLINE";
 
                 if (map && map.remove) {
@@ -449,11 +477,14 @@
                     attribution: '© OpenStreetMap'
                 }).addTo(map);
             } else {
+                mapType = 'ONLINE';
                 var myLatlng = new google.maps.LatLng(center.lat, center.lng);
                 map = new google.maps.Map(document.getElementById("map"), {
                     zoom: 10,
                     center: myLatlng,
                     streetViewControl: false,
+                    mapTypeControl: true,
+                    fullscreenControl: true,
                     mapTypeId: google.maps.MapTypeId.ROADMAP
                 });
             }
@@ -485,9 +516,21 @@
             } else {
                 map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
             }
+
+            if (pendingMapData && pendingMapData.length) {
+                $(".live-tracking-list").empty();
+                renderTodaMapData(pendingMapData);
+                fitTodaMapToTaxiMarkers();
+            }
         }
 
-        window.godsEyeMapInit = InitializeTodaMap;
+        window.godsEyeMapInit = function () {
+            if (mapType === 'OFFLINE' && typeof google !== 'undefined' && google.maps) {
+                InitializeTodaMap(true);
+            } else if (!godsEyeMapReady) {
+                InitializeTodaMap(false);
+            }
+        };
 
         function hasValidCoords(location) {
             if (!location || location.latitude == null || location.longitude == null) {
@@ -529,14 +572,164 @@
             return { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
         }
 
-        function getMarkerLatLng(point) {
-            if (!point) {
+        function resolveTodaDriverCoords(driver) {
+            if (!driver) {
                 return null;
             }
-            if (typeof point.lat === 'function') {
-                return { lat: point.lat(), lng: point.lng() };
+
+            var lat = driver.latitude;
+            var lng = driver.longitude;
+
+            if (driver.location) {
+                lat = lat != null ? lat : driver.location.latitude;
+                lng = lng != null ? lng : driver.location.longitude;
             }
-            return { lat: parseFloat(point.lat), lng: parseFloat(point.lng) };
+
+            if ((lat == null || lng == null) && driver.coordinates) {
+                lat = lat != null ? lat : driver.coordinates.latitude;
+                lng = lng != null ? lng : driver.coordinates.longitude;
+            }
+
+            if ((lat == null || lng == null) && driver.g && driver.g.geopoint) {
+                lat = lat != null ? lat : driver.g.geopoint.latitude;
+                lng = lng != null ? lng : driver.g.geopoint.longitude;
+            }
+
+            if (lat != null && lng != null) {
+                driver.latitude = parseFloat(lat);
+                driver.longitude = parseFloat(lng);
+                driver.location = {
+                    latitude: driver.latitude,
+                    longitude: driver.longitude
+                };
+            }
+
+            return driver.location;
+        }
+
+        function getTodaTaxiMarkerIcon(flag) {
+            return flag === 'available' ? base_url + '/car_available.png' : base_url + '/car_on_trip.png';
+        }
+
+        function canPlaceTodaTaxiMarker(lat, lng) {
+            return hasValidCoords({ latitude: lat, longitude: lng });
+        }
+
+        function createTodaTaxiMapMarker(i, val, driver, driverId) {
+            if (!map || !driver || !driver.location) {
+                return null;
+            }
+
+            resolveTodaDriverCoords(driver);
+            if (!canPlaceTodaTaxiMarker(driver.location.latitude, driver.location.longitude)) {
+                return null;
+            }
+
+            var iconImg = getTodaTaxiMarkerIcon(val.flag);
+            var content = '<div class="p-2">' +
+                '<h6>{{trans("lang.driver_name")}} : ' + (driver.firstName || '') + ' ' + (driver.lastName || '') + '</h6>' +
+                '<h6>{{trans("lang.phone")}} : ' + (driver.phoneNumber || '-') + '</h6>' +
+                '<h6>{{trans("lang.car_number")}} : ' + (driver.carNumber || '-') + '</h6>' +
+                '<h6>{{trans("lang.car_name")}} : ' + (driver.carName || '-') + '</h6>' +
+                '</div>';
+
+            if (mapType == "OFFLINE") {
+                var customIcon = L.icon({ iconUrl: iconImg, iconSize: [36, 36] });
+                var marker = L.marker([driver.location.latitude, driver.location.longitude], { icon: customIcon }).addTo(map);
+                marker.bindPopup(content);
+                markers[i] = marker;
+                markersByDriverId[driverId] = marker;
+                return marker;
+            }
+
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(driver.location.latitude, driver.location.longitude),
+                icon: { url: iconImg, scaledSize: new google.maps.Size(36, 36) },
+                map: map,
+                title: (driver.firstName || '') + ' ' + (driver.lastName || '')
+            });
+            var infowindow = new google.maps.InfoWindow({ content: content });
+            marker.__infowindow = infowindow;
+            marker.addListener('click', function () {
+                if (activeInfoWindow) {
+                    activeInfoWindow.close();
+                }
+                infowindow.open(map, marker);
+                activeInfoWindow = infowindow;
+                $('.live-tracking-box').removeClass('is-active');
+                $('.live-tracking-box[data-driver-id="' + driverId + '"]').addClass('is-active');
+            });
+            markers[i] = marker;
+            markersByDriverId[driverId] = marker;
+            return marker;
+        }
+
+        function updateTodaDriverListEntry(driverId, driver, flag) {
+            if (!driverId || !driver || !hasValidCoords(driver.location)) {
+                return;
+            }
+
+            var $box = $('.live-tracking-box[data-driver-id="' + driverId + '"]');
+            if (!$box.length) {
+                return;
+            }
+
+            var iconImg = getTodaTaxiMarkerIcon(flag || 'available');
+            $box.addClass('track-from')
+                .attr('data-lat', driver.location.latitude)
+                .attr('data-lng', driver.location.longitude)
+                .attr('title', 'Click to view on map');
+            $box.find('.listicon').html('<img src="' + iconImg + '" alt="">');
+            $box.find('.toda-location-hint').remove();
+        }
+
+        function renderTodaTaxiMarkersOnMap(mapEntries) {
+            mapEntries.forEach(function (entry) {
+                resolveTodaDriverCoords(entry.driver);
+                var pos = entry.driver.location;
+                if (!canPlaceTodaTaxiMarker(pos.latitude, pos.longitude)) {
+                    return;
+                }
+                try {
+                    createTodaTaxiMapMarker(entry.index, entry.val, entry.driver, entry.driverId);
+                } catch (e) {
+                    console.warn('TODA taxi marker skipped for driver', entry.driverId, e);
+                }
+            });
+        }
+
+        function fitTodaMapToTaxiMarkers() {
+            var validMarkers = Object.keys(markersByDriverId).map(function (id) {
+                return markersByDriverId[id];
+            }).filter(function (m) { return !!m; });
+            if (!validMarkers.length || !map) {
+                return;
+            }
+
+            var center = getDefaultMapCenter();
+
+            if (mapType == "OFFLINE") {
+                var group = L.featureGroup(validMarkers);
+                map.fitBounds(group.getBounds(), { padding: [40, 40] });
+                if (map.getZoom() > 14) {
+                    map.setZoom(14);
+                }
+                return;
+            }
+
+            var bounds = new google.maps.LatLngBounds();
+            validMarkers.forEach(function (marker) {
+                bounds.extend(marker.getPosition());
+            });
+            map.fitBounds(bounds, 48);
+            google.maps.event.addListenerOnce(map, 'idle', function () {
+                if (map.getZoom() < 5) {
+                    map.setCenter(new google.maps.LatLng(center.lat, center.lng));
+                    map.setZoom(6);
+                } else if (map.getZoom() > 15) {
+                    map.setZoom(15);
+                }
+            });
         }
 
         function shouldShowDriverOnMap(lat, lng) {
@@ -640,12 +833,7 @@
                     continue;
                 }
 
-                if (!driver.location) {
-                    driver.location = {
-                        latitude: driver.latitude,
-                        longitude: driver.longitude
-                    };
-                }
+                resolveTodaDriverCoords(driver);
 
                 hasCoords = hasValidCoords(driver.location);
                 if (hasCoords) {
@@ -677,6 +865,9 @@
                         : '<span class="listicon listicon-off"></span>';
                     html += '<h3 class="drier-name">{{trans("lang.driver_name")}} : ' + driver.firstName + ' ' + driver.lastName + '</h3>';
                     html += '<span class="badge badge-success">Available</span>';
+                    if (!hasCoords) {
+                        html += ' <span class="badge badge-secondary toda-location-hint">No GPS</span>';
+                    }
                     html += '</div></div>';
                 }
 
@@ -689,17 +880,7 @@
                 }
             }
 
-            mapEntries.forEach(function (entry) {
-                var pos = entry.driver.location;
-                if (!shouldShowDriverOnMap(pos.latitude, pos.longitude)) {
-                    return;
-                }
-                try {
-                    addTodaDriverMarker(entry.index, entry.val, entry.driver, entry.driverId);
-                } catch (e) {
-                        console.warn('TODA marker skipped for driver', entry.driverId, e);
-                }
-            });
+            renderTodaTaxiMarkersOnMap(mapEntries);
 
             startTodaLocationRefresh();
         }

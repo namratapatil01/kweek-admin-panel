@@ -35,32 +35,32 @@
                 <div class="card border-0" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
                     <div class="card-header d-flex justify-content-between align-items-center bg-white border-0" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 20px 24px;">
                         <div>
-                            <h4 class="mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">Document List</h4>
-                            <p class="mb-0 text-muted" style="font-size: 13px;">View and manage all the documents</p>
+                            <h4 class="mb-1" style="font-weight: 700; color: #2b354e; font-size: 18px;">{{ trans('lang.document_list') }}</h4>
+                            <p class="mb-0 text-muted" style="font-size: 13px;">{{ trans('lang.documents_table_text') }}</p>
                         </div>
-                        <div class="card-body pt-0">
-                            <div class="table-responsive">
-                                <table id="example24" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
-                                    <thead>
-                                        <tr>
-                                            <th class="delete-all" style="width: 90px; vertical-align: middle;">
-                                                <div class="d-flex align-items-center">
-                                                    <input type="checkbox" id="is_active" class="mr-2">
-                                                    <label for="is_active" class="mr-2 doc-select-label"></label>
-                                                    <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center delete-all-link" href="javascript:void(0)">
-                                                        <i class="fa fa-trash mr-1"></i> {{ trans('lang.all') }}
-                                                    </a>
-                                                </div>
-                                            </th>
-                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.title') }}</th>
-                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.document_for') }}</th>
-                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.coupon_enabled') }}</th>
-                                            <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.actions') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table id="example24" class="display nowrap table table-hover table-striped table-bordered" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th class="delete-all" style="width: 90px; vertical-align: middle;">
+                                            <div class="d-flex align-items-center">
+                                                <input type="checkbox" id="is_active" class="mr-2">
+                                                <label for="is_active" class="mr-2 doc-select-label"></label>
+                                                <a id="deleteAll" class="do_not_delete d-inline-flex align-items-center delete-all-link" href="javascript:void(0)">
+                                                    <i class="fa fa-trash mr-1"></i> {{ trans('lang.all') }}
+                                                </a>
+                                            </div>
+                                        </th>
+                                        <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.title') }}</th>
+                                        <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.document_for') }}</th>
+                                        <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.coupon_enabled') }}</th>
+                                        <th class="font-weight-bold" style="color: #2b354e;">{{ trans('lang.actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
