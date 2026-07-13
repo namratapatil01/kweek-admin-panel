@@ -447,7 +447,7 @@
 
             let ordersQuery = db.collection('vendor_orders')
                 .where('status', 'in', ["Order Completed"])
-                .where('vendor.section_id', '==', active_id);
+                .where('section_id', '==', active_id);
 
             if (filterType) {
                 ordersQuery = ordersQuery.where('createdAt', '>=', startTS)
@@ -457,7 +457,7 @@
             let ordersLastQuery = startLastTS && endLastTS
                 ? db.collection('vendor_orders')
                     .where('status', 'in', ["Order Completed"])
-                    .where('vendor.section_id', '==', active_id)
+                    .where('section_id', '==', active_id)
                     .where('createdAt', '>=', startLastTS)
                     .where('createdAt', '<=', endLastTS)
                 : null;
@@ -702,11 +702,11 @@
             return html;
         }
 
-        function buildOrderHTML(snapshots) {
+        async function buildOrderHTML(snapshots) {
             var html = '';
             var count = 1;
-            snapshots.docs.forEach((listval) => {
-                val = listval.data();
+            for (let listval of snapshots.docs) {
+                let val = listval.data();
                 val.id = listval.id;
                 var route = '<?php echo route("orders.edit", ":id"); ?>';
                 route = route.replace(':id', val.id);
@@ -726,7 +726,19 @@
                     price = parseInt(val.tip_amount) + price;
                 }
 
-                html = html + '<td data-url="' + vendorroute + '" class="redirecttopage">' + val.vendor.title + '</td>';
+                var storeName = val.storeName || (val.vendor && val.vendor.title) || '';
+                if (!storeName && val.vendorID) {
+                    try {
+                        let vendorSnap = await db.collection('vendors').doc(val.vendorID).get();
+                        if (vendorSnap.exists) {
+                            storeName = vendorSnap.data().title || '';
+                        }
+                    } catch (e) {
+                        console.error('Error fetching vendor:', e);
+                    }
+                }
+
+                html = html + '<td data-url="' + vendorroute + '" class="redirecttopage">' + storeName + '</td>';
 
                 var price = buildHTMLProductstotal(val);
 
@@ -734,7 +746,7 @@
                 html = html + '<td data-url="' + route + '" class="redirecttopage"><i class="fa fa-shopping-cart"></i> ' + val.products.length + '</td>';
                 html = html + '</a></tr>';
                 count++;
-            });
+            }
             return html;
         }
         async function loadOrderStatusCounts(filterType = null, year = null, month = null, startDate = null, endDate = null, active_id) {
@@ -828,14 +840,14 @@
             append_listrecent_order.innerHTML = '';
 
             ref = db.collection('vendor_orders')
-                .where('vendor.section_id', '==', active_id)
+                .where('section_id', '==', active_id)
                 .where('status', 'in', ["Order Placed", "Order Accepted", "Driver Pending", "Driver Accepted", "Order Shipped", "In Transit"]);
 
           
             ref = ref.orderBy('createdAt', 'desc');
 
             snapshots = await ref.limit(10).get();
-            html = buildOrderHTML(snapshots);
+            html = await buildOrderHTML(snapshots);
             if(html == ''){
                 append_listrecent_order.innerHTML = "<tr><td colspan='3'>{{trans('lang.no_record_found')}}</td></tr>";
             }else{
