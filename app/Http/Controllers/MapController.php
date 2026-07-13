@@ -343,13 +343,7 @@ class MapController extends Controller
 
     protected function normalizeDriverFromArray(array $driver): array
     {
-        $location = $driver['location'] ?? [];
-        $lat = $driver['latitude']
-            ?? ($location['latitude'] ?? null)
-            ?? ($driver['coordinates']['latitude'] ?? null);
-        $lng = $driver['longitude']
-            ?? ($location['longitude'] ?? null)
-            ?? ($driver['coordinates']['longitude'] ?? null);
+        [$lat, $lng] = $this->extractDriverCoordinates($driver, $driver);
 
         return [
             'id' => $driver['id'] ?? '',
@@ -362,11 +356,11 @@ class MapController extends Controller
             'sectionId' => $driver['sectionId'] ?? null,
             'isActive' => (bool) ($driver['isActive'] ?? false),
             'active' => (bool) ($driver['active'] ?? false),
-            'latitude' => $lat !== null ? (float) $lat : null,
-            'longitude' => $lng !== null ? (float) $lng : null,
+            'latitude' => $lat,
+            'longitude' => $lng,
             'location' => [
-                'latitude' => $lat !== null ? (float) $lat : null,
-                'longitude' => $lng !== null ? (float) $lng : null,
+                'latitude' => $lat,
+                'longitude' => $lng,
             ],
             'flag' => 'available',
         ];
@@ -375,18 +369,7 @@ class MapController extends Controller
     protected function normalizeDriverForMap(object $driver): array
     {
         $payload = $this->decodePayload($driver->payload ?? null);
-
-        $lat = $driver->latitude
-            ?? ($payload['latitude'] ?? null)
-            ?? ($payload['location']['latitude'] ?? null)
-            ?? ($payload['coordinates']['latitude'] ?? null)
-            ?? ($payload['g']['geopoint']['latitude'] ?? null);
-
-        $lng = $driver->longitude
-            ?? ($payload['longitude'] ?? null)
-            ?? ($payload['location']['longitude'] ?? null)
-            ?? ($payload['coordinates']['longitude'] ?? null)
-            ?? ($payload['g']['geopoint']['longitude'] ?? null);
+        [$lat, $lng] = $this->extractDriverCoordinates($driver, $payload);
 
         return [
             'id' => $driver->id,
@@ -399,13 +382,55 @@ class MapController extends Controller
             'sectionId' => $driver->sectionId ?? ($driver->section_id ?? ($payload['sectionId'] ?? null)),
             'isActive' => (bool) ($driver->isActive ?? $payload['isActive'] ?? false),
             'active' => (bool) ($driver->active ?? $payload['active'] ?? false),
-            'latitude' => $lat !== null ? (float) $lat : null,
-            'longitude' => $lng !== null ? (float) $lng : null,
+            'latitude' => $lat,
+            'longitude' => $lng,
             'location' => [
-                'latitude' => $lat !== null ? (float) $lat : null,
-                'longitude' => $lng !== null ? (float) $lng : null,
+                'latitude' => $lat,
+                'longitude' => $lng,
             ],
             'flag' => 'available',
+        ];
+    }
+
+    protected function extractDriverCoordinates(mixed $driver, array $payload = []): array
+    {
+        $lat = is_object($driver) ? ($driver->latitude ?? null) : ($driver['latitude'] ?? null);
+        $lng = is_object($driver) ? ($driver->longitude ?? null) : ($driver['longitude'] ?? null);
+
+        $sources = [
+            $payload,
+            is_array($driver) ? $driver : [],
+            is_object($driver) ? $this->decodePayload($driver->payload ?? null) : [],
+        ];
+
+        foreach ($sources as $source) {
+            if (! is_array($source) || $source === []) {
+                continue;
+            }
+
+            $lat ??= $source['latitude'] ?? $source['lat'] ?? data_get($source, 'location.latitude');
+            $lng ??= $source['longitude'] ?? $source['lng'] ?? data_get($source, 'location.longitude');
+            $lat ??= data_get($source, 'coordinates.latitude');
+            $lng ??= data_get($source, 'coordinates.longitude');
+            $lat ??= data_get($source, 'position.latitude', data_get($source, 'position.lat'));
+            $lng ??= data_get($source, 'position.longitude', data_get($source, 'position.lng'));
+            $lat ??= data_get($source, 'g.geopoint.latitude');
+            $lng ??= data_get($source, 'g.geopoint.longitude');
+            $lat ??= data_get($source, 'geo.latitude');
+            $lng ??= data_get($source, 'geo.longitude');
+
+            if (($lat === null || $lng === null) && isset($source['location']) && is_array($source['location'])) {
+                $geoPoint = $source['location'];
+                if (($geoPoint['__datatype__'] ?? null) === 'geopoint') {
+                    $lat ??= $geoPoint['latitude'] ?? data_get($geoPoint, 'value.latitude');
+                    $lng ??= $geoPoint['longitude'] ?? data_get($geoPoint, 'value.longitude');
+                }
+            }
+        }
+
+        return [
+            $lat !== null && $lat !== '' ? (float) $lat : null,
+            $lng !== null && $lng !== '' ? (float) $lng : null,
         ];
     }
 
