@@ -18,115 +18,112 @@
     <div class="container-fluid">
         <div class="error_topalert alert alert-danger" style="display:none;"></div>
         
-        <div class="card border-0" style="position: relative; margin-top: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div class="card-tab-badge">BANNER ITEMS</div>
-            
-            <div class="card-body pt-5">
-                <div class="row">
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.title')}} <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control title" placeholder="Enter Banner Title">
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.set_order')}} <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control set_order" min="0" placeholder="0">
-                    </div>
-                </div>
-                
-                <div class="row mt-2">
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.select_section')}} <span class="text-danger">*</span></label>
-                        <select name="section_id" id="section_id" class="form-control">
-                            <option value="">{{trans('lang.select')}}</option>
-                        </select>
-                        <span class="form-text text-danger mt-1 d-block" style="font-size: 13px; font-weight: 500;">
-                            Note: Rental service sections won't shown in this list.
-                        </span>
-                    </div>
-                    <div class="col-md-6 form-group align-self-center pt-3">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="is_publish">
-                            <label class="custom-control-label font-weight-bold" for="is_publish" style="color: #2b354e; cursor: pointer;">{{trans('lang.is_publish')}}</label>
+        <div class="row vendor_payout_create">
+            <div class="vendor_payout_create-inner">
+                <div class="card border-0" style="position: relative; margin-top: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div class="card-tab-badge">BANNER ITEMS</div>
+                    
+                    <div class="card-body pt-5">
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.title')}} <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control title" placeholder="Enter Banner Title">
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.set_order')}} <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control set_order" min="0" placeholder="0">
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Dynamic Fields for Ecommerce/Delivery Services -->
-                <div id="dynamic_fields_container" style="display: none;" class="mt-4 p-3 bg-light rounded border">
-                    <h5 class="mb-3 font-weight-bold text-dark" style="font-size: 15px;">Redirection Settings</h5>
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.banner_position')}}</label>
-                            <select name="position" id="position" class="form-control">
-                                <option value="top">{{trans('lang.top')}}</option>
-                                <option value="middle">{{trans('lang.middle')}}</option>
-                            </select>
+                        
+                        <div class="row mt-2">
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.select_section')}} <span class="text-danger">*</span></label>
+                                <select name="section_id" id="section_id" class="form-control">
+                                    <option value="">{{trans('lang.select')}}</option>
+                                </select>
+                                <span class="form-text text-danger mt-1 d-block" style="font-size: 13px; font-weight: 500;">
+                                    Note: Rental service sections won't shown in this list.
+                                </span>
+                            </div>
+                            <div class="col-md-6 form-group" id="banner_position_div" style="display: none;">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.banner_position')}}</label>
+                                <select name="position" id="position" class="form-control">
+                                    <option value="top">{{trans('lang.top')}}</option>
+                                    <option value="middle">{{trans('lang.middle')}}</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label class="font-weight-bold d-block mb-2" style="color: #2b354e;">Redirection Type</label>
-                            <div class="d-flex align-items-center mt-2">
-                                <div class="custom-control custom-radio mr-4">
-                                    <input type="radio" id="redirect_store" name="redirect_type" value="store" class="custom-control-input redirect_type">
-                                    <label class="custom-control-label font-weight-bold" for="redirect_store" style="cursor: pointer; color: #2b354e;">{{trans('lang.vendor')}}</label>
+                        
+                        <!-- Dynamic Fields for Ecommerce/Delivery Services -->
+                        <div id="dynamic_fields_container" style="display: none;">
+                            <div class="row mt-3">
+                                <div class="col-md-12 form-group">
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="custom-control custom-radio mr-4">
+                                            <input type="radio" id="redirect_store" name="redirect_type" value="store" class="custom-control-input redirect_type">
+                                            <label class="custom-control-label font-weight-bold" for="redirect_store" style="cursor: pointer; color: #2b354e;">Store</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mr-4">
+                                            <input type="radio" id="redirect_product" name="redirect_type" value="product" class="custom-control-input redirect_type">
+                                            <label class="custom-control-label font-weight-bold" for="redirect_product" style="cursor: pointer; color: #2b354e;">Product</label>
+                                        </div>
+                                        <div class="custom-control custom-radio">
+                                            <input type="radio" id="redirect_external" name="redirect_type" value="external_link" class="custom-control-input redirect_type">
+                                            <label class="custom-control-label font-weight-bold" for="redirect_external" style="cursor: pointer; color: #2b354e;">External Link</label>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="custom-control custom-radio mr-4">
-                                    <input type="radio" id="redirect_product" name="redirect_type" value="product" class="custom-control-input redirect_type">
-                                    <label class="custom-control-label font-weight-bold" for="redirect_product" style="cursor: pointer; color: #2b354e;">{{trans('lang.product')}}</label>
+                            </div>
+                            
+                            <div class="row mt-2">
+                                <div class="col-md-6 form-group" id="vendor_div" style="display: none;">
+                                    <label class="font-weight-bold" style="color: #2b354e;">Store <span class="text-danger">*</span></label>
+                                    <select name="storeId" id="storeId" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Store</option>
+                                    </select>
                                 </div>
-                                <div class="custom-control custom-radio">
-                                    <input type="radio" id="redirect_external" name="redirect_type" value="external_link" class="custom-control-input redirect_type">
-                                    <label class="custom-control-label font-weight-bold" for="redirect_external" style="cursor: pointer; color: #2b354e;">{{trans('lang.external_link')}}</label>
+                                <div class="col-md-6 form-group" id="product_div" style="display: none;">
+                                    <label class="font-weight-bold" style="color: #2b354e;">Product <span class="text-danger">*</span></label>
+                                    <select name="productId" id="productId" class="form-control select2" style="width: 100%;">
+                                        <option value="">Select Product</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 form-group" id="external_link_div" style="display: none;">
+                                    <label class="font-weight-bold" style="color: #2b354e;">External Link <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="external_link" placeholder="Enter external link URL">
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="row mt-2">
-                        <div class="col-md-12 form-group" id="vendor_div" style="display: none;">
-                            <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.vendor')}} <span class="text-danger">*</span></label>
-                            <select name="storeId" id="storeId" class="form-control select2" style="width: 100%;">
-                                <option value="">Select Vendor</option>
-                            </select>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12 form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="is_publish">
+                                    <label class="custom-control-label font-weight-bold" for="is_publish" style="color: #2b354e; cursor: pointer;">{{trans('lang.is_publish')}}</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-12 form-group" id="product_div" style="display: none;">
-                            <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.product')}} <span class="text-danger">*</span></label>
-                            <select name="productId" id="productId" class="form-control select2" style="width: 100%;">
-                                <option value="">Select Product</option>
-                            </select>
-                        </div>
-                        <div class="col-md-12 form-group" id="external_link_div" style="display: none;">
-                            <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.external_link')}} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="external_link" placeholder="Enter external link URL">
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.app_banner')}} <span class="text-danger">*</span></label>
+                                <input type="file" id="banner_img" accept="image/*" onChange="handleFileSelect(event)" class="form-control">
+                                <div class="user_image mt-2"></div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.web_banner')}}</label>
+                                <input type="file" id="web_banner_img" accept="image/*" onChange="handleWebBannerFileSelect(event)" class="form-control">
+                                <div class="web_banner_image mt-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="row mt-4">
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.app_banner')}} <span class="text-danger">*</span></label>
-                        <div class="file-upload-wrapper">
-                            <i class="mdi mdi-cloud-upload-outline" style="font-size: 24px; color: #4b5563;"></i>
-                            <p class="mb-0 font-weight-bold mt-1 text-muted" style="font-size: 13px;">Choose App Banner File</p>
-                            <input type="file" id="banner_img" accept="image/*" onChange="handleFileSelect(event)">
-                        </div>
-                        <div class="user_image mt-2"></div>
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-bold" style="color: #2b354e;">{{trans('lang.web_banner')}}</label>
-                        <div class="file-upload-wrapper">
-                            <i class="mdi mdi-cloud-upload-outline" style="font-size: 24px; color: #4b5563;"></i>
-                            <p class="mb-0 font-weight-bold mt-1 text-muted" style="font-size: 13px;">Choose Web Banner File</p>
-                            <input type="file" id="web_banner_img" accept="image/*" onChange="handleWebBannerFileSelect(event)">
-                        </div>
-                        <div class="web_banner_image mt-2"></div>
-                    </div>
+                <div class="form-group col-12 text-center mt-4">
+                    <button type="button" class="btn btn-save save-setting-btn"><i class="fa fa-save mr-1"></i> Save</button>
+                    <a href="{!! route('banners.index') !!}" class="btn btn-back ml-2"><i class="fa fa-undo mr-1"></i> Back</a>
                 </div>
             </div>
-        </div>
-        
-        <div class="form-group col-12 text-center mt-4">
-            <button type="button" class="btn btn-save save-setting-btn"><i class="fa fa-save mr-1"></i> {{trans('lang.save')}}</button>
-            <a href="{!! route('banners.index') !!}" class="btn btn-back ml-2"><i class="fa fa-undo mr-1"></i> {{trans('lang.cancel')}}</a>
         </div>
     </div>
 </div>
@@ -147,32 +144,6 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     
-    .file-upload-wrapper {
-        border: 1px dashed #ced4da;
-        padding: 20px;
-        border-radius: 8px;
-        text-align: center;
-        background: #fafbfc;
-        cursor: pointer;
-        position: relative;
-        transition: border-color 0.2s ease, background-color 0.2s ease;
-    }
-    
-    .file-upload-wrapper:hover {
-        border-color: #000;
-        background-color: #f3f4f6;
-    }
-    
-    .file-upload-wrapper input[type="file"] {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-    }
-    
     .preview-image-container {
         position: relative;
         display: inline-block;
@@ -180,8 +151,8 @@
     }
     
     .preview-image-container img {
-        width: 120px;
-        height: 80px;
+        width: 50px;
+        height: 50px;
         object-fit: cover;
         border-radius: 6px;
         border: 1px solid #e2e8f0;
@@ -246,6 +217,54 @@
     .form-control:focus {
         border-color: #000 !important;
         box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Custom checkbox styling to match Image 1 (only checkmark, no blue box container when checked) */
+    .custom-checkbox {
+        padding-left: 0 !important;
+    }
+    .custom-checkbox .custom-control-input {
+        opacity: 0;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        z-index: 2;
+    }
+    .custom-checkbox .custom-control-label {
+        padding-left: 24px !important;
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+    }
+    .custom-checkbox .custom-control-label::before {
+        display: none !important;
+    }
+    .custom-checkbox .custom-control-label::after {
+        display: none !important;
+    }
+    /* Add a custom checkmark element when checked */
+    .custom-checkbox .custom-control-label::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 3px;
+        width: 15px;
+        height: 15px;
+        border: 1px solid #ced4da;
+        border-radius: 3px;
+        background-color: #fff;
+        display: block !important;
+    }
+    .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+        content: '✔' !important;
+        border: none !important;
+        background-color: transparent !important;
+        color: #000 !important;
+        font-size: 14px;
+        line-height: 15px;
+        text-align: center;
+        font-weight: bold;
     }
 </style>
 @endsection
@@ -315,10 +334,12 @@
             let serviceType = $(this).find(':selected').attr('data-service-type');
             
             if (serviceType === 'ecommerce-service' || serviceType === 'delivery-service') {
+                $('#banner_position_div').show();
                 $('#dynamic_fields_container').slideDown();
             } else {
+                $('#banner_position_div').hide();
                 $('#dynamic_fields_container').slideUp();
-                $('#storeId').html('<option value="">Select Vendor</option>');
+                $('#storeId').html('<option value="">Select Store</option>');
                 $('#productId').html('<option value="">Select Product</option>');
                 $('#external_link').val('');
             }
@@ -494,6 +515,7 @@
             // Set Redirection Details
             let serviceType = $('#section_id').find(':selected').attr('data-service-type');
             if (serviceType === 'ecommerce-service' || serviceType === 'delivery-service') {
+                $('#banner_position_div').show();
                 if (banner.position) {
                     $('#position').val(banner.position);
                 }

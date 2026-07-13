@@ -1079,7 +1079,7 @@
                             .text(data.name));
                     })
                 });
-                if (order.vendor.section_id != undefined && order.vendor.section_id != '') {
+                if (order.vendor && order.vendor.section_id != undefined && order.vendor.section_id != '') {
                     await database.collection('sections').doc(order.vendor.section_id).get().then(async function(snapshot) {
                         service_type = snapshot.data().serviceTypeFlag;
                         delivery_enable = snapshot.data().dine_in_active;
@@ -1090,6 +1090,14 @@
                             }
                         }
                     });
+                } else if (order.section_id && order.section_id != '') {
+                    // Fallback: try section_id directly on order (MySQL-backed orders)
+                    await database.collection('sections').doc(order.section_id).get().then(async function(snapshot) {
+                        if (snapshot.exists) {
+                            service_type = snapshot.data().serviceTypeFlag;
+                            delivery_enable = snapshot.data().dine_in_active;
+                        }
+                    }).catch(function() {});
                 }
 
 
@@ -1100,16 +1108,16 @@
                 append_procucts_total.innerHTML = '';
                 firstName = '';
                 lastName = '';
-                if (order.author.hasOwnProperty('firstName')) {
+                if (order.author && order.author.hasOwnProperty('firstName')) {
                     firstName = order.author.firstName;
                 }
-                if (order.author.hasOwnProperty('lastName')) {
+                if (order.author && order.author.hasOwnProperty('lastName')) {
                     lastName = order.author.lastName;
                 }
 
-                if (order.address.name) {
+                if (order.address && order.address.name) {
                     $("#billing_name").text(order.address.name);
-                } else {
+                } else if (order.author) {
                     $("#billing_name").text(order.author.firstName + ' ' + order.author.lastName);
                 }
                 var billingAddressstring = '';
@@ -1119,13 +1127,13 @@
                     $("#trackng_number").text(id);
 
                 }
-                if (order.address.hasOwnProperty('address')) {
+                if (order.address && order.address.hasOwnProperty('address')) {
                     $("#billing_line1").text(order.address.address);
                 }
-                if (order.address.hasOwnProperty('locality')) {
+                if (order.address && order.address.hasOwnProperty('locality')) {
                     billingAddressstring = billingAddressstring + order.address.locality;
                 }
-                if (order.address.hasOwnProperty('landmark') && order.address.landmark != null) {
+                if (order.address && order.address.hasOwnProperty('landmark') && order.address.landmark != null) {
                     billingAddressstring = billingAddressstring + " " + order.address.landmark;
                 }
                 if (order.takeAway == true) {
@@ -1135,7 +1143,7 @@
 
                 $("#billing_line2").text(billingAddressstring);
 
-                if (order.author.hasOwnProperty('phoneNumber')) {
+                if (order.author && order.author.hasOwnProperty('phoneNumber')) {
                     if (order.author.phoneNumber.includes('+')) {
                         $("#billing_phone").text('+' + EditPhoneNumber(order.author.phoneNumber.slice(1)));
                     } else {
@@ -1144,34 +1152,43 @@
 
                 }
 
-                if (order.address.hasOwnProperty('country')) {
+                if (order.address && order.address.hasOwnProperty('country')) {
 
                     $("#billing_country").text(order.address.country);
 
                 }
 
-                if (order.author.hasOwnProperty('email')) {
+                if (order.author && order.author.hasOwnProperty('email')) {
                     $("#billing_email").html('<a href="mailto:' + order.author.email + '">' + shortEmail(order.author.email) + '</a>');
                 }
 
                 if (order.createdAt) {
-                    if (order.createdAt._seconds != undefined) {
-                        var date = new Date(order.createdAt._seconds * 1000);
-                        var time = date.toLocaleTimeString('en-US');
-
-                    } else {
-                        var date1 = order.createdAt.toDate().toString();
-                        var date = new Date(date1);
-                        var time = order.createdAt.toDate().toLocaleTimeString('en-US');
-
+                    var date, time;
+                    try {
+                        if (order.createdAt._seconds != undefined) {
+                            // Firestore Timestamp with _seconds
+                            date = new Date(order.createdAt._seconds * 1000);
+                            time = date.toLocaleTimeString('en-US');
+                        } else if (typeof order.createdAt === 'string' || typeof order.createdAt === 'number') {
+                            // MySQL ISO string or unix timestamp
+                            date = new Date(order.createdAt);
+                            time = date.toLocaleTimeString('en-US');
+                        } else if (typeof order.createdAt.toDate === 'function') {
+                            // Firestore Timestamp with toDate()
+                            date = new Date(order.createdAt.toDate().toString());
+                            time = order.createdAt.toDate().toLocaleTimeString('en-US');
+                        } else {
+                            date = new Date(order.createdAt);
+                            time = date.toLocaleTimeString('en-US');
+                        }
+                        var dd = String(date.getDate()).padStart(2, '0');
+                        var mm = String(date.getMonth() + 1).padStart(2, '0');
+                        var yyyy = date.getFullYear();
+                        var createdAt_val = yyyy + '-' + mm + '-' + dd;
+                        $('#createdAt').text(createdAt_val + ' ' + time);
+                    } catch(e) {
+                        $('#createdAt').text(order.createdAt);
                     }
-
-                    var dd = String(date.getDate()).padStart(2, '0');
-                    var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-                    var yyyy = date.getFullYear();
-                    var createdAt_val = yyyy + '-' + mm + '-' + dd;
-
-                    $('#createdAt').text(createdAt_val + ' ' + time);
                 }
 
                 var payment_method = '';
@@ -1296,9 +1313,9 @@
                     $('#driver_carName').text(order.driver.carName);
                     $('#driver_carNumber').text(order.driver.carNumber);
                     $('#driver_email').html('<a href="mailto:' + order.driver.email + '">' + shortEmail(order.driver.email) + '</a>');
-                    if (order.driver.phoneNumber.includes('+')) {
+                    if (order.driver.phoneNumber && order.driver.phoneNumber.includes('+')) {
                         $('#driver_phone').text('+' + EditPhoneNumber(order.driver.phoneNumber.slice(1)));
-                    } else {
+                    } else if (order.driver.phoneNumber) {
                         $('#driver_phone').text(EditPhoneNumber(order.driver.phoneNumber));
                     }
                     $('#driver-name').html(order.driver.firstName + ' ' + order.driver.lastName)
@@ -1320,16 +1337,16 @@
                 if (order.vendor && order.vendor.author != '' && order.vendor.author != undefined) {
                     vendorAuthor = order.vendor.author;
                 }
-                fcmToken = order.author.fcmToken;
-                vendorname = order.vendor.title;
+                fcmToken = order.author ? order.author.fcmToken : '';
+                vendorname = order.vendor ? order.vendor.title : '';
 
-                fcmTokenVendor = order.vendor.fcmToken;
-                customername = order.author.firstName;
+                fcmTokenVendor = order.vendor ? order.vendor.fcmToken : '';
+                customername = order.author ? order.author.firstName : '';
 
-                vendorId = order.vendor.id;
+                vendorId = order.vendor ? order.vendor.id : (order.vendorID || '');
                 old_order_status = order.status;
 
-                userId = order.author.id;
+                userId = order.author ? order.author.id : (order.authorID || '');
                 order_sectionId = order.section_id;
 
                 if (order_sectionId != '' && order_sectionId != undefined) {

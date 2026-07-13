@@ -90,12 +90,12 @@
                                 <input type="hidden" name="endDate" id="endDate" value="{{ old('endDate') }}">
                             </div>
 
-                            <div class="form-group mb-4" id="cover_image_container">
+                            <div class="form-group mb-4" id="cover_image_container" style="display: none;">
                                 <label class="font-weight-bold" style="color: #2b354e; font-size: 14px;">Cover Image</label>
                                 <input type="file" name="coverImage" class="form-control-file" accept="image/*">
                             </div>
 
-                            <div class="form-group mb-4" id="profile_image_container">
+                            <div class="form-group mb-4" id="profile_image_container" style="display: none;">
                                 <label class="font-weight-bold" style="color: #2b354e; font-size: 14px;">Profile Image</label>
                                 <input type="file" name="profileImage" class="form-control-file" accept="image/*">
                             </div>
@@ -106,65 +106,72 @@
                                 <small class="text-muted d-block mt-1">Maximum 2 MB. Supports: MP4, WEBM, MKV</small>
                             </div>
                             
-                            <div class="form-row mb-2">
-                                <div class="form-group col-md-6 mb-0">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="showReview" id="showReview" class="form-check-input" value="1" {{ old('showReview', 1) ? 'checked' : '' }}>
-                                        <label for="showReview" class="form-check-label font-weight-bold" style="color: #2b354e; font-size: 14px; cursor: pointer;">Review</label>
+                            <div class="form-group mb-2">
+                                <label class="font-weight-bold" style="color: #2b354e; font-size: 14px; margin-bottom: 8px;">Show review & rating</label>
+                                <div>
+                                    <div class="form-check d-flex align-items-center mb-2">
+                                        <i class="fa fa-check text-dark mr-2"></i>
+                                        <label class="form-check-label font-weight-bold" style="color: #2b354e; font-size: 14px; margin-bottom: 0;">Review</label>
+                                        <input type="hidden" name="showReview" value="1">
                                     </div>
-                                </div>
-                                <div class="form-group col-md-6 mb-0">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="showRating" id="showRating" class="form-check-input" value="1" {{ old('showRating', 1) ? 'checked' : '' }}>
-                                        <label for="showRating" class="form-check-label font-weight-bold" style="color: #2b354e; font-size: 14px; cursor: pointer;">Rating</label>
+                                    <div class="form-check d-flex align-items-center">
+                                        <i class="fa fa-check text-dark mr-2"></i>
+                                        <label class="form-check-label font-weight-bold" style="color: #2b354e; font-size: 14px; margin-bottom: 0;">Rating</label>
+                                        <input type="hidden" name="showRating" value="1">
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Footer Buttons Inside Card -->
+                            <div class="d-flex justify-content-center mt-5 mb-2" style="gap: 12px;">
+                                <button type="submit" class="btn btn-dark" style="background-color: #000; border-color: #000; border-radius: 4px; padding: 8px 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 14px;">
+                                    <i class="fa fa-save"></i> Save
+                                </button>
+                                <a href="{{ route('advertisements') }}" class="btn btn-secondary" style="background-color: #9ca3af; border-color: #9ca3af; border-radius: 4px; padding: 8px 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 14px;">
+                                    <i class="fa fa-undo"></i> Back
+                                </a>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Column (Live Preview) -->
                 <div class="col-lg-5 col-md-12" style="margin-top: 20px;">
-                    <h5 class="text-muted font-weight-bold mb-3" style="font-size: 14px;">Advertisement Preview</h5>
+                    <h5 class="text-muted font-weight-bold mb-3" style="font-size: 14px; color: #a0aec0!important;">Advertisement Preview</h5>
                     
-                    <div class="card border-0" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; background: #fff;">
-                        <div class="preview-media-container" style="background: #000; position: relative; height: 180px; display: flex; align-items: center; justify-content: center;">
-                            <!-- Image Preview -->
-                            <div id="preview_image_element_container" style="width: 100%; height: 100%;">
-                                <img id="preview_image" src="{{ asset('images/default_user.png') }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='{{ asset('images/default_user.png') }}'">
-                            </div>
-                            <!-- Video Preview -->
-                            <div id="preview_video_element_container" style="display: none; width: 100%; height: 100%;">
-                                <video id="preview_video" src="" controls style="width: 100%; height: 100%; object-fit: cover; background: #000;"></video>
+                    <div class="card border-0" style="border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; background: #fff; max-width: 450px;">
+                        <!-- Grey Top Area -->
+                        <div style="background-color: #e2e8f0; height: 160px; position: relative;">
+                            <img id="preview_image" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            <video id="preview_video" src="" style="width: 100%; height: 100%; object-fit: cover; background: #000; display: none;"></video>
+                            
+                            <!-- Orange toggle on right -->
+                            <div style="position: absolute; right: 12px; bottom: 12px;">
+                                <span style="display: inline-block; width: 26px; height: 14px; background: #ed8936; border-radius: 12px; position: relative;">
+                                    <span style="display: inline-block; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); position: absolute; right: -2px; top: -1px;"></span>
+                                </span>
                             </div>
                         </div>
-                        <div class="card-body" style="padding: 16px;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div style="flex: 1; padding-right: 12px;">
-                                    <h5 id="preview_title" class="font-weight-bold mb-1" style="color: #2d3748; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Fashion Made Effortless</h5>
-                                    <p id="preview_description" class="text-muted mb-0" style="font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">Explore a wide range of stylish clothing for every season. Enjoy exclusive online deals and upgrade your wardrobe instantly!</p>
-                                </div>
-                                <div>
-                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background-color: #000; color: #fff; font-size: 14px; cursor: pointer;">
-                                        <i class="fa fa-arrow-right"></i>
-                                    </span>
-                                </div>
+                        
+                        <!-- White Bottom Area -->
+                        <div class="card-body" style="padding: 16px; display: flex; align-items: flex-start;">
+                            <!-- White circle on left -->
+                            <div style="width: 44px; height: 44px; background: #f7fafc; border-radius: 50%; margin-right: 12px; overflow: hidden;">
+                                <img id="preview_profile" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            </div>
+                            
+                            <div style="flex: 1; padding-top: 2px;">
+                                <h5 id="preview_title" class="font-weight-bold mb-1" style="color: #2d3748; font-size: 14px;">Title</h5>
+                                <div id="preview_description" class="text-muted mb-0" style="font-size: 12px; line-height: 1.4; background: #e2e8f0; height: 8px; width: 80%; border-radius: 4px; margin-top: 6px;"></div>
+                                <div class="text-muted mb-0" style="font-size: 12px; line-height: 1.4; background: #e2e8f0; height: 8px; width: 50%; border-radius: 4px; margin-top: 6px;"></div>
+                            </div>
+                            
+                            <div style="padding-top: 4px;">
+                                <i class="fa fa-heart-o" style="color: #a0aec0; font-size: 16px;"></i>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Footer Buttons -->
-            <div class="row mt-4 mb-4">
-                <div class="col-12 text-center">
-                    <button type="submit" class="btn btn-dark mr-3 px-5 py-2 font-weight-bold" style="background-color: #000; border-color: #000; color: #fff; border-radius: 8px;">
-                        <i class="fa fa-save mr-1"></i> Save
-                    </button>
-                    <a href="{{ route('advertisements') }}" class="btn btn-secondary px-5 py-2 font-weight-bold" style="background-color: #cbd5e0; border-color: #cbd5e0; color: #4a5568; border-radius: 8px;">
-                        <i class="fa fa-undo mr-1"></i> Back
-                    </a>
                 </div>
             </div>
         </form>
@@ -209,33 +216,41 @@ $(document).ready(function () {
             $('#video_input_container').show();
             $('#cover_image_container').hide();
             $('#profile_image_container').hide();
-            $('#preview_video_element_container').show();
-            $('#preview_image_element_container').hide();
+            $('#preview_video').show();
+            $('#preview_image').hide();
         } else {
             $('#video_input_container').hide();
             $('#cover_image_container').show();
             $('#profile_image_container').show();
-            $('#preview_video_element_container').hide();
-            $('#preview_image_element_container').show();
+            $('#preview_video').hide();
+            $('#preview_image').show();
         }
     });
 
     // Live update preview title
     $('input[name="title"]').on('input', function () {
-        $('#preview_title').text($(this).val() || 'Fashion Made Effortless');
+        var title = $(this).val();
+        $('#preview_title').text(title || 'Title');
     });
 
-    // Live update preview description
-    $('textarea[name="description"]').on('input', function () {
-        $('#preview_description').text($(this).val() || 'Explore a wide range of stylish clothing for every season. Enjoy exclusive online deals and upgrade your wardrobe instantly!');
-    });
+    // Handle checkboxes to look like checkmarks from image
+    // The image just shows checkmarks instead of inputs
+    // We already hid the input and just show the checkmark.
 
     // Live update image file input preview
     $('input[name="coverImage"]').on('change', function (event) {
         var file = event.target.files[0];
         if (file) {
             var url = URL.createObjectURL(file);
-            $('#preview_image').attr('src', url);
+            $('#preview_image').attr('src', url).show();
+        }
+    });
+
+    $('input[name="profileImage"]').on('change', function (event) {
+        var file = event.target.files[0];
+        if (file) {
+            var url = URL.createObjectURL(file);
+            $('#preview_profile').attr('src', url).show();
         }
     });
 
@@ -244,7 +259,7 @@ $(document).ready(function () {
         var file = event.target.files[0];
         if (file) {
             var url = URL.createObjectURL(file);
-            $('#preview_video').attr('src', url);
+            $('#preview_video').attr('src', url).show();
         }
     });
 });

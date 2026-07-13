@@ -178,24 +178,43 @@
         append_list.innerHTML = '';
 
         placeholder.get().then(async function(snapshotsimage) {
-
-            placeholderImageData = snapshotsimage.data();
-
-            placeholderImage = placeholderImageData.image;
-
-
+            placeholderImageData = snapshotsimage ? snapshotsimage.data() : null;
+            placeholderImage = (placeholderImageData && placeholderImageData.image) ? placeholderImageData.image : '';
 
             ref.get().then(async function(snapshots) {
-
                 html = '';
-                snapshots = snapshots.data();
-                if (snapshots) {
-                    snapshots = snapshots.list;
-                    languages = snapshots;
-                    html = await buildHTML(snapshots);
-                    if (html != '') {
-                        append_list.innerHTML = html;
+                var snapshotData = snapshots ? snapshots.data() : null;
+                var list = [];
+                if (snapshotData && snapshotData.list) {
+                    list = snapshotData.list;
+                }
+                if (!snapshotData || !snapshotData.list || snapshotData.list.length === 0) {
+                    list = [
+                        { title: 'Arabic', slug: 'ar', isActive: true, is_rtl: true, flag: window.location.origin + '/scss/icons/flag-icon-css/flags/sd.svg' },
+                        { title: 'English', slug: 'en', isActive: true, is_rtl: false, flag: window.location.origin + '/scss/icons/flag-icon-css/flags/gb.svg' }
+                    ];
+                    languages = list;
+                    database.collection('settings').doc('languages').set({ 'list': list });
+                } else {
+                    var updated = false;
+                    list.forEach(function(item) {
+                        if (item.slug === 'ar' && (!item.flag || item.flag.trim() === '')) {
+                            item.flag = window.location.origin + '/scss/icons/flag-icon-css/flags/sd.svg';
+                            updated = true;
+                        }
+                        if (item.slug === 'en' && (!item.flag || item.flag.trim() === '')) {
+                            item.flag = window.location.origin + '/scss/icons/flag-icon-css/flags/gb.svg';
+                            updated = true;
+                        }
+                    });
+                    if (updated) {
+                        database.collection('settings').doc('languages').update({ 'list': list });
                     }
+                    languages = list;
+                }
+                html = await buildHTML(list);
+                if (html != '') {
+                    append_list.innerHTML = html;
                 }
 
                 var table = $('#example24').DataTable({
@@ -243,9 +262,10 @@ $(function () {
                             });
 
                 jQuery("#data-table_processing").hide();
-
             });
-
+        }).catch(function(error) {
+            console.error("Error loading languages:", error);
+            jQuery("#data-table_processing").hide();
         });
 
 

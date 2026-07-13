@@ -90,7 +90,7 @@ trait ProvidesMySqlCrud
         return view($this->viewPrefix() . '.create', $this->moduleViewData());
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate(StoreModuleRequest::buildRules($this->moduleSlug(), true));
         $validated = $this->applyDefaultSectionId($validated);
@@ -98,11 +98,25 @@ trait ProvidesMySqlCrud
         try {
             $this->crudService()->store($validated);
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => trans('lang.saved_successfully')
+                ]);
+            }
+
             return redirect()
                 ->route($this->indexRouteName())
                 ->with('success', trans('lang.saved_successfully'));
         } catch (Throwable $e) {
             Log::error(static::class . '@store', ['error' => $e->getMessage()]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
 
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
@@ -132,7 +146,7 @@ trait ProvidesMySqlCrud
         ]));
     }
 
-    public function update(Request $request, ...$params): RedirectResponse
+    public function update(Request $request, ...$params): JsonResponse|RedirectResponse
     {
         $id = (string) end($params);
         $validated = $request->validate(UpdateModuleRequest::buildRules($this->moduleSlug(), false));
@@ -140,11 +154,25 @@ trait ProvidesMySqlCrud
         try {
             $this->crudService()->update($id, $validated);
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => trans('lang.update_success')
+                ]);
+            }
+
             return redirect()
                 ->route($this->indexRouteName())
                 ->with('success', trans('lang.update_success'));
         } catch (Throwable $e) {
             Log::error(static::class . '@update', ['error' => $e->getMessage()]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
 
             return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
