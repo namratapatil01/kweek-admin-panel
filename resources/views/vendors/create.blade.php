@@ -110,11 +110,11 @@ foreach ($countries as $keycountry => $valuecountry) {
 
                         </fieldset>
 
-                        <fieldset class="subscription-plans-wrapper d-none">
+                        <fieldset class="subscription-plans-wrapper">
                             <legend>{{ trans('lang.subscription_details') }}</legend>
-                            <div class="form-group row width-50">
-                                <label class="col-3 control-label">{{ trans('lang.select_subscription_plan') }}</label>
+                            <div class="form-group row width-100">
                                 <div class="col-7">
+                                    <label class="control-label">{{ trans('lang.select_subscription_plan') }}</label>
                                     <select class="form-control" id="subscription_plan">
                                         <option value="" selected> {{ trans('lang.select_subscription_plan') }}</option>
                                     </select>
@@ -229,6 +229,7 @@ foreach ($countries as $keycountry => $valuecountry) {
     var ownerphoto = '';
     var businessModelData = { subscription_model: false };
     var hasSubscriptionPlans = false;
+    var subscriptionPlansList = [];
     var newcountriesjs = @json($newcountriesjs);
 
     function showError(msg) {
@@ -287,6 +288,34 @@ foreach ($countries as $keycountry => $valuecountry) {
     }
 
     $(document).ready(function () {
+        $.get("{{ route('vendors.subscription-plans') }}", { section_id: section_id }, function (res) {
+            if (res.error) {
+                alert("API Error: " + res.error);
+            }
+            subscriptionPlansList = res.plans || [];
+            if (subscriptionPlansList.length === 0) {
+                alert("API returned 0 plans. Please check your subscription_plans database table.");
+            }
+            hasSubscriptionPlans = subscriptionPlansList.length > 0;
+            subscriptionPlansList.forEach(function (plan) {
+                $('#subscription_plan').append($('<option></option>').attr('value', plan.id).text(plan.name));
+            });
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            alert("Failed to load subscription plans: " + errorThrown);
+        });
+
+        $('#subscription_plan').on('change', function () {
+            var selectedId = $(this).val();
+            var selectedPlan = subscriptionPlansList.find(p => p.id == selectedId);
+            if (selectedPlan) {
+                var type = selectedPlan.type || 'free';
+                type = type.charAt(0).toUpperCase() + type.slice(1);
+                $('#subscription_plan_type').val(type);
+            } else {
+                $('#subscription_plan_type').val('');
+            }
+        });
+
         jQuery("#country_selector").select2({
             templateResult: formatState,
             templateSelection: formatState2,
@@ -298,18 +327,6 @@ foreach ($countries as $keycountry => $valuecountry) {
 
         $.get("{{ route('vendors.meta') }}", function (meta) {
             businessModelData.subscription_model = meta.subscription_model;
-            if (meta.subscription_model) {
-                $(".subscription-plans-wrapper").removeClass('d-none');
-                $.get("{{ route('vendors.subscription-plans') }}", { section_id: section_id }, function (res) {
-                    hasSubscriptionPlans = (res.plans || []).length > 0;
-                    (res.plans || []).forEach(function (plan) {
-                        $('#subscription_plan').append($('<option></option>').attr('value', plan.id).text(plan.name));
-                    });
-                    if (!hasSubscriptionPlans) {
-                        $(".subscription-plans-wrapper").addClass('d-none');
-                    }
-                });
-            }
             if (meta.defaultCountryCode) {
                 var defaultPhoneCode = String(meta.defaultCountryCode).replace('+', '').trim();
                 var $option = $("#country_selector option").filter(function () {
@@ -359,7 +376,7 @@ foreach ($countries as $keycountry => $valuecountry) {
             if (!userPhone) {
                 return showError("{{ trans('lang.enter_owners_phone') }}");
             }
-            if (!subscriptionPlanId && businessModelData.subscription_model && hasSubscriptionPlans) {
+            if (!subscriptionPlanId && hasSubscriptionPlans) {
                 return showError("{{ trans('lang.select_subscription_plan') }}");
             }
 

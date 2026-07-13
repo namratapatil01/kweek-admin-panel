@@ -38,6 +38,7 @@ Route::middleware(['permission:users,users'])->group(function () {
     Route::get('/users', [App\Http\Controllers\CustomerController::class, 'index'])->name('users');
     Route::get('/users-list', [App\Http\Controllers\CustomerController::class, 'index'])->name('users.index');
     Route::post('/users', [App\Http\Controllers\CustomerController::class, 'store'])->name('users.store');
+    Route::post('/users/toggle-status', [App\Http\Controllers\CustomerController::class, 'toggleStatus'])->name('users.toggle-status');
 });
 Route::middleware(['permission:users,users.create'])->group(function () {
     Route::get('/users/create', [App\Http\Controllers\CustomerController::class, 'create'])->name('users.create');

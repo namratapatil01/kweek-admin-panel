@@ -191,26 +191,17 @@
         jQuery("#data-table_processing").show();
 
         placeholder.get().then(async function (snapshotsimage) {
-
-            var placeholderImageData = snapshotsimage.data();
-
-            placeholderImage = placeholderImageData.image;
+            var placeholderImageData = snapshotsimage ? snapshotsimage.data() : null;
+            placeholderImage = (placeholderImageData && placeholderImageData.image) ? placeholderImageData.image : '';
 
             ref.get().then(async function (snapshots) {
-
-
-
-                snapshots = snapshots.data();
-
-                snapshots = snapshots.list;
-
-                if (snapshots.length) {
-
-                    languages = snapshots;
-
+                var snapshotData = snapshots ? snapshots.data() : null;
+                var list = (snapshotData && snapshotData.list) ? snapshotData.list : [];
+                if (list.length) {
+                    languages = list;
                 }
 
-                snapshots.forEach((data) => {
+                list.forEach((data) => {
 
                     if (id == data.slug) {
 
@@ -264,25 +255,20 @@
 
 
 
-                for (var key in snapshots) {
-
-                    if (snapshots[key]['slug'] == id) {
-
+                for (var key in list) {
+                    if (list[key]['slug'] == id) {
                         language_key = key;
-
                     }
-
                 }
 
 
 
                 jQuery("#data-table_processing").hide();
-
-
-
             });
-
-        })
+        }).catch(function(error) {
+            console.error("Error loading languages:", error);
+            jQuery("#data-table_processing").hide();
+        });
 
 
 

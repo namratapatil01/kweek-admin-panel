@@ -56,6 +56,46 @@ div.dataTables_wrapper div.dataTables_length select {
     background: #000 !important; border-color: #000 !important; color: #fff !important; border-radius: 8px !important; box-shadow: none !important;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button, .page-link { border-radius: 8px; color: #6b7280 !important; border: none !important; }
+
+/* Circular action buttons */
+.action-btn-circle-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    border: 1.5px solid;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+.btn-circle i {
+    border: none !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    background: none !important;
+    line-height: 1 !important;
+}
+.btn-circle:hover { transform: scale(1.1); }
+.btn-circle-view {
+    color: #fff !important;
+    border-color: #000 !important;
+    background: #000 !important;
+}
+.btn-circle-view:hover { background: #333 !important; border-color: #333 !important; color: #fff !important; }
+.btn-circle-edit {
+    color: #5ac8fa !important;
+    border-color: #5ac8fa !important;
+    background: #fff !important;
+}
+.btn-circle-edit:hover { background: #5ac8fa !important; color: #fff !important; }
 </style>
 
 <div class="page-wrapper">
@@ -109,6 +149,8 @@ div.dataTables_wrapper div.dataTables_length select {
                                 <th>Notification Type</th>
                                 <th>Subject</th>
                                 <th>Message</th>
+                                <th>Date Created</th>
+                                <th class="no-export">Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -130,6 +172,10 @@ $(function () {
             url: '{{ route($routePrefix . ".datatable") }}',
             type: 'GET'
         },
+        order: [[4, 'desc']],
+        columnDefs: [
+            { orderable: false, targets: [5] }
+        ],
         pageLength: 10,
         language: {
             zeroRecords: "{{ trans('lang.no_record_found') }}",

@@ -387,7 +387,16 @@ class ProvidersController extends Controller
             if ($sectionId) {
                 $query->where('sectionId', $sectionId);
             }
-            $plans = $query->get(['id', 'name', 'expiryDay', 'price', 'sectionId']);
+            $plans = $query->get(['id', 'name', 'sectionId', 'payload'])
+                ->map(function ($plan) {
+                    $payload = json_decode($plan->payload ?? '{}', true);
+                    if (is_array($payload)) {
+                        $plan->expiryDay = $payload['expiryDay'] ?? null;
+                        $plan->price = $payload['price'] ?? null;
+                    }
+                    unset($plan->payload);
+                    return $plan;
+                });
 
             return response()->json(['plans' => $plans]);
         } catch (\Exception $e) {

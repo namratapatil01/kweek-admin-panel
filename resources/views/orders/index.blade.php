@@ -780,11 +780,29 @@
                             let records = [];
                             let filteredRecords = [];
                             let sectionNames = {};
+                            let vendorNameCache = {};
                             // Fetch section names
                             const sectionDocs = await sectionsRef.get();
                             sectionDocs.forEach(doc => {
                                 sectionNames[doc.id] = doc.data().name;
                             });
+                            // Pre-fetch vendor names for all unique vendorIDs
+                            const vendorIDs = [...new Set(querySnapshot.docs.map(doc => doc.data().vendorID).filter(Boolean))];
+                            if (vendorIDs.length > 0) {
+                                const vendorChunks = [];
+                                for (let i = 0; i < vendorIDs.length; i += 10) {
+                                    vendorChunks.push(vendorIDs.slice(i, i + 10));
+                                }
+                                for (const chunk of vendorChunks) {
+                                    try {
+                                        const vendorSnaps = await database.collection('vendors').where('id', 'in', chunk).get();
+                                        vendorSnaps.forEach(vDoc => {
+                                            const vData = vDoc.data();
+                                            vendorNameCache[vData.id] = vData.title || '';
+                                        });
+                                    } catch(e) {}
+                                }
+                            }
                             querySnapshot.docs.map(async doc => {
                                 let childData = doc.data();
                                 childData.id = doc.id; // Ensure the document ID is included in the data
@@ -795,8 +813,13 @@
                                     driverName = childData.driver.firstName + ' ' + childData.driver.lastName;
                                     childData.driverName = driverName;
                                 }
-                                if (childData.hasOwnProperty('vendor') && childData.vendor != null) {
+                                // Populate storeName: use embedded vendor.title, fallback to vendorNameCache
+                                if (childData.hasOwnProperty('vendor') && childData.vendor != null && childData.vendor.title) {
                                     childData.storeName = childData.vendor.title;
+                                } else if (childData.vendorID && vendorNameCache[childData.vendorID]) {
+                                    childData.storeName = vendorNameCache[childData.vendorID];
+                                } else {
+                                    childData.storeName = '';
                                 }
                                 if (childData.hasOwnProperty('author') && childData.author != null) {
                                     childData.clientName = childData.author.firstName + ' ' + childData.author.lastName;
@@ -1021,14 +1044,10 @@
 
                 } else {
 
-                    var title = '';
-                    if (val.hasOwnProperty('vendor') && val.vendor.title != undefined) {
-                        title = val.vendor.title;
-                    }
-                    html.push('<a  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + title + '</a>');
+                    // Use pre-populated storeName (from embedded vendor or vendorNameCache lookup)
+                    html.push('<a  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + (val.storeName || '') + '</a>');
                     
                     if (val.hasOwnProperty("author") && val.author != null) {
-                        var driverId = val.author.id;
                         html.push('<a  data-url="' + customer_view + '" href="' + customer_view + '" class="redirecttopage">' + val.author.firstName + ' ' + val.author.lastName + '</a>');
                     } else {
                         html.push('');
@@ -1039,11 +1058,7 @@
 
                 if (userID) {
 
-                    var title = '';
-                    if (val.hasOwnProperty('vendor') && val.vendor.title != undefined) {
-                        title = val.vendor.title;
-                    }
-                    html.push('<td  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + title + '</td>');
+                    html.push('<td  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + (val.storeName || '') + '</td>');
                     
                     if (val.hasOwnProperty("driver") && val.driver != null) {
                         var driverId = val.driver.id;
@@ -1086,11 +1101,8 @@
 
                 } else {
 
-                    var title = '';
-                    if (val.hasOwnProperty('vendor') && val.vendor.title != undefined) {
-                        title = val.vendor.title;
-                    }
-                    html.push('<a  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + title + '</a>');
+                    // Use pre-populated storeName (from embedded vendor or vendorNameCache lookup)
+                    html.push('<a  data-url="' + route_view + '" href="' + route_view + '" class="redirecttopage">' + (val.storeName || '') + '</a>');
                     
                     if (val.hasOwnProperty("driver") && val.driver != null) {
                         var driverId = val.driver.id;
@@ -1102,7 +1114,6 @@
                     }
                     
                     if (val.hasOwnProperty("author") && val.author != null) {
-                        var driverId = val.author.id;
                         html.push('<a  data-url="' + customer_view + '" href="' + customer_view + '" class="redirecttopage">' + val.author.firstName + ' ' + val.author.lastName + '</a>');
                     } else {
                         html.push('');

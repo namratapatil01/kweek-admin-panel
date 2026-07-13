@@ -274,12 +274,16 @@ class SubscriptionPlanController extends Controller
                 ->leftJoin('app_users', function ($join) {
                     $join->on('app_users.id', '=', 'subscription_histories.user_id')
                         ->orOn('app_users.id', '=', DB::raw("JSON_UNQUOTE(JSON_EXTRACT(subscription_histories.payload, '$.user_id'))"));
+                })
+                ->leftJoin('vendors', function ($join) {
+                    $join->on('vendors.id', '=', 'subscription_histories.user_id')
+                        ->orOn('vendors.id', '=', DB::raw("JSON_UNQUOTE(JSON_EXTRACT(subscription_histories.payload, '$.user_id'))"));
                 });
 
             if ($id) {
                 $query->where(function ($q) use ($id) {
                     $q->where('subscription_histories.user_id', $id)
-                      ->orWhere('payload->user_id', $id);
+                      ->orWhere('subscription_histories.payload->user_id', $id);
                 });
             }
 
