@@ -2,14 +2,14 @@
 
 @section('style')
 <style>
-    /* Checkbox custom styling */
-    #subscriptionPlansTable input[type="checkbox"] {
+    /* Checkbox custom styling - only for regular checkboxes, not switch toggles */
+    #subscriptionPlansTable input[type="checkbox"]:not(.switch input) {
         position: relative !important;
         appearance: none !important;
         -webkit-appearance: none !important;
         width: 18px !important;
         height: 18px !important;
-        border: 1.5px solid #cbd5e0 !important;
+        border: 1px solid #cbd5e0 !important;
         border-radius: 4px !important;
         outline: none !important;
         cursor: pointer !important;
@@ -21,11 +21,11 @@
         margin: 0 !important;
         opacity: 1 !important;
     }
-    #subscriptionPlansTable input[type="checkbox"]:checked {
+    #subscriptionPlansTable input[type="checkbox"]:not(.switch input):checked {
         background-color: #ff5c28 !important;
         border-color: #ff5c28 !important;
     }
-    #subscriptionPlansTable input[type="checkbox"]:checked::after {
+    #subscriptionPlansTable input[type="checkbox"]:not(.switch input):checked::after {
         content: '' !important;
         width: 5px !important;
         height: 9px !important;
@@ -40,19 +40,19 @@
     .action-btn-circle-container {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
     }
     .btn-circle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background-color: transparent;
         transition: all 0.2s ease;
         text-decoration: none !important;
-        font-size: 14px;
+        font-size: 16px;
     }
     .btn-circle-edit {
         border: 1px solid #06b6d4;
@@ -110,6 +110,26 @@
         color: #fff !important;
     }
 
+    /* DataTables Overrides for exact match */
+    .dataTables_wrapper .dataTables_length select {
+        background-color: #f8fafc !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 5px 15px !important;
+        outline: none !important;
+        box-shadow: none !important;
+        margin: 0 5px;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        background-color: #f8fafc !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 6px 15px !important;
+        outline: none !important;
+        box-shadow: none !important;
+        margin-left: 8px;
+    }
+
     .delete-all {
         min-width: 80px !important;
         white-space: nowrap !important;
@@ -156,7 +176,7 @@
             <div class="overview-sec mb-4">
                 <h3 class="text-dark-2 mb-1 h4">{{ trans('lang.overview') }}</h3>
                 <p class="mb-3 text-muted">{{ trans('lang.see_overview_of_package_earning') }}</p>
-                <div class="row subscription-list">
+                <div class="row subscription-overview-cards">
                 </div>
             </div>
             <div class="table-list">
@@ -183,12 +203,14 @@
                                         cellspacing="0" width="100%">
                                         <thead>
                                             <tr>
-                                                <?php if (in_array('subscription-plans.delete', json_decode(@session('user_permissions'), true))) { ?>
-                                                <th class="delete-all"><input type="checkbox" id="is_active"><label
-                                                        class="col-3 control-label" for="is_active">
-                                                        <a id="deleteAll" class="do_not_delete" href="javascript:void(0)"><i
-                                                                class="mdi mdi-delete"></i>
-                                                            {{ trans('lang.all') }}</a></label>
+                                                <?php if (in_array('subscription-plans.delete', json_decode(@session('user_permissions'), true) ?: [])) { ?>
+                                                <th class="delete-all">
+                                                    <input type="checkbox" id="is_active">
+                                                    <label class="control-label mb-0 ml-2" for="is_active">
+                                                        <a id="deleteAll" class="do_not_delete" href="javascript:void(0)" style="color: #333; font-weight: bold; text-decoration: none;">
+                                                            {{ trans('lang.all') }}
+                                                        </a>
+                                                    </label>
                                                 </th>
                                                 <?php } ?>
                                                 <th>{{ trans('lang.plan_name') }}</th>
@@ -207,8 +229,6 @@
                 </div>
             </div>
         </div>
-    </div>
-    </div>
     </div>
 @endsection
 @section('scripts')
@@ -284,7 +304,8 @@
                         {
                         data: null,
                         render: function (data, type, row) {
-                            if (checkDeletePermission && row.isCommissionPlan != true) {
+                            var isComm = row.isCommissionPlan;
+                            if (checkDeletePermission && !(isComm == 1 || isComm === '1' || isComm == true || isComm === 'true')) {
                                 return '<input type="checkbox" id="is_open_' + row.id + '" class="is_open" dataId="' + row.id + '"><label class="col-3 control-label" for="is_open_' + row.id + '"></label>';
                             }
                             return '';
@@ -298,7 +319,7 @@
                             var rowName = row.name || '';
                             var rowImage = resolveImageUrl(row.image);
                             var url = "{{ url('current-subscriber') }}/" + rowId;
-                            return '<img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="" style="width:70px;height:70px;" src="' + rowImage + '"> <a href="' + url + '" id="' + rowId + '">' + rowName + '</a>';
+                            return '<div class="d-flex align-items-center"><img onerror="this.onerror=null;this.src=\'' + placeholderImage + '\'" alt="" style="width:50px;height:50px;margin-right:15px;border-radius:8px;" src="' + rowImage + '"> <a href="' + url + '" id="' + rowId + '" style="color: #333; font-weight: 500;">' + rowName + '</a></div>';
                         }
                     },
                     {
@@ -330,7 +351,8 @@
                     {
                         data: null,
                         render: function (data, type, row) {
-                            if (row.isCommissionPlan == true || row.isCommissionPlan === 'true') return '';
+                            var isComm = row.isCommissionPlan;
+                            if (isComm == 1 || isComm === '1' || isComm == true || isComm === 'true') return '';
                             var isEnable = (row.isEnable == 1 || row.isEnable === true || row.isEnable === 'true');
                             var checked = isEnable ? 'checked' : '';
                             return '<label class="switch"><input type="checkbox" ' + checked + ' id="' + row.id + '" data-section="' + row.sectionId + '" name="isActive"><span class="slider round"></span></label>';
@@ -342,7 +364,9 @@
                             var rowId = row.id || '';
                             var editRoute = "{{ url('subscription-plans/save') }}/" + rowId;
                             var html = '<span class="action-btn-circle-container"><a href="' + editRoute + '" class="btn-circle btn-circle-edit" data-toggle="tooltip" title="{{ trans('lang.edit') }}"><i class="mdi mdi-lead-pencil"></i></a>';
-                            if (checkDeletePermission && row.isCommissionPlan != true && row.isCommissionPlan !== 'true') {
+                            
+                            var isComm = row.isCommissionPlan;
+                            if (checkDeletePermission && !(isComm == 1 || isComm === '1' || isComm == true || isComm === 'true')) {
                                 html += '<a id="' + rowId + '" class="btn-circle btn-circle-delete delete-btn" name="plan-delete" href="javascript:void(0)" data-toggle="tooltip" title="{{ trans('lang.delete') }}"><i class="mdi mdi-delete"></i></a>';
                             }
                             html += '</span>';
@@ -480,25 +504,25 @@
                             var img = resolveImageUrl(data.image || (data.payload && data.payload.image));
                             
                             html += ` <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card overview-card border-0 shadow-sm position-relative overflow-hidden" style="border-radius: 12px; height: 120px; background-color: #fff;">
-                                        <div class="card-body d-flex align-items-center h-100 p-4">
-                                            <div class="overview-icon-container mr-3" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                    <div class="card overview-card border-0 shadow-sm position-relative overflow-hidden" style="border-radius: 12px; height: 140px; background-color: #fff;">
+                                        <div class="card-body h-100 p-4 d-flex flex-column justify-content-center">
+                                            <div class="overview-icon-container mb-3" style="width: 35px; height: 35px; background: transparent; padding: 0;">
                                                 <img src="${img}" onerror="this.onerror=null;this.src='${placeholderImage}'" style="width: 100%; height: 100%; object-fit: contain;">
                                             </div>
-                                            <div class="overview-text">
-                                                <h3 class="font-weight-bold mb-1 earnings_${data.id}" style="font-size: 1.5rem; color: #2b2b2b;"></h3>
-                                                <span class="text-muted font-weight-medium" style="font-size: 0.9rem;">${dName}</span>
+                                            <div class="overview-text text-left">
+                                                <h3 class="font-weight-bold mb-1 earnings_${data.id}" style="font-size: 1.4rem; color: #000;"></h3>
+                                                <span class="text-muted" style="font-size: 0.9rem;">${dName}</span>
                                             </div>
                                         </div>
-                                        <div class="position-absolute" style="bottom: -15px; right: -15px; width: 80px; height: 80px; opacity: 0.15; pointer-events: none;">
+                                        <div class="position-absolute" style="bottom: 10px; right: 10px; width: 90px; height: 90px; opacity: 0.1; pointer-events: none;">
                                             <img src="${img}" onerror="this.onerror=null;this.src='${placeholderImage}'" style="width: 100%; height: 100%; object-fit: contain;">
                                         </div>
                                     </div>
                                 </div>`;
                         });
-                        $('.subscription-list').html(html);
+                        $('.subscription-overview-cards').html(html);
                     } else {
-                        $('.subscription-list').html('<div class="col-12"><p class="text-muted">{{ trans("lang.no_active_plans") }}</p></div>');
+                        $('.subscription-overview-cards').html('<div class="col-12"><p class="text-muted">{{ trans("lang.no_active_plans") }}</p></div>');
                     }
                 }
             });
